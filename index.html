@@ -1,0 +1,1212 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-SWGDSZH41W"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag("js", new Date());
+
+            gtag("config", "G-SWGDSZH41W");
+        </script>
+        <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🖨️</text></svg>' />
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>icon_print — Bond Paper Stitcher</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+        <style>
+            :root {
+                --ink: #1b1e1c;
+                --ink-soft: #262a27;
+                --paper: #fafaf7;
+                --paper-edge: rgba(27, 30, 26, 0.14);
+                --line: #ddd9cd;
+                --muted: #767c73;
+                --accent: #e1432b;
+                --accent-soft: #f7dcd6;
+                --cyan: #177b86;
+                --cyan-soft: #d9eeef;
+                --radius: 3px;
+                --font-display: "Space Grotesk", sans-serif;
+                --font-body: "Inter", sans-serif;
+                --font-mono: "IBM Plex Mono", monospace;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            html,
+            body {
+                height: 100%;
+            }
+            body {
+                margin: 0;
+                font-family: var(--font-body);
+                color: var(--ink);
+                background: var(--paper);
+                -webkit-font-smoothing: antialiased;
+            }
+            button,
+            select,
+            input {
+                font-family: inherit;
+            }
+            .app {
+                display: flex;
+                height: 100vh;
+                overflow: hidden;
+            }
+
+            /* ---------- Sidebar ---------- */
+            .sidebar {
+                width: 236px;
+                flex-shrink: 0;
+                background: var(--ink);
+                color: #efefea;
+                display: flex;
+                flex-direction: column;
+                padding: 22px 16px;
+            }
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-family: var(--font-display);
+                font-weight: 700;
+                font-size: 17px;
+                letter-spacing: 0.01em;
+                padding-bottom: 20px;
+                margin-bottom: 16px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            }
+            .brand-mark {
+                width: 22px;
+                height: 22px;
+                flex-shrink: 0;
+            }
+            .brand-mark circle {
+                fill: none;
+                stroke: var(--accent);
+                stroke-width: 1.6;
+            }
+            .brand-mark line {
+                stroke: var(--accent);
+                stroke-width: 1.6;
+            }
+            .brand small {
+                display: block;
+                font-family: var(--font-mono);
+                font-weight: 400;
+                font-size: 10px;
+                color: #8b8f89;
+                letter-spacing: 0.04em;
+            }
+
+            nav {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+            }
+            .nav-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 9px 10px;
+                border-radius: var(--radius);
+                font-size: 13.5px;
+                font-weight: 500;
+                color: #d6d8d2;
+                text-decoration: none;
+                cursor: pointer;
+                border: 1px solid transparent;
+                background: transparent;
+            }
+            .nav-item svg {
+                width: 16px;
+                height: 16px;
+                flex-shrink: 0;
+                opacity: 0.85;
+            }
+            .nav-item.active {
+                background: rgba(225, 67, 43, 0.15);
+                color: #fff;
+                border-color: rgba(225, 67, 43, 0.4);
+            }
+            .nav-item.active svg {
+                opacity: 1;
+            }
+            .nav-item.disabled {
+                color: #5d615a;
+                cursor: default;
+            }
+            .nav-section-label {
+                font-family: var(--font-mono);
+                font-size: 10px;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: #6c716a;
+                margin: 18px 0 6px 10px;
+            }
+            .sidebar-footer {
+                margin-top: auto;
+                padding-top: 16px;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                font-family: var(--font-mono);
+                font-size: 10.5px;
+                color: #63675f;
+            }
+
+            /* ---------- Main ---------- */
+            main {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                min-width: 0;
+            }
+
+            .toolbar {
+                display: flex;
+                align-items: center;
+                gap: 22px;
+                padding: 12px 24px;
+                border-bottom: 1px solid var(--line);
+                background: #fff;
+                flex-wrap: wrap;
+            }
+            .toolbar h1 {
+                font-family: var(--font-display);
+                font-size: 15px;
+                font-weight: 600;
+                margin: 0 22px 0 0;
+                padding-right: 22px;
+                border-right: 1px solid var(--line);
+            }
+            .toolbar-group {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .toolbar label {
+                font-size: 11.5px;
+                color: var(--muted);
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-weight: 500;
+            }
+            select {
+                border: 1px solid var(--line);
+                border-radius: var(--radius);
+                padding: 6px 8px;
+                font-size: 12.5px;
+                background: #fff;
+                color: var(--ink);
+                font-family: var(--font-mono);
+            }
+            .btn {
+                border: 1px solid var(--line);
+                background: #fff;
+                color: var(--ink);
+                padding: 8px 13px;
+                border-radius: var(--radius);
+                font-size: 12.5px;
+                font-weight: 600;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 7px;
+                white-space: nowrap;
+            }
+            .btn:hover {
+                border-color: #b9b4a6;
+            }
+            .btn svg {
+                width: 14px;
+                height: 14px;
+            }
+            .btn.primary {
+                background: var(--ink);
+                color: #fff;
+                border-color: var(--ink);
+            }
+            .btn.primary:hover {
+                background: #000;
+            }
+            .btn.accent {
+                background: var(--accent);
+                color: #fff;
+                border-color: var(--accent);
+            }
+            .btn.accent:hover {
+                background: #c93a24;
+            }
+            .btn:disabled {
+                opacity: 0.4;
+                cursor: not-allowed;
+            }
+            .btn.small {
+                padding: 5px 9px;
+                font-size: 11.5px;
+                font-weight: 500;
+            }
+            .toolbar-spacer {
+                flex: 1;
+            }
+
+            /* ---------- Workspace ---------- */
+            .workspace {
+                flex: 1;
+                overflow: auto;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 40px;
+                position: relative;
+                background: radial-gradient(circle, #e7e3d8 1px, transparent 1px) 0 0/22px 22px;
+            }
+            .empty-hint {
+                position: absolute;
+                text-align: center;
+                color: var(--muted);
+                font-size: 13px;
+                pointer-events: none;
+                max-width: 260px;
+                line-height: 1.5;
+            }
+            .empty-hint b {
+                color: var(--ink);
+                font-family: var(--font-display);
+                font-size: 14px;
+            }
+
+            .page-scaler {
+                position: relative;
+            }
+            .page {
+                position: relative;
+                background: #fff;
+                box-shadow:
+                    0 18px 40px var(--paper-edge),
+                    0 2px 6px rgba(0, 0, 0, 0.08);
+                overflow: hidden;
+            }
+            .page.no-image {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: repeating-linear-gradient(45deg, #f2f0e9, #f2f0e9 10px, #edeae1 10px, #edeae1 20px);
+            }
+
+            .crop {
+                position: absolute;
+                width: 26px;
+                height: 26px;
+                pointer-events: none;
+            }
+            .crop svg {
+                width: 100%;
+                height: 100%;
+            }
+            .crop path,
+            .crop circle {
+                stroke: var(--ink);
+                stroke-width: 1;
+                fill: none;
+                opacity: 0.55;
+            }
+            .crop.tl {
+                top: -13px;
+                left: -13px;
+            }
+            .crop.tr {
+                top: -13px;
+                right: -13px;
+            }
+            .crop.bl {
+                bottom: -13px;
+                left: -13px;
+            }
+            .crop.br {
+                bottom: -13px;
+                right: -13px;
+            }
+
+            .seam-guide {
+                position: absolute;
+                left: 0;
+                right: 0;
+                height: 0;
+                border-top: 1.5px dashed var(--accent);
+                pointer-events: none;
+                z-index: 500;
+                display: none;
+            }
+            .seam-guide span {
+                position: absolute;
+                right: 6px;
+                top: -19px;
+                font-family: var(--font-mono);
+                font-size: 10px;
+                color: var(--accent);
+                background: #fff;
+                padding: 1px 5px;
+                border-radius: 2px;
+            }
+
+            .layer {
+                position: absolute;
+                cursor: grab;
+                touch-action: none;
+            }
+            .layer img {
+                position: absolute;
+                display: block;
+                user-select: none;
+                -webkit-user-drag: none;
+                pointer-events: none;
+            }
+            .layer.selected {
+                outline: 1.5px solid var(--cyan);
+                outline-offset: 0;
+            }
+            .layer .tag {
+                position: absolute;
+                top: -21px;
+                left: -1.5px;
+                font-family: var(--font-mono);
+                font-size: 10px;
+                background: var(--cyan);
+                color: #fff;
+                padding: 2px 6px;
+                border-radius: 2px 2px 2px 0;
+                opacity: 0;
+                transition: opacity 0.12s;
+                white-space: nowrap;
+            }
+            .layer.selected .tag {
+                opacity: 1;
+            }
+            .handle {
+                position: absolute;
+                width: 11px;
+                height: 11px;
+                background: #fff;
+                border: 1.5px solid var(--cyan);
+                border-radius: 50%;
+                bottom: -6px;
+                right: -6px;
+                cursor: nwse-resize;
+                display: none;
+            }
+            .layer.selected .handle {
+                display: block;
+            }
+
+            /* ---------- Inspector ---------- */
+            .inspector {
+                width: 250px;
+                flex-shrink: 0;
+                background: #fff;
+                border-left: 1px solid var(--line);
+                padding: 18px 16px;
+                overflow-y: auto;
+                font-size: 12.5px;
+            }
+            .inspector h2 {
+                font-family: var(--font-display);
+                font-size: 12px;
+                font-weight: 600;
+                margin: 0 0 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: var(--muted);
+            }
+            .layer-row {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px;
+                border: 1px solid var(--line);
+                border-radius: var(--radius);
+                margin-bottom: 8px;
+                cursor: pointer;
+                background: #fff;
+            }
+            .layer-row.active {
+                border-color: var(--cyan);
+                background: var(--cyan-soft);
+            }
+            .layer-row .thumb {
+                width: 30px;
+                height: 30px;
+                border-radius: 2px;
+                object-fit: cover;
+                border: 1px solid var(--line);
+                flex-shrink: 0;
+            }
+            .layer-row .name {
+                flex: 1;
+                font-weight: 500;
+                font-size: 12px;
+            }
+            .layer-row .name small {
+                display: block;
+                font-family: var(--font-mono);
+                font-size: 9.5px;
+                color: var(--muted);
+                font-weight: 400;
+            }
+            .icon-btn {
+                width: 24px;
+                height: 24px;
+                border: 1px solid var(--line);
+                background: #fff;
+                border-radius: 2px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                flex-shrink: 0;
+            }
+            .icon-btn:hover {
+                border-color: #b9b4a6;
+            }
+            .icon-btn svg {
+                width: 13px;
+                height: 13px;
+            }
+            .layer-controls {
+                display: flex;
+                gap: 5px;
+                margin-top: 6px;
+            }
+
+            .field {
+                margin: 16px 0;
+            }
+            .field-label {
+                display: flex;
+                justify-content: space-between;
+                font-size: 11.5px;
+                color: var(--muted);
+                margin-bottom: 6px;
+                font-weight: 500;
+            }
+            .field-label span:last-child {
+                font-family: var(--font-mono);
+                color: var(--ink);
+            }
+            input[type="range"] {
+                width: 100%;
+                accent-color: var(--cyan);
+            }
+            .check-row {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 12px;
+                margin: 14px 0;
+                color: var(--ink);
+            }
+            .check-row input {
+                accent-color: var(--accent);
+            }
+            .hint {
+                font-size: 11px;
+                color: var(--muted);
+                line-height: 1.5;
+                margin-top: 4px;
+            }
+            .divider {
+                height: 1px;
+                background: var(--line);
+                margin: 16px 0;
+            }
+            kbd {
+                font-family: var(--font-mono);
+                font-size: 10px;
+                background: #f2f0e9;
+                border: 1px solid var(--line);
+                border-radius: 2px;
+                padding: 1px 5px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="app">
+            <!-- ============ SIDEBAR ============ -->
+            <aside class="sidebar">
+                <div class="brand">
+                    <svg class="brand-mark" viewBox="0 0 22 22">
+                        <circle cx="11" cy="11" r="6" />
+                        <line x1="11" y1="0" x2="11" y2="22" />
+                        <line x1="0" y1="11" x2="22" y2="11" />
+                    </svg>
+                    <div>icon_print<small>TOOLBOX</small></div>
+                </div>
+                <nav>
+                    <a class="nav-item active" data-tool="stitch">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+                            <rect x="2" y="2" width="9" height="7" rx="0.5" />
+                            <rect x="5" y="7" width="9" height="7" rx="0.5" />
+                        </svg>
+                        Bond Paper Stitcher
+                    </a>
+                    <div class="nav-section-label">More tools</div>
+                    <a class="nav-item disabled">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+                            <rect x="2" y="2" width="12" height="12" rx="1" />
+                            <path d="M2 11l3-3 2 2 4-5 3 4" />
+                        </svg>
+                        Coming soon
+                    </a>
+                    <a class="nav-item disabled">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+                            <path d="M2 8a6 6 0 1 1 6 6" />
+                            <path d="M2 8V4M2 8h4" />
+                        </svg>
+                        Coming soon
+                    </a>
+                </nav>
+                <div class="sidebar-footer">icon_print v1.0<br />Bond Paper Stitcher</div>
+            </aside>
+
+            <!-- ============ MAIN ============ -->
+            <main>
+                <header class="toolbar">
+                    <h1>Bond Paper Stitcher</h1>
+
+                    <div class="toolbar-group">
+                        <label
+                            >Paper
+                            <select id="paperSize">
+                                <option value="long" selected>Long — 8.5 × 13"</option>
+                                <option value="short">Short — 8.5 × 11"</option>
+                                <option value="legal">Legal — 8.5 × 14"</option>
+                                <option value="a4">A4 — 8.27 × 11.69"</option>
+                            </select>
+                        </label>
+                        <label
+                            >Quality
+                            <select id="dpiSelect">
+                                <option value="150">150 DPI (draft)</option>
+                                <option value="300" selected>300 DPI (print)</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <div class="toolbar-group">
+                        <button class="btn" id="upload1">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+                                <path d="M8 11V3M4.5 6.5 8 3l3.5 3.5" />
+                                <path d="M2 13h12" />
+                            </svg>
+                            Top scan
+                        </button>
+                        <button class="btn" id="upload2">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+                                <path d="M8 11V3M4.5 6.5 8 3l3.5 3.5" />
+                                <path d="M2 13h12" />
+                            </svg>
+                            Bottom scan
+                        </button>
+                        <input type="file" id="file1" accept="image/*" hidden />
+                        <input type="file" id="file2" accept="image/*" hidden />
+                    </div>
+
+                    <button class="btn accent" id="autoFit">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 2h4M2 2v4M14 2h-4M14 2v4M2 14h4M2 14v-4M14 14h-4M14 14v-4" /></svg>
+                        Auto-fit &amp; Stitch
+                    </button>
+
+                    <div class="toolbar-spacer"></div>
+
+                    <button class="btn small" id="resetBtn">Reset</button>
+                    <button class="btn primary" id="downloadBtn">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+                            <path d="M8 2v8M5 7l3 3 3-3" />
+                            <path d="M2 13h12" />
+                        </svg>
+                        Export PNG
+                    </button>
+                </header>
+
+                <section class="workspace" id="workspace">
+                    <div class="empty-hint" id="emptyHint">
+                        <b>Nothing scanned yet.</b><br />
+                        Upload the top and bottom halves of your long bond paper, then hit
+                        <b>Auto-fit &amp; Stitch</b>. Drag each half to line up the seam.
+                    </div>
+                    <div class="page-scaler" id="pageScaler">
+                        <div class="page" id="page">
+                            <div class="crop tl">
+                                <svg viewBox="0 0 26 26"><path d="M13 2v10M2 13h10" /></svg>
+                            </div>
+                            <div class="crop tr">
+                                <svg viewBox="0 0 26 26"><path d="M13 2v10M24 13h-10" /></svg>
+                            </div>
+                            <div class="crop bl">
+                                <svg viewBox="0 0 26 26"><path d="M13 24v-10M2 13h10" /></svg>
+                            </div>
+                            <div class="crop br">
+                                <svg viewBox="0 0 26 26"><path d="M13 24v-10M24 13h-10" /></svg>
+                            </div>
+                            <div class="seam-guide" id="seamGuide"><span id="seamLabel">seam</span></div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <!-- ============ INSPECTOR ============ -->
+            <aside class="inspector">
+                <h2>Layers</h2>
+                <div id="layerList"><p class="hint">No scans loaded.</p></div>
+
+                <div class="divider"></div>
+
+                <div class="field">
+                    <div class="field-label"><span>Seam overlap nudge</span><span id="overlapVal">0 px</span></div>
+                    <input type="range" id="overlapSlider" min="-200" max="200" value="0" />
+                    <div class="hint">Fine-tunes where the bottom scan sits under the top scan. Drag a layer directly for pixel-perfect alignment.</div>
+                </div>
+
+                <div class="check-row">
+                    <input type="checkbox" id="ghostToggle" />
+                    <label for="ghostToggle">Ghost overlay (see-through seam for alignment)</label>
+                </div>
+
+                <div class="divider"></div>
+                <h2>Selected layer</h2>
+                <div id="selectedControls" class="hint">Click a scan to select it.</div>
+
+                <div class="divider"></div>
+                <p class="hint">Nudge selected layer with arrow keys (<kbd>Shift</kbd> = 10px). Press <kbd>Delete</kbd> to remove it.</p>
+            </aside>
+        </div>
+
+        <script>
+            (function () {
+                "use strict";
+
+                // ---------- Paper definitions (inches) ----------
+                const PAPER_SIZES = {
+                    long: { w: 8.5, h: 13, label: 'Long — 8.5 × 13"' },
+                    short: { w: 8.5, h: 11, label: 'Short — 8.5 × 11"' },
+                    legal: { w: 8.5, h: 14, label: 'Legal — 8.5 × 14"' },
+                    a4: { w: 8.27, h: 11.69, label: 'A4 — 8.27 × 11.69"' },
+                };
+
+                const els = {
+                    paperSize: document.getElementById("paperSize"),
+                    dpiSelect: document.getElementById("dpiSelect"),
+                    upload1: document.getElementById("upload1"),
+                    upload2: document.getElementById("upload2"),
+                    file1: document.getElementById("file1"),
+                    file2: document.getElementById("file2"),
+                    autoFit: document.getElementById("autoFit"),
+                    resetBtn: document.getElementById("resetBtn"),
+                    downloadBtn: document.getElementById("downloadBtn"),
+                    workspace: document.getElementById("workspace"),
+                    pageScaler: document.getElementById("pageScaler"),
+                    page: document.getElementById("page"),
+                    emptyHint: document.getElementById("emptyHint"),
+                    seamGuide: document.getElementById("seamGuide"),
+                    seamLabel: document.getElementById("seamLabel"),
+                    layerList: document.getElementById("layerList"),
+                    overlapSlider: document.getElementById("overlapSlider"),
+                    overlapVal: document.getElementById("overlapVal"),
+                    ghostToggle: document.getElementById("ghostToggle"),
+                    selectedControls: document.getElementById("selectedControls"),
+                };
+
+                let state = {
+                    dpi: 300,
+                    paperKey: "long",
+                    pageW: 0,
+                    pageH: 0,
+                    scale: 1,
+                    layers: [], // {id, name, img, natW, natH, x, y, w, h, rot, opacity}
+                    selectedId: null,
+                    nextId: 1,
+                };
+
+                function computePageSize() {
+                    const p = PAPER_SIZES[state.paperKey];
+                    state.pageW = Math.round(p.w * state.dpi);
+                    state.pageH = Math.round(p.h * state.dpi);
+                }
+
+                function layoutPage() {
+                    computePageSize();
+                    els.page.style.width = state.pageW + "px";
+                    els.page.style.height = state.pageH + "px";
+                    els.page.classList.toggle("no-image", state.layers.length === 0);
+
+                    // fit to available workspace
+                    const avail = els.workspace.getBoundingClientRect();
+                    const availW = avail.width - 80;
+                    const availH = avail.height - 80;
+                    state.scale = Math.min(availW / state.pageW, availH / state.pageH, 1);
+                    els.pageScaler.style.width = state.pageW * state.scale + "px";
+                    els.pageScaler.style.height = state.pageH * state.scale + "px";
+                    els.page.style.transform = "scale(" + state.scale + ")";
+                    els.page.style.transformOrigin = "top left";
+
+                    els.emptyHint.style.display = state.layers.length === 0 ? "block" : "none";
+                }
+
+                // ---------- File loading ----------
+                function loadFile(file, slotName) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        const img = new Image();
+                        img.onload = function () {
+                            addOrReplaceLayer(slotName, img, e.target.result);
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+
+                function addOrReplaceLayer(slotName, img, src) {
+                    let layer = state.layers.find((l) => l.slot === slotName);
+                    if (!layer) {
+                        layer = {
+                            id: state.nextId++,
+                            slot: slotName,
+                            name: slotName === "top" ? "Top scan" : "Bottom scan",
+                            rot: 0,
+                            opacity: 1,
+                        };
+                        state.layers.push(layer);
+                    }
+                    layer.img = img;
+                    layer.src = src;
+                    layer.natW = img.naturalWidth;
+                    layer.natH = img.naturalHeight;
+
+                    // default placement before auto-fit: natural size, centered-ish
+                    if (!layer.placed) {
+                        const scaleToFit = Math.min(state.pageW / layer.natW, 1);
+                        layer.w = layer.natW * scaleToFit;
+                        layer.h = layer.natH * scaleToFit;
+                        layer.x = (state.pageW - layer.w) / 2;
+                        layer.y = slotName === "top" ? 0 : state.pageH - layer.h;
+                        layer.placed = true;
+                    }
+
+                    renderAll();
+                }
+
+                // ---------- Auto-fit & stitch ----------
+                function autoFitStitch() {
+                    const top = state.layers.find((l) => l.slot === "top");
+                    const bottom = state.layers.find((l) => l.slot === "bottom");
+                    if (!top && !bottom) {
+                        alert("Upload the top and bottom scans first.");
+                        return;
+                    }
+                    [top, bottom].forEach((layer) => {
+                        if (!layer) return;
+                        layer.w = state.pageW;
+                        layer.h = layer.natH * (state.pageW / layer.natW);
+                        layer.x = 0;
+                    });
+                    if (top) top.y = 0;
+                    if (bottom) bottom.y = state.pageH - bottom.h;
+
+                    // stacking: top scan on top so its edge reads cleanly over the seam
+                    state.layers.sort((a, b) => (a.slot === "bottom" ? -1 : 1) - (b.slot === "bottom" ? -1 : 1));
+
+                    els.overlapSlider.value = 0;
+                    renderAll();
+                }
+
+                // ---------- Rendering ----------
+                function renderAll() {
+                    layoutPage();
+
+                    // clear existing layer DOM (keep crop marks + seam guide)
+                    els.page.querySelectorAll(".layer").forEach((n) => n.remove());
+
+                    state.layers.forEach((layer, idx) => {
+                        const el = document.createElement("div");
+                        el.className = "layer" + (layer.id === state.selectedId ? " selected" : "");
+                        el.style.left = layer.x + "px";
+                        el.style.top = layer.y + "px";
+                        el.style.width = layer.w + "px";
+                        el.style.height = layer.h + "px";
+                        el.style.zIndex = idx + 1;
+                        el.dataset.id = layer.id;
+
+                        const isGhost = els.ghostToggle.checked && idx === state.layers.length - 1 && state.layers.length > 1;
+                        el.style.opacity = isGhost ? 0.55 : 1;
+
+                        const img = document.createElement("img");
+                        img.src = layer.src;
+                        img.draggable = false;
+                        if (layer.rot % 180 === 0) {
+                            img.style.width = layer.w + "px";
+                            img.style.height = layer.h + "px";
+                            img.style.left = "0px";
+                            img.style.top = "0px";
+                        } else {
+                            img.style.width = layer.h + "px";
+                            img.style.height = layer.w + "px";
+                            img.style.left = (layer.w - layer.h) / 2 + "px";
+                            img.style.top = (layer.h - layer.w) / 2 + "px";
+                        }
+                        img.style.transform = "rotate(" + layer.rot + "deg)";
+                        el.appendChild(img);
+
+                        const tag = document.createElement("div");
+                        tag.className = "tag";
+                        tag.textContent = layer.name;
+                        el.appendChild(tag);
+
+                        const handle = document.createElement("div");
+                        handle.className = "handle";
+                        el.appendChild(handle);
+
+                        el.addEventListener("pointerdown", (e) => startDrag(e, layer, el));
+                        handle.addEventListener("pointerdown", (e) => startResize(e, layer, el));
+
+                        els.page.appendChild(el);
+                    });
+
+                    updateSeamGuide();
+                    renderLayerList();
+                    renderSelectedControls();
+                }
+
+                function updateSeamGuide() {
+                    const top = state.layers.find((l) => l.slot === "top");
+                    const bottom = state.layers.find((l) => l.slot === "bottom");
+                    if (top && bottom && top.placed && bottom.placed && top.w && bottom.w) {
+                        const seamY = bottom.y;
+                        els.seamGuide.style.display = "block";
+                        els.seamGuide.style.top = seamY + "px";
+                        const overlapPx = Math.round(top.y + top.h - bottom.y);
+                        els.seamLabel.textContent = overlapPx > 0 ? "overlap " + overlapPx + "px" : "seam";
+                    } else {
+                        els.seamGuide.style.display = "none";
+                    }
+                }
+
+                function renderLayerList() {
+                    if (state.layers.length === 0) {
+                        els.layerList.innerHTML = '<p class="hint">No scans loaded.</p>';
+                        return;
+                    }
+                    els.layerList.innerHTML = "";
+                    // show topmost first in the list
+                    for (let i = state.layers.length - 1; i >= 0; i--) {
+                        const layer = state.layers[i];
+                        const row = document.createElement("div");
+                        row.className = "layer-row" + (layer.id === state.selectedId ? " active" : "");
+                        row.innerHTML =
+                            '<img class="thumb" src="' + layer.src + '">' + '<div class="name">' + layer.name + "<small>" + Math.round(layer.w) + " × " + Math.round(layer.h) + " px</small></div>";
+                        row.addEventListener("click", () => {
+                            state.selectedId = layer.id;
+                            renderAll();
+                        });
+                        els.layerList.appendChild(row);
+                    }
+                }
+
+                function renderSelectedControls() {
+                    const layer = state.layers.find((l) => l.id === state.selectedId);
+                    if (!layer) {
+                        els.selectedControls.innerHTML = "Click a scan to select it.";
+                        return;
+                    }
+                    els.selectedControls.innerHTML = "";
+                    const wrap = document.createElement("div");
+
+                    const label = document.createElement("div");
+                    label.style.fontWeight = "600";
+                    label.style.marginBottom = "8px";
+                    label.textContent = layer.name;
+                    wrap.appendChild(label);
+
+                    const row1 = document.createElement("div");
+                    row1.className = "layer-controls";
+                    row1.appendChild(iconButton("Send to back", svgLayerBack(), () => reorder(layer, "back")));
+                    row1.appendChild(iconButton("Bring backward", svgLayerBackward(), () => reorder(layer, "backward")));
+                    row1.appendChild(iconButton("Bring forward", svgLayerForward(), () => reorder(layer, "forward")));
+                    row1.appendChild(iconButton("Bring to front", svgLayerFront(), () => reorder(layer, "front")));
+                    wrap.appendChild(row1);
+
+                    const row2 = document.createElement("div");
+                    row2.className = "layer-controls";
+                    row2.style.marginTop = "6px";
+                    row2.appendChild(
+                        iconButton("Rotate 90°", svgRotate(), () => {
+                            layer.rot = (layer.rot + 90) % 360;
+                            renderAll();
+                        }),
+                    );
+                    row2.appendChild(
+                        iconButton("Delete layer", svgTrash(), () => {
+                            deleteLayer(layer);
+                        }),
+                    );
+                    wrap.appendChild(row2);
+
+                    els.selectedControls.appendChild(wrap);
+                }
+
+                function iconButton(title, svg, onClick) {
+                    const b = document.createElement("div");
+                    b.className = "icon-btn";
+                    b.title = title;
+                    b.innerHTML = svg;
+                    b.addEventListener("click", onClick);
+                    return b;
+                }
+
+                function reorder(layer, dir) {
+                    const i = state.layers.indexOf(layer);
+                    state.layers.splice(i, 1);
+                    if (dir === "back") state.layers.unshift(layer);
+                    else if (dir === "front") state.layers.push(layer);
+                    else if (dir === "backward") state.layers.splice(Math.max(0, i - 1), 0, layer);
+                    else if (dir === "forward") state.layers.splice(Math.min(state.layers.length, i + 1), 0, layer);
+                    renderAll();
+                }
+
+                function deleteLayer(layer) {
+                    state.layers = state.layers.filter((l) => l.id !== layer.id);
+                    if (state.selectedId === layer.id) state.selectedId = null;
+                    renderAll();
+                }
+
+                // ---------- Drag / resize ----------
+                function startDrag(e, layer, el) {
+                    if (e.target.classList.contains("handle")) return;
+                    e.stopPropagation();
+                    state.selectedId = layer.id;
+                    renderAll();
+                    const startX = e.clientX,
+                        startY = e.clientY;
+                    const origX = layer.x,
+                        origY = layer.y;
+                    el.setPointerCapture(e.pointerId);
+                    el.style.cursor = "grabbing";
+
+                    function onMove(ev) {
+                        const dx = (ev.clientX - startX) / state.scale;
+                        const dy = (ev.clientY - startY) / state.scale;
+                        layer.x = origX + dx;
+                        layer.y = origY + dy;
+                        el.style.left = layer.x + "px";
+                        el.style.top = layer.y + "px";
+                        updateSeamGuide();
+                    }
+                    function onUp(ev) {
+                        el.releasePointerCapture(ev.pointerId);
+                        el.removeEventListener("pointermove", onMove);
+                        el.removeEventListener("pointerup", onUp);
+                        el.style.cursor = "grab";
+                        renderLayerList();
+                    }
+                    el.addEventListener("pointermove", onMove);
+                    el.addEventListener("pointerup", onUp);
+                }
+
+                function startResize(e, layer, el) {
+                    e.stopPropagation();
+                    state.selectedId = layer.id;
+                    const startX = e.clientX;
+                    const origW = layer.w,
+                        origH = layer.h;
+                    const ratio = origH / origW;
+                    e.target.setPointerCapture(e.pointerId);
+
+                    function onMove(ev) {
+                        const dx = (ev.clientX - startX) / state.scale;
+                        let newW = Math.max(30, origW + dx);
+                        let newH = newW * ratio;
+                        layer.w = newW;
+                        layer.h = newH;
+                        renderAll();
+                    }
+                    function onUp(ev) {
+                        e.target.releasePointerCapture(ev.pointerId);
+                        e.target.removeEventListener("pointermove", onMove);
+                        e.target.removeEventListener("pointerup", onUp);
+                    }
+                    e.target.addEventListener("pointermove", onMove);
+                    e.target.addEventListener("pointerup", onUp);
+                }
+
+                // ---------- Overlap slider ----------
+                els.overlapSlider.addEventListener("input", () => {
+                    const val = parseInt(els.overlapSlider.value, 10);
+                    els.overlapVal.textContent = val + " px";
+                    const bottom = state.layers.find((l) => l.slot === "bottom");
+                    if (bottom) {
+                        const base = state.pageH - bottom.h;
+                        bottom.y = base - val;
+                        renderAll();
+                    }
+                });
+
+                els.ghostToggle.addEventListener("change", renderAll);
+
+                // ---------- Keyboard nudge ----------
+                document.addEventListener("keydown", (e) => {
+                    const active = document.activeElement;
+                    if (active && (active.tagName === "SELECT" || active.tagName === "INPUT")) return;
+                    const layer = state.layers.find((l) => l.id === state.selectedId);
+                    if (!layer) return;
+                    const step = e.shiftKey ? 10 : 1;
+                    let handled = true;
+                    if (e.key === "ArrowUp") layer.y -= step;
+                    else if (e.key === "ArrowDown") layer.y += step;
+                    else if (e.key === "ArrowLeft") layer.x -= step;
+                    else if (e.key === "ArrowRight") layer.x += step;
+                    else if (e.key === "Delete" || e.key === "Backspace") deleteLayer(layer);
+                    else handled = false;
+                    if (handled) {
+                        e.preventDefault();
+                        renderAll();
+                    }
+                });
+
+                els.page.addEventListener("pointerdown", (e) => {
+                    if (e.target === els.page) {
+                        state.selectedId = null;
+                        renderAll();
+                    }
+                });
+
+                // ---------- Uploads ----------
+                els.upload1.addEventListener("click", () => els.file1.click());
+                els.upload2.addEventListener("click", () => els.file2.click());
+                els.file1.addEventListener("change", (e) => {
+                    if (e.target.files[0]) loadFile(e.target.files[0], "top");
+                });
+                els.file2.addEventListener("change", (e) => {
+                    if (e.target.files[0]) loadFile(e.target.files[0], "bottom");
+                });
+
+                els.autoFit.addEventListener("click", autoFitStitch);
+
+                els.paperSize.addEventListener("change", () => {
+                    state.paperKey = els.paperSize.value;
+                    state.layers.forEach((l) => (l.placed = false));
+                    renderAll();
+                });
+                els.dpiSelect.addEventListener("change", () => {
+                    const oldDpi = state.dpi;
+                    state.dpi = parseInt(els.dpiSelect.value, 10);
+                    const factor = state.dpi / oldDpi;
+                    state.layers.forEach((l) => {
+                        l.x *= factor;
+                        l.y *= factor;
+                        l.w *= factor;
+                        l.h *= factor;
+                    });
+                    renderAll();
+                });
+
+                els.resetBtn.addEventListener("click", () => {
+                    if (state.layers.length && !confirm("Clear both scans and start over?")) return;
+                    state.layers = [];
+                    state.selectedId = null;
+                    els.file1.value = "";
+                    els.file2.value = "";
+                    els.overlapSlider.value = 0;
+                    els.overlapVal.textContent = "0 px";
+                    renderAll();
+                });
+
+                // ---------- Export ----------
+                els.downloadBtn.addEventListener("click", () => {
+                    if (state.layers.length === 0) {
+                        alert("Upload and stitch your scans first.");
+                        return;
+                    }
+                    const canvas = document.createElement("canvas");
+                    canvas.width = state.pageW;
+                    canvas.height = state.pageH;
+                    const ctx = canvas.getContext("2d");
+                    ctx.fillStyle = "#FFFFFF";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    state.layers.forEach((layer) => {
+                        ctx.save();
+                        ctx.globalAlpha = 1;
+                        ctx.translate(layer.x + layer.w / 2, layer.y + layer.h / 2);
+                        ctx.rotate((layer.rot * Math.PI) / 180);
+                        if (layer.rot % 180 === 0) {
+                            ctx.drawImage(layer.img, -layer.w / 2, -layer.h / 2, layer.w, layer.h);
+                        } else {
+                            ctx.drawImage(layer.img, -layer.h / 2, -layer.w / 2, layer.h, layer.w);
+                        }
+                        ctx.restore();
+                    });
+
+                    canvas.toBlob((blob) => {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+                        a.href = url;
+                        a.download = "stitched-bond-paper-" + stamp + ".png";
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        URL.revokeObjectURL(url);
+                    }, "image/png");
+                });
+
+                // ---------- Icon SVGs ----------
+                function svgLayerFront() {
+                    return '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="5" y="5" width="8" height="8" rx="0.5"/><rect x="3" y="3" width="8" height="8" rx="0.5" fill="#fff"/></svg>';
+                }
+                function svgLayerBack() {
+                    return '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="3" width="8" height="8" rx="0.5" fill="#fff"/><rect x="5" y="5" width="8" height="8" rx="0.5"/></svg>';
+                }
+                function svgLayerForward() {
+                    return '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M8 3v7M8 3 5 6M8 3l3 3"/><path d="M3 13h10"/></svg>';
+                }
+                function svgLayerBackward() {
+                    return '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M8 13V6M8 13l-3-3M8 13l3-3"/><path d="M3 3h10"/></svg>';
+                }
+                function svgRotate() {
+                    return '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M13 8A5 5 0 1 1 8 3"/><path d="M13 3v4h-4"/></svg>';
+                }
+                function svgTrash() {
+                    return '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3 4h10M6 4V3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1M5 4v9a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V4"/></svg>';
+                }
+
+                window.addEventListener("resize", () => renderAll());
+
+                // init
+                layoutPage();
+                renderAll();
+            })();
+        </script>
+        <script>
+            if ("serviceWorker" in navigator) {
+                window.addEventListener("load", () => {
+                    navigator.serviceWorker.register("sw.js").catch((err) => {
+                        console.error("SW registration failed:", err);
+                    });
+                });
+
+                // Auto-refresh once when a new SW version takes control.
+                let refreshing = false;
+                navigator.serviceWorker.addEventListener("controllerchange", () => {
+                    if (refreshing) return;
+                    refreshing = true;
+                    window.location.reload();
+                });
+            }
+        </script>
+    </body>
+</html>
