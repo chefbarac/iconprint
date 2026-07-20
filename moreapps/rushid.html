@@ -1,0 +1,898 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Rush ID — Auto Layout</title>
+        <style>
+            :root {
+                --ink: #1c2530;
+                --paper: #f2f4f3;
+                --line: #c9d0d6;
+                --accent: #1f6f5c;
+                --accent-dark: #144e40;
+                --danger: #b3452c;
+                --gap: 0in;
+                --pad: 0.35in;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                background: var(--paper);
+                font-family:
+                    "Segoe UI",
+                    -apple-system,
+                    BlinkMacSystemFont,
+                    Helvetica,
+                    Arial,
+                    sans-serif;
+                color: var(--ink);
+                padding: 22px 16px 60px;
+            }
+
+            h1 {
+                font-size: 20px;
+                letter-spacing: 0.02em;
+                margin: 0;
+            }
+            .eyebrow {
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.14em;
+                color: var(--accent);
+                font-weight: 700;
+                margin: 0 0 4px;
+            }
+            .header-wrap {
+                max-width: 980px;
+                margin: 0 auto 18px;
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+            .header-wrap p {
+                margin: 2px 0 0;
+                font-size: 13px;
+                color: #5a6672;
+            }
+
+            /* ---------- Toolbar ---------- */
+            .toolbar {
+                max-width: 980px;
+                margin: 0 auto 22px;
+                background: #fff;
+                border: 1px solid var(--line);
+                border-radius: 10px;
+                padding: 18px 20px;
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+                gap: 16px 20px;
+            }
+            .field {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+            .field label {
+                font-size: 11px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                color: #5a6672;
+            }
+            .field input[type="text"],
+            .field input[type="number"] {
+                border: 1px solid var(--line);
+                border-radius: 6px;
+                padding: 8px 10px;
+                font-size: 14px;
+                font-family: inherit;
+                background: #fbfcfc;
+            }
+            .field input:focus {
+                outline: 2px solid var(--accent);
+                outline-offset: 1px;
+            }
+            .btnrow {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            button {
+                font-family: inherit;
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+                border-radius: 6px;
+                border: 1px solid var(--accent);
+                padding: 9px 14px;
+                background: var(--accent);
+                color: #fff;
+                transition: background 0.15s ease;
+            }
+            button:hover {
+                background: var(--accent-dark);
+            }
+            button.ghost {
+                background: #fff;
+                color: var(--accent);
+            }
+            button.ghost:hover {
+                background: #eaf3f0;
+            }
+            button.danger {
+                background: #fff;
+                color: var(--danger);
+                border-color: var(--danger);
+            }
+            button.danger:hover {
+                background: #fbeae5;
+            }
+            button:disabled {
+                opacity: 0.45;
+                cursor: not-allowed;
+            }
+            button.primary-wide {
+                width: 100%;
+                padding: 11px 14px;
+                font-size: 14px;
+            }
+
+            .checkline {
+                display: flex;
+                align-items: center;
+                gap: 7px;
+                font-size: 13px;
+            }
+            .checkline input {
+                width: 15px;
+                height: 15px;
+            }
+
+            input[type="range"] {
+                width: 100%;
+                accent-color: var(--accent);
+            }
+            .rangeval {
+                font-size: 11px;
+                color: #5a6672;
+            }
+
+            #fileInput {
+                display: none;
+            }
+
+            .thumb-wrap {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            #photoThumb {
+                width: 52px;
+                height: 52px;
+                border-radius: 6px;
+                object-fit: cover;
+                border: 1px solid var(--line);
+                background: #e9ecee;
+                display: none;
+            }
+            .thumb-placeholder {
+                width: 52px;
+                height: 52px;
+                border-radius: 6px;
+                border: 1px dashed var(--line);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 9px;
+                color: #8a95a0;
+                text-align: center;
+                background: #e9ecee;
+            }
+
+            /* ---------- Modals ---------- */
+            .modal-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(20, 25, 30, 0.6);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 50;
+                padding: 16px;
+            }
+            .hidden {
+                display: none !important;
+            }
+            .modal-box {
+                background: #fff;
+                border-radius: 10px;
+                padding: 20px;
+                max-width: 520px;
+                width: 100%;
+                max-height: 92vh;
+                overflow: auto;
+            }
+            .modal-box h2 {
+                margin: 0 0 4px;
+                font-size: 16px;
+            }
+            .modal-box p.hint {
+                margin: 0 0 14px;
+                font-size: 12px;
+                color: #5a6672;
+            }
+            .modal-actions {
+                display: flex;
+                justify-content: flex-end;
+                gap: 8px;
+                margin-top: 16px;
+            }
+
+            #cropStage {
+                position: relative;
+                max-width: 100%;
+                border: 1px solid var(--line);
+                background: #111 repeating-conic-gradient(#2a2a2a 0% 25%, #1e1e1e 0% 50%) 50%/16px 16px;
+                overflow: hidden;
+                touch-action: none;
+                user-select: none;
+            }
+            #cropImg {
+                display: block;
+                max-width: 100%;
+                pointer-events: none;
+            }
+            #cropBox {
+                position: absolute;
+                border: 2px solid #fff;
+                box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.45);
+                cursor: move;
+            }
+            #cropBox .handle {
+                position: absolute;
+                width: 14px;
+                height: 14px;
+                background: var(--accent);
+                border: 2px solid #fff;
+                border-radius: 3px;
+                right: -8px;
+                bottom: -8px;
+                cursor: nwse-resize;
+            }
+            #cameraVideo {
+                width: 100%;
+                border-radius: 6px;
+                background: #000;
+                display: block;
+            }
+            .camera-frame {
+                position: relative;
+            }
+            .camera-guide {
+                position: absolute;
+                inset: 8% 25%;
+                border: 2px dashed rgba(255, 255, 255, 0.75);
+                border-radius: 6px;
+                pointer-events: none;
+            }
+
+            /* ---------- Sheet ---------- */
+            .sheet-wrapper {
+                display: flex;
+                justify-content: center;
+            }
+            .sheet {
+                width: 8.27in;
+                min-height: 11.69in;
+                background: #fff;
+                padding: var(--pad);
+                box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+                border-radius: 2px;
+            }
+            .sheet-meta {
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+                border-bottom: 1px solid var(--line);
+                padding-bottom: 8px;
+                margin-bottom: 14px;
+            }
+            .sheet-meta .brand {
+                font-size: 12px;
+                font-weight: 800;
+                letter-spacing: 0.1em;
+                color: var(--accent);
+                text-transform: uppercase;
+            }
+            .sheet-meta .metaname {
+                font-size: 12px;
+                color: #5a6672;
+            }
+
+            .section-label {
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                color: #8a95a0;
+                margin: 0 0 8px;
+            }
+            .section-label.hidden-label {
+                display: none;
+            }
+
+            .layout-row {
+                display: flex;
+                gap: var(--gap);
+                align-items: flex-start;
+            }
+            .block {
+                display: flex;
+                flex-direction: column;
+            }
+            .section.grid-2x2 {
+                display: grid;
+                grid-template-columns: repeat(2, 2in);
+                grid-auto-rows: 2in;
+                gap: var(--gap);
+            }
+            .section.grid-1x1 {
+                display: grid;
+                grid-template-columns: repeat(3, 1in);
+                grid-auto-rows: 1in;
+                gap: var(--gap);
+            }
+
+            .cell {
+                border: 1px dashed #9aa5ad;
+                position: relative;
+                flex: 0 0 auto;
+                overflow: hidden;
+                background: #eef1f2;
+            }
+            .cell.size-2x2 {
+                width: 2in;
+                height: 2in;
+            }
+            .cell.size-1x1 {
+                width: 1in;
+                height: 1in;
+            }
+            .cell.no-guides {
+                border-color: transparent;
+            }
+
+            .cell img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+            }
+            .cell .placeholder-icon {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #aab4bc;
+                font-size: 10px;
+                text-align: center;
+                padding: 6px;
+            }
+            .cell .name-label {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(255, 255, 255, 0.88);
+                text-align: center;
+                color: #111;
+                font-weight: 700;
+                line-height: 1.15;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: clip;
+                padding: 1px 2px;
+            }
+
+            /* ---------- Print ---------- */
+            @page {
+                size: A4;
+                margin: 0;
+            }
+            @media print {
+                body {
+                    background: #fff;
+                    padding: 0;
+                    margin: 0;
+                }
+                .no-print {
+                    display: none !important;
+                }
+                .sheet-wrapper {
+                    display: block;
+                }
+                .sheet {
+                    box-shadow: none;
+                    border-radius: 0;
+                    width: 210mm;
+                    min-height: 297mm;
+                    margin: 0;
+                    padding: var(--pad);
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header-wrap no-print">
+            <div>
+                <p class="eyebrow">Rush ID · Print Sheet Generator</p>
+                <h1>Auto Layout — 2×2 &amp; 1×1</h1>
+                <p>Capture or upload a photo, crop it square, add a name, and print a ready-to-cut A4 sheet.</p>
+            </div>
+        </div>
+
+        <!-- ================= TOOLBAR ================= -->
+        <div class="toolbar no-print">
+            <div class="field">
+                <label>Photo</label>
+                <div class="thumb-wrap">
+                    <img id="photoThumb" alt="Current photo" />
+                    <div class="thumb-placeholder" id="thumbPlaceholder">No<br />photo</div>
+                    <div class="btnrow" style="flex-direction: column">
+                        <button type="button" id="btnUpload">Upload photo</button>
+                        <button type="button" id="btnCamera" class="ghost">Capture photo</button>
+                    </div>
+                </div>
+                <input type="file" id="fileInput" accept="image/*" />
+                <button type="button" id="btnRecrop" class="ghost" disabled>Re-crop current photo</button>
+            </div>
+
+            <div class="field">
+                <label for="nameInput">Name on ID</label>
+                <input type="text" id="nameInput" placeholder="Juan Dela Cruz" maxlength="40" />
+
+                <label style="margin-top: 6px" class="checkline">
+                    <input type="checkbox" id="autoFitCheck" checked />
+                    Auto-fit name size
+                </label>
+                <div id="manualFontWrap" style="display: none">
+                    <input type="range" id="fontSlider" min="6" max="26" value="14" />
+                    <div class="rangeval">Manual size: <span id="fontSliderVal">14</span>px</div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="count2x2">Copies — 2in × 2in (left)</label>
+                <input type="number" id="count2x2" min="0" max="20" value="4" />
+                <label for="count1x1" style="margin-top: 6px">Copies — 1in × 1in (right)</label>
+                <input type="number" id="count1x1" min="0" max="40" value="12" />
+            </div>
+
+            <div class="field">
+                <label>Sheet options</label>
+                <label class="checkline"><input type="checkbox" id="guidesCheck" checked /> Show cut guides</label>
+                <label class="checkline"><input type="checkbox" id="metaCheck" /> Show name header on sheet</label>
+                <label class="checkline"><input type="checkbox" id="sizeLabelCheck" /> Show "2in×2in / 1in×1in" labels</label>
+                <label class="checkline"><input type="checkbox" id="spacingCheck" /> Add spacing between photos</label>
+                <label for="marginInput" style="margin-top: 6px">Page margin (in)</label>
+                <input type="number" id="marginInput" min="0" max="0.4" step="0.05" value="0.35" />
+                <button type="button" id="btnGenerate" class="primary-wide" style="margin-top: 8px">Update layout</button>
+            </div>
+
+            <div class="field">
+                <label>Output</label>
+                <button type="button" id="btnPrint" class="primary-wide">Print sheet</button>
+                <button type="button" id="btnReset" class="danger ghost" style="margin-top: 4px">Clear all</button>
+            </div>
+        </div>
+
+        <!-- ================= CROP MODAL ================= -->
+        <div class="modal-overlay hidden no-print" id="cropModal">
+            <div class="modal-box">
+                <h2>Crop photo</h2>
+                <p class="hint">Drag the square to reposition. Drag the corner handle to resize. ID photos are cropped 1:1.</p>
+                <div id="cropStage">
+                    <img id="cropImg" alt="Photo to crop" />
+                    <div id="cropBox"><div class="handle" id="cropHandle"></div></div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="ghost" id="cropCancel">Cancel</button>
+                    <button type="button" id="cropApply">Apply crop</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= CAMERA MODAL ================= -->
+        <div class="modal-overlay hidden no-print" id="cameraModal">
+            <div class="modal-box">
+                <h2>Capture photo</h2>
+                <p class="hint">Center the face in the guide, then capture.</p>
+                <div class="camera-frame">
+                    <video id="cameraVideo" autoplay playsinline></video>
+                    <div class="camera-guide"></div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="ghost" id="cameraCancel">Cancel</button>
+                    <button type="button" id="cameraCapture">Capture</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= PRINT SHEET ================= -->
+        <div class="sheet-wrapper">
+            <div class="sheet" id="sheet">
+                <div class="sheet-meta no-print-border" id="sheetMeta">
+                    <span class="brand">Rush ID</span>
+                    <span class="metaname" id="metaNameText">&nbsp;</span>
+                </div>
+
+                <div class="layout-row">
+                    <div class="block">
+                        <div class="section-label">2in × 2in</div>
+                        <div class="section grid-2x2" id="section2x2"></div>
+                    </div>
+                    <div class="block">
+                        <div class="section-label">1in × 1in</div>
+                        <div class="section grid-1x1" id="section1x1"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            (function () {
+                "use strict";
+
+                // ---------------- State ----------------
+                let currentPhoto = null; // final cropped dataURL
+                let rawPhoto = null; // uncropped source for the crop modal
+                let stream = null; // camera MediaStream
+
+                // ---------------- Elements ----------------
+                const fileInput = document.getElementById("fileInput");
+                const btnUpload = document.getElementById("btnUpload");
+                const btnCamera = document.getElementById("btnCamera");
+                const btnRecrop = document.getElementById("btnRecrop");
+                const photoThumb = document.getElementById("photoThumb");
+                const thumbPlaceholder = document.getElementById("thumbPlaceholder");
+
+                const nameInput = document.getElementById("nameInput");
+                const autoFitCheck = document.getElementById("autoFitCheck");
+                const manualWrap = document.getElementById("manualFontWrap");
+                const fontSlider = document.getElementById("fontSlider");
+                const fontSliderVal = document.getElementById("fontSliderVal");
+
+                const count2x2In = document.getElementById("count2x2");
+                const count1x1In = document.getElementById("count1x1");
+                const guidesCheck = document.getElementById("guidesCheck");
+                const metaCheck = document.getElementById("metaCheck");
+                const sizeLabelCheck = document.getElementById("sizeLabelCheck");
+                const spacingCheck = document.getElementById("spacingCheck");
+                const marginInput = document.getElementById("marginInput");
+                const metaNameText = document.getElementById("metaNameText");
+
+                const btnGenerate = document.getElementById("btnGenerate");
+                const btnPrint = document.getElementById("btnPrint");
+                const btnReset = document.getElementById("btnReset");
+
+                const section2x2 = document.getElementById("section2x2");
+                const section1x1 = document.getElementById("section1x1");
+
+                // Crop modal
+                const cropModal = document.getElementById("cropModal");
+                const cropImg = document.getElementById("cropImg");
+                const cropStage = document.getElementById("cropStage");
+                const cropBox = document.getElementById("cropBox");
+                const cropHandle = document.getElementById("cropHandle");
+                const cropCancel = document.getElementById("cropCancel");
+                const cropApply = document.getElementById("cropApply");
+
+                // Camera modal
+                const cameraModal = document.getElementById("cameraModal");
+                const cameraVideo = document.getElementById("cameraVideo");
+                const cameraCancel = document.getElementById("cameraCancel");
+                const cameraCapture = document.getElementById("cameraCapture");
+
+                // ---------------- Upload ----------------
+                btnUpload.addEventListener("click", () => fileInput.click());
+                fileInput.addEventListener("change", (e) => {
+                    const file = e.target.files && e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => openCropModal(ev.target.result);
+                    reader.readAsDataURL(file);
+                    fileInput.value = "";
+                });
+
+                btnRecrop.addEventListener("click", () => {
+                    if (rawPhoto) openCropModal(rawPhoto);
+                });
+
+                // ---------------- Camera ----------------
+                btnCamera.addEventListener("click", async () => {
+                    try {
+                        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                        cameraVideo.srcObject = stream;
+                        cameraModal.classList.remove("hidden");
+                    } catch (err) {
+                        alert("Could not access the camera. You can upload a photo instead.\n\n(" + err.message + ")");
+                    }
+                });
+
+                function stopCamera() {
+                    if (stream) {
+                        stream.getTracks().forEach((t) => t.stop());
+                        stream = null;
+                    }
+                    cameraModal.classList.add("hidden");
+                }
+                cameraCancel.addEventListener("click", stopCamera);
+
+                cameraCapture.addEventListener("click", () => {
+                    const canvas = document.createElement("canvas");
+                    canvas.width = cameraVideo.videoWidth;
+                    canvas.height = cameraVideo.videoHeight;
+                    canvas.getContext("2d").drawImage(cameraVideo, 0, 0);
+                    const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
+                    stopCamera();
+                    openCropModal(dataUrl);
+                });
+
+                // ---------------- Crop modal ----------------
+                let boxState = null; // {x,y,size} in displayed px, relative to cropStage
+                let dragMode = null; // 'move' | 'resize'
+                let dragStart = null;
+
+                function openCropModal(src) {
+                    rawPhoto = src;
+                    // Reset any stale sizing from a previous crop session, then show the
+                    // modal BEFORE we measure the image — while display:none, clientWidth/
+                    // clientHeight read as 0, which was producing a zero-size crop (and a
+                    // solid black output image).
+                    cropStage.style.width = "auto";
+                    cropStage.style.height = "auto";
+                    cropModal.classList.remove("hidden");
+
+                    cropImg.onload = () => {
+                        cropStage.style.width = cropImg.clientWidth + "px";
+                        cropStage.style.height = cropImg.clientHeight + "px";
+                        const size = Math.min(cropImg.clientWidth, cropImg.clientHeight) * 0.8;
+                        boxState = {
+                            x: (cropImg.clientWidth - size) / 2,
+                            y: (cropImg.clientHeight - size) / 2,
+                            size: size,
+                        };
+                        renderCropBox();
+                    };
+                    cropImg.src = src;
+                }
+
+                function renderCropBox() {
+                    cropBox.style.left = boxState.x + "px";
+                    cropBox.style.top = boxState.y + "px";
+                    cropBox.style.width = boxState.size + "px";
+                    cropBox.style.height = boxState.size + "px";
+                }
+
+                cropBox.addEventListener("pointerdown", (e) => {
+                    if (e.target === cropHandle) return; // handled separately
+                    dragMode = "move";
+                    dragStart = { x: e.clientX, y: e.clientY, box: { ...boxState } };
+                    cropBox.setPointerCapture(e.pointerId);
+                });
+
+                cropHandle.addEventListener("pointerdown", (e) => {
+                    e.stopPropagation();
+                    dragMode = "resize";
+                    dragStart = { x: e.clientX, y: e.clientY, box: { ...boxState } };
+                    cropHandle.setPointerCapture(e.pointerId);
+                });
+
+                window.addEventListener("pointermove", (e) => {
+                    if (!dragMode || !dragStart) return;
+                    const dx = e.clientX - dragStart.x;
+                    const dy = e.clientY - dragStart.y;
+                    const stageW = cropImg.clientWidth,
+                        stageH = cropImg.clientHeight;
+
+                    if (dragMode === "move") {
+                        let nx = dragStart.box.x + dx;
+                        let ny = dragStart.box.y + dy;
+                        nx = Math.max(0, Math.min(stageW - boxState.size, nx));
+                        ny = Math.max(0, Math.min(stageH - boxState.size, ny));
+                        boxState.x = nx;
+                        boxState.y = ny;
+                        renderCropBox();
+                    } else if (dragMode === "resize") {
+                        const delta = Math.max(dx, dy);
+                        let newSize = Math.max(30, dragStart.box.size + delta);
+                        newSize = Math.min(newSize, stageW - dragStart.box.x, stageH - dragStart.box.y);
+                        boxState.size = newSize;
+                        renderCropBox();
+                    }
+                });
+
+                window.addEventListener("pointerup", () => {
+                    dragMode = null;
+                    dragStart = null;
+                });
+
+                cropCancel.addEventListener("click", () => cropModal.classList.add("hidden"));
+
+                cropApply.addEventListener("click", () => {
+                    if (!boxState || !boxState.size || cropImg.clientWidth === 0) {
+                        alert("The photo isn't ready yet — please wait a moment and try again.");
+                        return;
+                    }
+                    const scaleX = cropImg.naturalWidth / cropImg.clientWidth;
+                    const scaleY = cropImg.naturalHeight / cropImg.clientHeight;
+
+                    const sx = boxState.x * scaleX;
+                    const sy = boxState.y * scaleY;
+                    const sSize = boxState.size * scaleX;
+
+                    const OUT = 600;
+                    const canvas = document.createElement("canvas");
+                    canvas.width = OUT;
+                    canvas.height = OUT;
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(cropImg, sx, sy, sSize, sSize, 0, 0, OUT, OUT);
+
+                    currentPhoto = canvas.toDataURL("image/jpeg", 0.92);
+                    photoThumb.src = currentPhoto;
+                    photoThumb.style.display = "block";
+                    thumbPlaceholder.style.display = "none";
+                    btnRecrop.disabled = false;
+
+                    cropModal.classList.add("hidden");
+                    generateLayout();
+                });
+
+                // ---------------- Name / font controls ----------------
+                autoFitCheck.addEventListener("change", () => {
+                    manualWrap.style.display = autoFitCheck.checked ? "none" : "block";
+                    generateLayout();
+                });
+                fontSlider.addEventListener("input", () => {
+                    fontSliderVal.textContent = fontSlider.value;
+                    applyLabelFonts();
+                });
+                nameInput.addEventListener("input", generateLayout);
+                count2x2In.addEventListener("change", generateLayout);
+                count1x1In.addEventListener("change", generateLayout);
+                guidesCheck.addEventListener("change", generateLayout);
+                metaCheck.addEventListener("change", generateLayout);
+                sizeLabelCheck.addEventListener("change", generateLayout);
+                spacingCheck.addEventListener("change", generateLayout);
+                marginInput.addEventListener("change", generateLayout);
+                btnGenerate.addEventListener("click", generateLayout);
+
+                // ---------------- Layout generation ----------------
+                function buildCell(sizeClass) {
+                    const cell = document.createElement("div");
+                    cell.className = "cell " + sizeClass + (guidesCheck.checked ? "" : " no-guides");
+
+                    if (currentPhoto) {
+                        const img = document.createElement("img");
+                        img.src = currentPhoto;
+                        cell.appendChild(img);
+                    } else {
+                        const ph = document.createElement("div");
+                        ph.className = "placeholder-icon";
+                        ph.textContent = "Add a photo";
+                        cell.appendChild(ph);
+                    }
+
+                    const name = (nameInput.value || "").trim();
+                    if (name) {
+                        const label = document.createElement("div");
+                        label.className = "name-label";
+                        label.textContent = name;
+                        cell.appendChild(label);
+                    }
+                    return cell;
+                }
+
+                function generateLayout() {
+                    const n2 = Math.max(0, parseInt(count2x2In.value, 10) || 0);
+                    const n1 = Math.max(0, parseInt(count1x1In.value, 10) || 0);
+
+                    section2x2.innerHTML = "";
+                    for (let i = 0; i < n2; i++) section2x2.appendChild(buildCell("size-2x2"));
+
+                    section1x1.innerHTML = "";
+                    for (let i = 0; i < n1; i++) section1x1.appendChild(buildCell("size-1x1"));
+
+                    const name = (nameInput.value || "").trim();
+                    metaNameText.textContent = metaCheck.checked && name ? name : "\u00A0";
+                    document.getElementById("sheetMeta").style.visibility = metaCheck.checked ? "visible" : "hidden";
+
+                    document.querySelectorAll(".section-label").forEach((el) => {
+                        el.classList.toggle("hidden-label", !sizeLabelCheck.checked);
+                    });
+
+                    document.getElementById("sheet").style.setProperty("--gap", spacingCheck.checked ? "0.12in" : "0in");
+
+                    const margin = Math.max(0, Math.min(0.4, parseFloat(marginInput.value) || 0));
+                    document.getElementById("sheet").style.setProperty("--pad", margin + "in");
+
+                    applyLabelFonts();
+                }
+
+                // Shrink-to-fit text sizing using canvas measurement
+                const measureCanvas = document.createElement("canvas");
+                const measureCtx = measureCanvas.getContext("2d");
+
+                function fitFontForLabel(label, cellWidthPx, maxPx, minPx) {
+                    const text = label.textContent;
+                    if (!text) return;
+                    let size = maxPx;
+                    while (size > minPx) {
+                        measureCtx.font = "700 " + size + "px Segoe UI, Arial, sans-serif";
+                        const w = measureCtx.measureText(text).width;
+                        if (w <= cellWidthPx - 6) break;
+                        size -= 0.5;
+                    }
+                    label.style.fontSize = size + "px";
+                }
+
+                function applyLabelFonts() {
+                    const cellPx2x2 = pxPerInch() * 2;
+                    const cellPx1x1 = pxPerInch() * 1;
+
+                    const manual = !autoFitCheck.checked;
+                    const manualSize2 = parseInt(fontSlider.value, 10);
+                    const manualSize1 = Math.max(5, Math.round(manualSize2 * 0.55));
+
+                    section2x2.querySelectorAll(".name-label").forEach((label) => {
+                        if (manual) label.style.fontSize = manualSize2 + "px";
+                        else fitFontForLabel(label, cellPx2x2, 18, 6);
+                    });
+                    section1x1.querySelectorAll(".name-label").forEach((label) => {
+                        if (manual) label.style.fontSize = manualSize1 + "px";
+                        else fitFontForLabel(label, cellPx1x1, 10, 5);
+                    });
+                }
+
+                function pxPerInch() {
+                    const probe = document.createElement("div");
+                    probe.style.width = "1in";
+                    probe.style.position = "absolute";
+                    probe.style.visibility = "hidden";
+                    document.body.appendChild(probe);
+                    const px = probe.getBoundingClientRect().width;
+                    document.body.removeChild(probe);
+                    return px || 96;
+                }
+
+                // ---------------- Print / reset ----------------
+                btnPrint.addEventListener("click", () => window.print());
+
+                btnReset.addEventListener("click", () => {
+                    if (!confirm("Clear the photo, name, and layout?")) return;
+                    currentPhoto = null;
+                    rawPhoto = null;
+                    photoThumb.style.display = "none";
+                    thumbPlaceholder.style.display = "flex";
+                    btnRecrop.disabled = true;
+                    nameInput.value = "";
+                    generateLayout();
+                });
+
+                // ---------------- Init ----------------
+                generateLayout();
+            })();
+        </script>
+    </body>
+</html>
