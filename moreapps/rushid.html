@@ -2,6 +2,7 @@
 <html lang="en">
     <head>
         <!-- Google tag (gtag.js) -->
+
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-SWGDSZH41W"></script>
         <script>
             window.dataLayer = window.dataLayer || [];
@@ -12,17 +13,10 @@
 
             gtag("config", "G-SWGDSZH41W");
         </script>
+        <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🖨️</text></svg>' />
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Rush ID — Auto Layout</title>
-        <link
-            rel="icon"
-            href='data:image/svg+xml,<svg  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
-                            <rect x="2" y="2" width="12" height="12" rx="1" />
-                            <path d="M2 11l3-3 2 2 4-5 3 4" />
-
-                        </svg>'
-        />
         <style>
             :root {
                 --ink: #1c2530;
@@ -33,6 +27,7 @@
                 --danger: #b3452c;
                 --gap: 0in;
                 --pad: 0.35in;
+                --guide-color: rgba(30, 40, 50, 0.18);
             }
             * {
                 box-sizing: border-box;
@@ -69,7 +64,7 @@
                 margin: 0 0 4px;
             }
             .header-wrap {
-                max-width: 980px;
+                max-width: 1020px;
                 margin: 0 auto 18px;
                 display: flex;
                 align-items: baseline;
@@ -85,7 +80,7 @@
 
             /* ---------- Toolbar ---------- */
             .toolbar {
-                max-width: 980px;
+                max-width: 1020px;
                 margin: 0 auto 22px;
                 background: #fff;
                 border: 1px solid var(--line);
@@ -108,7 +103,8 @@
                 color: #5a6672;
             }
             .field input[type="text"],
-            .field input[type="number"] {
+            .field input[type="number"],
+            .field select {
                 border: 1px solid var(--line);
                 border-radius: 6px;
                 padding: 8px 10px;
@@ -116,7 +112,8 @@
                 font-family: inherit;
                 background: #fbfcfc;
             }
-            .field input:focus {
+            .field input:focus,
+            .field select:focus {
                 outline: 2px solid var(--accent);
                 outline-offset: 1px;
             }
@@ -186,7 +183,8 @@
                 color: #5a6672;
             }
 
-            #fileInput {
+            #fileInput,
+            #sigFileInput {
                 display: none;
             }
 
@@ -195,7 +193,8 @@
                 align-items: center;
                 gap: 10px;
             }
-            #photoThumb {
+            #photoThumb,
+            #sigThumb {
                 width: 52px;
                 height: 52px;
                 border-radius: 6px;
@@ -203,6 +202,10 @@
                 border: 1px solid var(--line);
                 background: #e9ecee;
                 display: none;
+            }
+            #sigThumb {
+                object-fit: contain;
+                background: #fff;
             }
             .thumb-placeholder {
                 width: 52px;
@@ -359,39 +362,36 @@
                 display: flex;
                 flex-direction: column;
             }
-            .section.grid-2x2 {
+            .block.hidden-block {
+                display: none;
+            }
+            .block.full-width {
+                flex: 1 1 auto;
+                width: 100%;
+            }
+            .section {
                 display: grid;
-                grid-template-columns: repeat(2, 2in);
-                grid-auto-rows: 2in;
                 gap: var(--gap);
             }
-            .section.grid-1x1 {
-                display: grid;
-                grid-template-columns: repeat(3, 1in);
-                grid-auto-rows: 1in;
-                gap: var(--gap);
+            .section.full-width {
+                width: 100%;
             }
 
             .cell {
-                border: 1px dashed #9aa5ad;
+                border-width: 1px;
+                border-style: dashed;
+                border-color: var(--guide-color);
                 position: relative;
                 flex: 0 0 auto;
                 overflow: hidden;
                 background: #eef1f2;
             }
-            .cell.size-2x2 {
-                width: 2in;
-                height: 2in;
-            }
-            .cell.size-1x1 {
-                width: 1in;
-                height: 1in;
-            }
             .cell.no-guides {
-                border-color: transparent;
+                border-style: none;
+                border-width: 0;
             }
 
-            .cell img {
+            .cell img.photo-img {
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
@@ -404,24 +404,41 @@
                 align-items: center;
                 justify-content: center;
                 color: #aab4bc;
-                font-size: 10px;
+                font-size: 9px;
                 text-align: center;
                 padding: 6px;
             }
-            .cell .name-label {
+
+            .cell .id-footer {
                 position: absolute;
                 left: 0;
                 right: 0;
                 bottom: 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
                 background: rgba(255, 255, 255, 0.88);
+                padding: 1px 2px 1px;
+            }
+            .cell .signature-img {
+                display: block;
+                max-width: 24%;
+                max-height: 14%;
+                object-fit: contain;
+                margin-bottom: -2px; /* slight overlap onto the name for a compact block */
+                position: relative;
+                z-index: 1;
+            }
+            .cell .name-label {
+                width: 100%;
                 text-align: center;
                 color: #111;
                 font-weight: 700;
-                line-height: 1.15;
+                line-height: 1.1;
                 white-space: nowrap;
                 overflow: hidden;
-                text-overflow: clip;
-                padding: 1px 2px;
+                position: relative;
+                z-index: 2;
             }
 
             /* ---------- Print ---------- */
@@ -456,8 +473,8 @@
         <div class="header-wrap no-print">
             <div>
                 <p class="eyebrow">Rush ID · Print Sheet Generator</p>
-                <h1>Auto Layout — 2×2 &amp; 1×1</h1>
-                <p>Capture or upload a photo, crop it square, add a name, and print a ready-to-cut A4 sheet.</p>
+                <h1>Auto Layout</h1>
+                <p>Capture or upload a photo, crop it, add a name and signature, and print a ready-to-cut A4 sheet.</p>
             </div>
         </div>
 
@@ -478,6 +495,17 @@
             </div>
 
             <div class="field">
+                <label>Signature (optional)</label>
+                <div class="thumb-wrap">
+                    <img id="sigThumb" alt="Signature preview" />
+                    <div class="thumb-placeholder" id="sigPlaceholder">No<br />sig</div>
+                    <button type="button" id="btnUploadSig" class="ghost">Upload signature</button>
+                </div>
+                <input type="file" id="sigFileInput" accept="image/*" />
+                <button type="button" id="btnClearSig" class="ghost" disabled>Remove signature</button>
+            </div>
+
+            <div class="field">
                 <label for="nameInput">Name on ID</label>
                 <input type="text" id="nameInput" placeholder="Juan Dela Cruz" maxlength="40" />
 
@@ -492,17 +520,24 @@
             </div>
 
             <div class="field">
-                <label for="count2x2">Copies — 2in × 2in (left)</label>
-                <input type="number" id="count2x2" min="0" max="20" value="4" />
-                <label for="count1x1" style="margin-top: 6px">Copies — 1in × 1in (right)</label>
-                <input type="number" id="count1x1" min="0" max="40" value="12" />
+                <label for="idTypeSelect">ID type</label>
+                <select id="idTypeSelect">
+                    <option value="combo">2×2 &amp; 1×1 (Set)</option>
+                    <option value="passport">Passport Size (Set)</option>
+                    <option value="visa">Visa (Set)</option>
+                </select>
+
+                <label id="countALabel" for="countA" style="margin-top: 6px">Copies — 2in × 2in (left)</label>
+                <input type="number" id="countA" min="0" max="30" value="4" />
+                <label id="countBLabel" for="countB" style="margin-top: 6px">Copies — 1in × 1in (right)</label>
+                <input type="number" id="countB" min="0" max="40" value="12" />
             </div>
 
             <div class="field">
                 <label>Sheet options</label>
                 <label class="checkline"><input type="checkbox" id="guidesCheck" checked /> Show cut guides</label>
                 <label class="checkline"><input type="checkbox" id="metaCheck" /> Show name header on sheet</label>
-                <label class="checkline"><input type="checkbox" id="sizeLabelCheck" /> Show "2in×2in / 1in×1in" labels</label>
+                <label class="checkline"><input type="checkbox" id="sizeLabelCheck" /> Show size labels</label>
                 <label class="checkline"><input type="checkbox" id="spacingCheck" /> Add spacing between photos</label>
                 <label for="marginInput" style="margin-top: 6px">Page margin (in)</label>
                 <input type="number" id="marginInput" min="0" max="0.4" step="0.05" value="0.35" />
@@ -520,7 +555,7 @@
         <div class="modal-overlay hidden no-print" id="cropModal">
             <div class="modal-box">
                 <h2>Crop photo</h2>
-                <p class="hint">Drag the square to reposition. Drag the corner handle to resize. ID photos are cropped 1:1.</p>
+                <p class="hint">Drag the square to reposition. Drag the corner handle to resize. The crop shape matches the selected ID type.</p>
                 <div id="cropStage">
                     <img id="cropImg" alt="Photo to crop" />
                     <div id="cropBox"><div class="handle" id="cropHandle"></div></div>
@@ -551,19 +586,19 @@
         <!-- ================= PRINT SHEET ================= -->
         <div class="sheet-wrapper">
             <div class="sheet" id="sheet">
-                <div class="sheet-meta no-print-border" id="sheetMeta">
+                <div class="sheet-meta" id="sheetMeta">
                     <span class="brand">Rush ID</span>
                     <span class="metaname" id="metaNameText">&nbsp;</span>
                 </div>
 
                 <div class="layout-row">
-                    <div class="block">
-                        <div class="section-label">2in × 2in</div>
-                        <div class="section grid-2x2" id="section2x2"></div>
+                    <div class="block" id="blockA">
+                        <div class="section-label" id="labelA">2in × 2in</div>
+                        <div class="section" id="sectionA"></div>
                     </div>
-                    <div class="block">
-                        <div class="section-label">1in × 1in</div>
-                        <div class="section grid-1x1" id="section1x1"></div>
+                    <div class="block" id="blockB">
+                        <div class="section-label" id="labelB">1in × 1in</div>
+                        <div class="section" id="sectionB"></div>
                     </div>
                 </div>
             </div>
@@ -573,9 +608,27 @@
             (function () {
                 "use strict";
 
+                // ---------------- ID type presets ----------------
+                // wIn/hIn = physical cell size in inches. cols = grid columns.
+                const ID_TYPES = {
+                    combo: {
+                        blocks: [
+                            { label: "2in × 2in", wIn: 2, hIn: 2, cols: 2, defaultCount: 4, countLabel: "Copies — 2in × 2in (left)" },
+                            { label: "1in × 1in", wIn: 1, hIn: 1, cols: 3, defaultCount: 12, countLabel: "Copies — 1in × 1in (right)" },
+                        ],
+                    },
+                    passport: {
+                        blocks: [{ label: "Passport 3.5cm × 4.5cm", wIn: 1.38, hIn: 1.77, cols: 3, defaultCount: 10, countLabel: "Copies — Passport size" }],
+                    },
+                    visa: {
+                        blocks: [{ label: "Visa 2in × 2in", wIn: 2, hIn: 2, cols: 3, defaultCount: 6, countLabel: "Copies — Visa size" }],
+                    },
+                };
+
                 // ---------------- State ----------------
                 let currentPhoto = null; // final cropped dataURL
                 let rawPhoto = null; // uncropped source for the crop modal
+                let currentSignature = null; // signature dataURL
                 let stream = null; // camera MediaStream
 
                 // ---------------- Elements ----------------
@@ -586,14 +639,24 @@
                 const photoThumb = document.getElementById("photoThumb");
                 const thumbPlaceholder = document.getElementById("thumbPlaceholder");
 
+                const sigFileInput = document.getElementById("sigFileInput");
+                const btnUploadSig = document.getElementById("btnUploadSig");
+                const btnClearSig = document.getElementById("btnClearSig");
+                const sigThumb = document.getElementById("sigThumb");
+                const sigPlaceholder = document.getElementById("sigPlaceholder");
+
                 const nameInput = document.getElementById("nameInput");
                 const autoFitCheck = document.getElementById("autoFitCheck");
                 const manualWrap = document.getElementById("manualFontWrap");
                 const fontSlider = document.getElementById("fontSlider");
                 const fontSliderVal = document.getElementById("fontSliderVal");
 
-                const count2x2In = document.getElementById("count2x2");
-                const count1x1In = document.getElementById("count1x1");
+                const idTypeSelect = document.getElementById("idTypeSelect");
+                const countALabel = document.getElementById("countALabel");
+                const countBLabel = document.getElementById("countBLabel");
+                const countA = document.getElementById("countA");
+                const countB = document.getElementById("countB");
+
                 const guidesCheck = document.getElementById("guidesCheck");
                 const metaCheck = document.getElementById("metaCheck");
                 const sizeLabelCheck = document.getElementById("sizeLabelCheck");
@@ -605,8 +668,12 @@
                 const btnPrint = document.getElementById("btnPrint");
                 const btnReset = document.getElementById("btnReset");
 
-                const section2x2 = document.getElementById("section2x2");
-                const section1x1 = document.getElementById("section1x1");
+                const blockA = document.getElementById("blockA");
+                const blockB = document.getElementById("blockB");
+                const labelA = document.getElementById("labelA");
+                const labelB = document.getElementById("labelB");
+                const sectionA = document.getElementById("sectionA");
+                const sectionB = document.getElementById("sectionB");
 
                 // Crop modal
                 const cropModal = document.getElementById("cropModal");
@@ -623,7 +690,7 @@
                 const cameraCancel = document.getElementById("cameraCancel");
                 const cameraCapture = document.getElementById("cameraCapture");
 
-                // ---------------- Upload ----------------
+                // ---------------- Upload photo ----------------
                 btnUpload.addEventListener("click", () => fileInput.click());
                 fileInput.addEventListener("change", (e) => {
                     const file = e.target.files && e.target.files[0];
@@ -636,6 +703,32 @@
 
                 btnRecrop.addEventListener("click", () => {
                     if (rawPhoto) openCropModal(rawPhoto);
+                });
+
+                // ---------------- Upload signature ----------------
+                btnUploadSig.addEventListener("click", () => sigFileInput.click());
+                sigFileInput.addEventListener("change", (e) => {
+                    const file = e.target.files && e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        currentSignature = ev.target.result;
+                        sigThumb.src = currentSignature;
+                        sigThumb.style.display = "block";
+                        sigPlaceholder.style.display = "none";
+                        btnClearSig.disabled = false;
+                        generateLayout();
+                    };
+                    reader.readAsDataURL(file);
+                    sigFileInput.value = "";
+                });
+
+                btnClearSig.addEventListener("click", () => {
+                    currentSignature = null;
+                    sigThumb.style.display = "none";
+                    sigPlaceholder.style.display = "flex";
+                    btnClearSig.disabled = true;
+                    generateLayout();
                 });
 
                 // ---------------- Camera ----------------
@@ -669,16 +762,24 @@
                 });
 
                 // ---------------- Crop modal ----------------
-                let boxState = null; // {x,y,size} in displayed px, relative to cropStage
+                let boxState = null; // {x,y,w,h} in displayed px, relative to cropStage
                 let dragMode = null; // 'move' | 'resize'
                 let dragStart = null;
+                let cropRatio = 1; // width / height of the crop box, matches the selected ID type
+
+                function currentCropRatio() {
+                    const cfg = ID_TYPES[idTypeSelect.value];
+                    const b = cfg.blocks[0];
+                    return b.wIn / b.hIn;
+                }
 
                 function openCropModal(src) {
                     rawPhoto = src;
-                    // Reset any stale sizing from a previous crop session, then show the
-                    // modal BEFORE we measure the image — while display:none, clientWidth/
-                    // clientHeight read as 0, which was producing a zero-size crop (and a
-                    // solid black output image).
+                    cropRatio = currentCropRatio();
+                    // Reset stale sizing from a previous session, then show the modal
+                    // BEFORE measuring the image. While display:none, clientWidth/Height
+                    // read as 0 — that was producing a zero-size crop box, which drew a
+                    // blank region onto the canvas and exported as solid black.
                     cropStage.style.width = "auto";
                     cropStage.style.height = "auto";
                     cropModal.classList.remove("hidden");
@@ -686,12 +787,11 @@
                     cropImg.onload = () => {
                         cropStage.style.width = cropImg.clientWidth + "px";
                         cropStage.style.height = cropImg.clientHeight + "px";
-                        const size = Math.min(cropImg.clientWidth, cropImg.clientHeight) * 0.8;
-                        boxState = {
-                            x: (cropImg.clientWidth - size) / 2,
-                            y: (cropImg.clientHeight - size) / 2,
-                            size: size,
-                        };
+                        const stageW = cropImg.clientWidth,
+                            stageH = cropImg.clientHeight;
+                        let h = Math.min(stageH, stageW / cropRatio) * 0.8;
+                        let w = h * cropRatio;
+                        boxState = { x: (stageW - w) / 2, y: (stageH - h) / 2, w: w, h: h };
                         renderCropBox();
                     };
                     cropImg.src = src;
@@ -700,12 +800,12 @@
                 function renderCropBox() {
                     cropBox.style.left = boxState.x + "px";
                     cropBox.style.top = boxState.y + "px";
-                    cropBox.style.width = boxState.size + "px";
-                    cropBox.style.height = boxState.size + "px";
+                    cropBox.style.width = boxState.w + "px";
+                    cropBox.style.height = boxState.h + "px";
                 }
 
                 cropBox.addEventListener("pointerdown", (e) => {
-                    if (e.target === cropHandle) return; // handled separately
+                    if (e.target === cropHandle) return;
                     dragMode = "move";
                     dragStart = { x: e.clientX, y: e.clientY, box: { ...boxState } };
                     cropBox.setPointerCapture(e.pointerId);
@@ -728,16 +828,28 @@
                     if (dragMode === "move") {
                         let nx = dragStart.box.x + dx;
                         let ny = dragStart.box.y + dy;
-                        nx = Math.max(0, Math.min(stageW - boxState.size, nx));
-                        ny = Math.max(0, Math.min(stageH - boxState.size, ny));
+                        nx = Math.max(0, Math.min(stageW - boxState.w, nx));
+                        ny = Math.max(0, Math.min(stageH - boxState.h, ny));
                         boxState.x = nx;
                         boxState.y = ny;
                         renderCropBox();
                     } else if (dragMode === "resize") {
-                        const delta = Math.max(dx, dy);
-                        let newSize = Math.max(30, dragStart.box.size + delta);
-                        newSize = Math.min(newSize, stageW - dragStart.box.x, stageH - dragStart.box.y);
-                        boxState.size = newSize;
+                        // Drive resize off horizontal drag, derive height from the fixed aspect ratio.
+                        const delta = dx + dy * cropRatio; // blend both axes so dragging diagonally feels natural
+                        let newW = Math.max(30, dragStart.box.w + delta);
+                        let newH = newW / cropRatio;
+                        const maxW = stageW - dragStart.box.x;
+                        const maxH = stageH - dragStart.box.y;
+                        if (newW > maxW) {
+                            newW = maxW;
+                            newH = newW / cropRatio;
+                        }
+                        if (newH > maxH) {
+                            newH = maxH;
+                            newW = newH * cropRatio;
+                        }
+                        boxState.w = newW;
+                        boxState.h = newH;
                         renderCropBox();
                     }
                 });
@@ -750,7 +862,7 @@
                 cropCancel.addEventListener("click", () => cropModal.classList.add("hidden"));
 
                 cropApply.addEventListener("click", () => {
-                    if (!boxState || !boxState.size || cropImg.clientWidth === 0) {
+                    if (!boxState || !boxState.w || !boxState.h || cropImg.clientWidth === 0) {
                         alert("The photo isn't ready yet — please wait a moment and try again.");
                         return;
                     }
@@ -759,14 +871,16 @@
 
                     const sx = boxState.x * scaleX;
                     const sy = boxState.y * scaleY;
-                    const sSize = boxState.size * scaleX;
+                    const sw = boxState.w * scaleX;
+                    const sh = boxState.h * scaleY;
 
-                    const OUT = 600;
+                    const OUT_W = 700;
+                    const OUT_H = Math.round(OUT_W / cropRatio);
                     const canvas = document.createElement("canvas");
-                    canvas.width = OUT;
-                    canvas.height = OUT;
+                    canvas.width = OUT_W;
+                    canvas.height = OUT_H;
                     const ctx = canvas.getContext("2d");
-                    ctx.drawImage(cropImg, sx, sy, sSize, sSize, 0, 0, OUT, OUT);
+                    ctx.drawImage(cropImg, sx, sy, sw, sh, 0, 0, OUT_W, OUT_H);
 
                     currentPhoto = canvas.toDataURL("image/jpeg", 0.92);
                     photoThumb.src = currentPhoto;
@@ -775,6 +889,23 @@
                     btnRecrop.disabled = false;
 
                     cropModal.classList.add("hidden");
+                    generateLayout();
+                });
+
+                // ---------------- ID type switching ----------------
+                idTypeSelect.addEventListener("change", () => {
+                    const cfg = ID_TYPES[idTypeSelect.value];
+                    countALabel.textContent = cfg.blocks[0].countLabel;
+                    countA.value = cfg.blocks[0].defaultCount;
+                    if (cfg.blocks[1]) {
+                        countBLabel.style.display = "";
+                        countB.style.display = "";
+                        countBLabel.textContent = cfg.blocks[1].countLabel;
+                        countB.value = cfg.blocks[1].defaultCount;
+                    } else {
+                        countBLabel.style.display = "none";
+                        countB.style.display = "none";
+                    }
                     generateLayout();
                 });
 
@@ -788,8 +919,8 @@
                     applyLabelFonts();
                 });
                 nameInput.addEventListener("input", generateLayout);
-                count2x2In.addEventListener("change", generateLayout);
-                count1x1In.addEventListener("change", generateLayout);
+                countA.addEventListener("change", generateLayout);
+                countB.addEventListener("change", generateLayout);
                 guidesCheck.addEventListener("change", generateLayout);
                 metaCheck.addEventListener("change", generateLayout);
                 sizeLabelCheck.addEventListener("change", generateLayout);
@@ -798,12 +929,15 @@
                 btnGenerate.addEventListener("click", generateLayout);
 
                 // ---------------- Layout generation ----------------
-                function buildCell(sizeClass) {
+                function buildCell(blockCfg) {
                     const cell = document.createElement("div");
-                    cell.className = "cell " + sizeClass + (guidesCheck.checked ? "" : " no-guides");
+                    cell.className = "cell" + (guidesCheck.checked ? "" : " no-guides");
+                    cell.style.width = blockCfg.wIn + "in";
+                    cell.style.height = blockCfg.hIn + "in";
 
                     if (currentPhoto) {
                         const img = document.createElement("img");
+                        img.className = "photo-img";
                         img.src = currentPhoto;
                         cell.appendChild(img);
                     } else {
@@ -814,24 +948,56 @@
                     }
 
                     const name = (nameInput.value || "").trim();
-                    if (name) {
-                        const label = document.createElement("div");
-                        label.className = "name-label";
-                        label.textContent = name;
-                        cell.appendChild(label);
+                    if (name || currentSignature) {
+                        const footer = document.createElement("div");
+                        footer.className = "id-footer";
+
+                        if (currentSignature) {
+                            const sig = document.createElement("img");
+                            sig.className = "signature-img";
+                            sig.src = currentSignature;
+                            footer.appendChild(sig);
+                        }
+                        if (name) {
+                            const label = document.createElement("div");
+                            label.className = "name-label";
+                            label.textContent = name;
+                            footer.appendChild(label);
+                        }
+                        cell.appendChild(footer);
                     }
                     return cell;
                 }
 
                 function generateLayout() {
-                    const n2 = Math.max(0, parseInt(count2x2In.value, 10) || 0);
-                    const n1 = Math.max(0, parseInt(count1x1In.value, 10) || 0);
+                    const cfg = ID_TYPES[idTypeSelect.value];
+                    const blocks = cfg.blocks;
 
-                    section2x2.innerHTML = "";
-                    for (let i = 0; i < n2; i++) section2x2.appendChild(buildCell("size-2x2"));
+                    // Block A
+                    const nA = Math.max(0, parseInt(countA.value, 10) || 0);
+                    const singleBlock = !blocks[1];
+                    labelA.textContent = blocks[0].label;
+                    blockA.classList.toggle("full-width", singleBlock);
+                    sectionA.classList.toggle("full-width", singleBlock);
+                    sectionA.style.gridTemplateColumns = singleBlock ? `repeat(auto-fill, ${blocks[0].wIn}in)` : `repeat(${blocks[0].cols}, ${blocks[0].wIn}in)`;
+                    sectionA.style.gridAutoRows = `${blocks[0].hIn}in`;
+                    sectionA.innerHTML = "";
+                    for (let i = 0; i < nA; i++) sectionA.appendChild(buildCell(blocks[0]));
+                    blockA.classList.remove("hidden-block");
 
-                    section1x1.innerHTML = "";
-                    for (let i = 0; i < n1; i++) section1x1.appendChild(buildCell("size-1x1"));
+                    // Block B (optional)
+                    if (blocks[1]) {
+                        const nB = Math.max(0, parseInt(countB.value, 10) || 0);
+                        labelB.textContent = blocks[1].label;
+                        sectionB.style.gridTemplateColumns = `repeat(${blocks[1].cols}, ${blocks[1].wIn}in)`;
+                        sectionB.style.gridAutoRows = `${blocks[1].hIn}in`;
+                        sectionB.innerHTML = "";
+                        for (let i = 0; i < nB; i++) sectionB.appendChild(buildCell(blocks[1]));
+                        blockB.classList.remove("hidden-block");
+                    } else {
+                        sectionB.innerHTML = "";
+                        blockB.classList.add("hidden-block");
+                    }
 
                     const name = (nameInput.value || "").trim();
                     metaNameText.textContent = metaCheck.checked && name ? name : "\u00A0";
@@ -841,10 +1007,11 @@
                         el.classList.toggle("hidden-label", !sizeLabelCheck.checked);
                     });
 
-                    document.getElementById("sheet").style.setProperty("--gap", spacingCheck.checked ? "0.12in" : "0in");
+                    const sheetEl = document.getElementById("sheet");
+                    sheetEl.style.setProperty("--gap", spacingCheck.checked ? "0.12in" : "0in");
 
                     const margin = Math.max(0, Math.min(0.4, parseFloat(marginInput.value) || 0));
-                    document.getElementById("sheet").style.setProperty("--pad", margin + "in");
+                    sheetEl.style.setProperty("--pad", margin + "in");
 
                     applyLabelFonts();
                 }
@@ -867,20 +1034,26 @@
                 }
 
                 function applyLabelFonts() {
-                    const cellPx2x2 = pxPerInch() * 2;
-                    const cellPx1x1 = pxPerInch() * 1;
-
+                    const cfg = ID_TYPES[idTypeSelect.value];
+                    const ppi = pxPerInch();
                     const manual = !autoFitCheck.checked;
-                    const manualSize2 = parseInt(fontSlider.value, 10);
-                    const manualSize1 = Math.max(5, Math.round(manualSize2 * 0.55));
+                    const manualSizeMax = parseInt(fontSlider.value, 10);
 
-                    section2x2.querySelectorAll(".name-label").forEach((label) => {
-                        if (manual) label.style.fontSize = manualSize2 + "px";
-                        else fitFontForLabel(label, cellPx2x2, 18, 6);
-                    });
-                    section1x1.querySelectorAll(".name-label").forEach((label) => {
-                        if (manual) label.style.fontSize = manualSize1 + "px";
-                        else fitFontForLabel(label, cellPx1x1, 10, 5);
+                    [
+                        [sectionA, cfg.blocks[0]],
+                        [sectionB, cfg.blocks[1]],
+                    ].forEach(([section, blockCfg]) => {
+                        if (!blockCfg) return;
+                        const cellPx = ppi * blockCfg.wIn;
+                        const maxPx = Math.max(6, Math.min(18, Math.round(blockCfg.wIn * 9)));
+                        const minPx = Math.max(5, Math.round(maxPx * 0.4));
+                        const scale = blockCfg.wIn / (cfg.blocks[0].wIn || 1);
+                        const manualSize = Math.max(5, Math.round(manualSizeMax * Math.min(1, scale)));
+
+                        section.querySelectorAll(".name-label").forEach((label) => {
+                            if (manual) label.style.fontSize = manualSize + "px";
+                            else fitFontForLabel(label, cellPx, maxPx, minPx);
+                        });
                     });
                 }
 
@@ -899,12 +1072,16 @@
                 btnPrint.addEventListener("click", () => window.print());
 
                 btnReset.addEventListener("click", () => {
-                    if (!confirm("Clear the photo, name, and layout?")) return;
+                    if (!confirm("Clear the photo, signature, name, and layout?")) return;
                     currentPhoto = null;
                     rawPhoto = null;
+                    currentSignature = null;
                     photoThumb.style.display = "none";
                     thumbPlaceholder.style.display = "flex";
                     btnRecrop.disabled = true;
+                    sigThumb.style.display = "none";
+                    sigPlaceholder.style.display = "flex";
+                    btnClearSig.disabled = true;
                     nameInput.value = "";
                     generateLayout();
                 });
@@ -913,5 +1090,6 @@
                 generateLayout();
             })();
         </script>
+        <script src="/sw-register.js"></script>
     </body>
 </html>
