@@ -1,19 +1,6 @@
 <!doctype html>
 <html lang="en">
     <head>
-        <!-- Google tag (gtag.js) -->
-
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-SWGDSZH41W"></script>
-        <script>
-            window.dataLayer = window.dataLayer || [];
-            function gtag() {
-                dataLayer.push(arguments);
-            }
-            gtag("js", new Date());
-
-            gtag("config", "G-SWGDSZH41W");
-        </script>
-        <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🖨️</text></svg>' />
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Rush ID — Auto Layout</title>
@@ -422,10 +409,7 @@
             }
             .cell .signature-img {
                 display: block;
-                max-width: 24%;
-                max-height: 14%;
                 object-fit: contain;
-                margin-bottom: -2px; /* slight overlap onto the name for a compact block */
                 position: relative;
                 z-index: 1;
             }
@@ -503,6 +487,14 @@
                 </div>
                 <input type="file" id="sigFileInput" accept="image/*" />
                 <button type="button" id="btnClearSig" class="ghost" disabled>Remove signature</button>
+
+                <label for="sigHeightSlider" style="margin-top: 6px">Signature height</label>
+                <input type="range" id="sigHeightSlider" min="5" max="35" value="14" />
+                <div class="rangeval"><span id="sigHeightVal">14</span>% of photo height</div>
+
+                <label for="sigGapSlider" style="margin-top: 6px">Signature ↔ name spacing</label>
+                <input type="range" id="sigGapSlider" min="-8" max="10" value="-2" />
+                <div class="rangeval"><span id="sigGapVal">-2</span>px (negative = overlap)</div>
             </div>
 
             <div class="field">
@@ -644,6 +636,10 @@
                 const btnClearSig = document.getElementById("btnClearSig");
                 const sigThumb = document.getElementById("sigThumb");
                 const sigPlaceholder = document.getElementById("sigPlaceholder");
+                const sigHeightSlider = document.getElementById("sigHeightSlider");
+                const sigHeightVal = document.getElementById("sigHeightVal");
+                const sigGapSlider = document.getElementById("sigGapSlider");
+                const sigGapVal = document.getElementById("sigGapVal");
 
                 const nameInput = document.getElementById("nameInput");
                 const autoFitCheck = document.getElementById("autoFitCheck");
@@ -704,6 +700,28 @@
                 btnRecrop.addEventListener("click", () => {
                     if (rawPhoto) openCropModal(rawPhoto);
                 });
+
+                sigHeightSlider.addEventListener("input", () => {
+                    sigHeightVal.textContent = sigHeightSlider.value;
+                    updateSignatureStyle();
+                });
+                sigGapSlider.addEventListener("input", () => {
+                    sigGapVal.textContent = sigGapSlider.value;
+                    updateSignatureStyle();
+                });
+
+                const SIG_WIDTH_RATIO = 24 / 14; // preserves the original width:height proportion as height is scaled
+
+                function updateSignatureStyle() {
+                    const pct = parseFloat(sigHeightSlider.value) / 100;
+                    const gapPx = parseFloat(sigGapSlider.value);
+                    document.querySelectorAll(".signature-img").forEach((img) => {
+                        const hIn = parseFloat(img.dataset.hIn) || 1;
+                        img.style.maxHeight = pct * hIn + "in";
+                        img.style.maxWidth = pct * hIn * SIG_WIDTH_RATIO + "in";
+                        img.style.marginBottom = gapPx + "px";
+                    });
+                }
 
                 // ---------------- Upload signature ----------------
                 btnUploadSig.addEventListener("click", () => sigFileInput.click());
@@ -956,6 +974,8 @@
                             const sig = document.createElement("img");
                             sig.className = "signature-img";
                             sig.src = currentSignature;
+                            sig.dataset.hIn = blockCfg.hIn;
+                            sig.dataset.wIn = blockCfg.wIn;
                             footer.appendChild(sig);
                         }
                         if (name) {
@@ -1014,6 +1034,7 @@
                     sheetEl.style.setProperty("--pad", margin + "in");
 
                     applyLabelFonts();
+                    updateSignatureStyle();
                 }
 
                 // Shrink-to-fit text sizing using canvas measurement
@@ -1090,6 +1111,5 @@
                 generateLayout();
             })();
         </script>
-        <script src="/sw-register.js"></script>
     </body>
 </html>

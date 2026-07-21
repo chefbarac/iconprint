@@ -12,8 +12,23 @@
 
             gtag("config", "G-SWGDSZH41W");
         </script>
-        <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🖨️</text></svg>' />
 
+`
+
+`
+
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🖨️</text></svg>' />
+`
+
+`
+
+<link
+            rel="icon"
+            href='data:image/svg+xml,<svg  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+                            <rect x="2" y="2" width="12" height="12" rx="1" />
+                            <path d="M2 11l3-3 2 2 4-5 3 4" />
+                        </svg>'
+        />
 `
 
 `
