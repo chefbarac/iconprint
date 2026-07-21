@@ -1,21 +1,9 @@
 <!doctype html>
 <html lang="en">
     <head>
-        <!-- Google tag (gtag.js) -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-SWGDSZH41W"></script>
-        <script>
-            window.dataLayer = window.dataLayer || [];
-            function gtag() {
-                dataLayer.push(arguments);
-            }
-            gtag("js", new Date());
-
-            gtag("config", "G-SWGDSZH41W");
-        </script>
-        <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🖨️</text></svg>' />
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Icon Print — Bond Paper Stitcher</title>
+        <title>icon_print — Bond Paper Stitcher</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
         <style>
@@ -533,6 +521,116 @@
                 border-radius: 2px;
                 padding: 1px 5px;
             }
+
+            /* ---------- Modal / History ---------- */
+            .modal-overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(20, 22, 19, 0.5);
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+                padding: 30px;
+            }
+            .modal-overlay.open {
+                display: flex;
+            }
+            .modal {
+                background: #fff;
+                width: min(760px, 100%);
+                max-height: 82vh;
+                border-radius: 6px;
+                display: flex;
+                flex-direction: column;
+                box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+            }
+            .modal-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 16px 20px;
+                border-bottom: 1px solid var(--line);
+            }
+            .modal-header h2 {
+                font-family: var(--font-display);
+                font-size: 15px;
+                font-weight: 600;
+                margin: 0;
+            }
+            .modal-header .icon-btn {
+                width: 26px;
+                height: 26px;
+            }
+            .modal-body {
+                padding: 18px 20px;
+                overflow-y: auto;
+            }
+            .history-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 14px;
+            }
+            .history-card {
+                border: 1px solid var(--line);
+                border-radius: var(--radius);
+                padding: 10px;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                background: #fdfdfb;
+            }
+            .history-thumb {
+                width: 100%;
+                aspect-ratio: 8.5/13;
+                object-fit: contain;
+                background: #f2f0e9;
+                border: 1px solid var(--line);
+                border-radius: 2px;
+            }
+            .history-name {
+                font-size: 12.5px;
+                font-weight: 600;
+                line-height: 1.3;
+                word-break: break-word;
+            }
+            .history-date {
+                font-family: var(--font-mono);
+                font-size: 10px;
+                color: var(--muted);
+            }
+            .history-actions {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                margin-top: 2px;
+            }
+            .history-actions .btn {
+                flex: 1;
+            }
+
+            /* ---------- Print ---------- */
+            .print-area {
+                display: none;
+            }
+            @media print {
+                body > *:not(.print-area) {
+                    display: none !important;
+                }
+                .print-area {
+                    display: block !important;
+                    position: static;
+                    width: 100%;
+                    height: 100%;
+                    margin: 0;
+                    padding: 0;
+                }
+                .print-area img {
+                    display: block;
+                    width: 100%;
+                    height: 100%;
+                }
+            }
         </style>
     </head>
     <body>
@@ -545,7 +643,7 @@
                         <line x1="11" y1="0" x2="11" y2="22" />
                         <line x1="0" y1="11" x2="22" y2="11" />
                     </svg>
-                    <div>Icon Print<small>TOOLBOX</small></div>
+                    <div>icon_print<small>TOOLBOX</small></div>
                 </div>
                 <nav>
                     <a class="nav-item active" data-tool="stitch">
@@ -556,13 +654,12 @@
                         Bond Paper Stitcher
                     </a>
                     <div class="nav-section-label">More tools</div>
-                    <a href="moreapps/rushid.html" class="nav-item">
-                        <!-- <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🪪</text></svg> -->
+                    <a class="nav-item disabled">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
                             <rect x="2" y="2" width="12" height="12" rx="1" />
                             <path d="M2 11l3-3 2 2 4-5 3 4" />
                         </svg>
-                        Rush ID
+                        Coming soon
                     </a>
                     <a class="nav-item disabled">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
@@ -572,7 +669,7 @@
                         Coming soon
                     </a>
                 </nav>
-                <div class="sidebar-footer">Icon Print v1.0<br />Bond Paper Stitcher</div>
+                <div class="sidebar-footer">icon_print v1.0<br />Bond Paper Stitcher</div>
             </aside>
 
             <!-- ============ MAIN ============ -->
@@ -625,7 +722,30 @@
 
                     <div class="toolbar-spacer"></div>
 
+                    <button class="btn small" id="saveLayoutBtn">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+                            <path d="M3 2h8l2 2v10H3V2z" />
+                            <path d="M5 2v4h5V2M5 10h6" />
+                        </svg>
+                        Save layout
+                    </button>
+                    <button class="btn small" id="historyBtn">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+                            <circle cx="8" cy="8.5" r="5.5" />
+                            <path d="M8 5.5V8.5l2.2 1.3" />
+                            <path d="M3 3.5V6h2.5" />
+                        </svg>
+                        History
+                    </button>
                     <button class="btn small" id="resetBtn">Reset</button>
+                    <button class="btn" id="printBtn">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+                            <path d="M4 6V2h8v4" />
+                            <rect x="2" y="6" width="12" height="6" rx="0.5" />
+                            <path d="M4 10h8v4H4z" />
+                        </svg>
+                        Print
+                    </button>
                     <button class="btn primary" id="downloadBtn">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
                             <path d="M8 2v8M5 7l3 3 3-3" />
@@ -688,6 +808,22 @@
             </aside>
         </div>
 
+        <div class="modal-overlay" id="historyOverlay">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2>Saved layouts</h2>
+                    <div class="icon-btn" id="closeHistory" title="Close">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 3l10 10M13 3 3 13" /></svg>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <div class="history-grid" id="historyGrid"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="print-area" id="printArea"><img id="printImg" alt="Stitched page" /></div>
+
         <script>
             (function () {
                 "use strict";
@@ -721,6 +857,14 @@
                     overlapVal: document.getElementById("overlapVal"),
                     ghostToggle: document.getElementById("ghostToggle"),
                     selectedControls: document.getElementById("selectedControls"),
+                    saveLayoutBtn: document.getElementById("saveLayoutBtn"),
+                    historyBtn: document.getElementById("historyBtn"),
+                    closeHistory: document.getElementById("closeHistory"),
+                    historyOverlay: document.getElementById("historyOverlay"),
+                    historyGrid: document.getElementById("historyGrid"),
+                    printBtn: document.getElementById("printBtn"),
+                    printArea: document.getElementById("printArea"),
+                    printImg: document.getElementById("printImg"),
                 };
 
                 let state = {
@@ -1126,15 +1270,12 @@
                     renderAll();
                 });
 
-                // ---------- Export ----------
-                els.downloadBtn.addEventListener("click", () => {
-                    if (state.layers.length === 0) {
-                        alert("Upload and stitch your scans first.");
-                        return;
-                    }
+                // ---------- Canvas building (shared by export, print, thumbnails) ----------
+                function buildStitchedCanvas(scaleFactor) {
+                    scaleFactor = scaleFactor || 1;
                     const canvas = document.createElement("canvas");
-                    canvas.width = state.pageW;
-                    canvas.height = state.pageH;
+                    canvas.width = Math.max(1, Math.round(state.pageW * scaleFactor));
+                    canvas.height = Math.max(1, Math.round(state.pageH * scaleFactor));
                     const ctx = canvas.getContext("2d");
                     ctx.fillStyle = "#FFFFFF";
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1142,16 +1283,27 @@
                     state.layers.forEach((layer) => {
                         ctx.save();
                         ctx.globalAlpha = 1;
-                        ctx.translate(layer.x + layer.w / 2, layer.y + layer.h / 2);
+                        ctx.translate((layer.x + layer.w / 2) * scaleFactor, (layer.y + layer.h / 2) * scaleFactor);
                         ctx.rotate((layer.rot * Math.PI) / 180);
+                        const w = layer.w * scaleFactor,
+                            h = layer.h * scaleFactor;
                         if (layer.rot % 180 === 0) {
-                            ctx.drawImage(layer.img, -layer.w / 2, -layer.h / 2, layer.w, layer.h);
+                            ctx.drawImage(layer.img, -w / 2, -h / 2, w, h);
                         } else {
-                            ctx.drawImage(layer.img, -layer.h / 2, -layer.w / 2, layer.h, layer.w);
+                            ctx.drawImage(layer.img, -h / 2, -w / 2, h, w);
                         }
                         ctx.restore();
                     });
+                    return canvas;
+                }
 
+                // ---------- Export ----------
+                els.downloadBtn.addEventListener("click", () => {
+                    if (state.layers.length === 0) {
+                        alert("Upload and stitch your scans first.");
+                        return;
+                    }
+                    const canvas = buildStitchedCanvas(1);
                     canvas.toBlob((blob) => {
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement("a");
@@ -1163,6 +1315,196 @@
                         a.remove();
                         URL.revokeObjectURL(url);
                     }, "image/png");
+                });
+
+                // ---------- Print (direct browser print, sized to the exact paper) ----------
+                function printLayout() {
+                    if (state.layers.length === 0) {
+                        alert("Upload and stitch your scans first.");
+                        return;
+                    }
+                    const canvas = buildStitchedCanvas(1);
+                    const dataUrl = canvas.toDataURL("image/png");
+                    const paper = PAPER_SIZES[state.paperKey];
+
+                    let styleTag = document.getElementById("printPageStyle");
+                    if (!styleTag) {
+                        styleTag = document.createElement("style");
+                        styleTag.id = "printPageStyle";
+                        document.head.appendChild(styleTag);
+                    }
+                    styleTag.textContent = "@page { size: " + paper.w + "in " + paper.h + "in; margin: 0; }";
+
+                    els.printImg.onload = () => {
+                        window.print();
+                    };
+                    els.printImg.src = dataUrl;
+                }
+                els.printBtn.addEventListener("click", printLayout);
+
+                // ---------- IndexedDB: save / history ----------
+                const DB_NAME = "icon_print_db";
+                const DB_VERSION = 1;
+                const STORE = "layouts";
+
+                function openDB() {
+                    return new Promise((resolve, reject) => {
+                        const req = indexedDB.open(DB_NAME, DB_VERSION);
+                        req.onupgradeneeded = (e) => {
+                            const db = e.target.result;
+                            if (!db.objectStoreNames.contains(STORE)) {
+                                const store = db.createObjectStore(STORE, { keyPath: "id", autoIncrement: true });
+                                store.createIndex("savedAt", "savedAt");
+                            }
+                        };
+                        req.onsuccess = () => resolve(req.result);
+                        req.onerror = () => reject(req.error);
+                    });
+                }
+
+                async function dbSave(record) {
+                    const db = await openDB();
+                    return new Promise((resolve, reject) => {
+                        const tx = db.transaction(STORE, "readwrite");
+                        const req = tx.objectStore(STORE).add(record);
+                        req.onsuccess = () => resolve(req.result);
+                        req.onerror = () => reject(req.error);
+                    });
+                }
+
+                async function dbGetAll() {
+                    const db = await openDB();
+                    return new Promise((resolve, reject) => {
+                        const tx = db.transaction(STORE, "readonly");
+                        const req = tx.objectStore(STORE).getAll();
+                        req.onsuccess = () => resolve(req.result.sort((a, b) => b.savedAt - a.savedAt));
+                        req.onerror = () => reject(req.error);
+                    });
+                }
+
+                async function dbDelete(id) {
+                    const db = await openDB();
+                    return new Promise((resolve, reject) => {
+                        const tx = db.transaction(STORE, "readwrite");
+                        tx.objectStore(STORE).delete(id);
+                        tx.oncomplete = () => resolve();
+                        tx.onerror = () => reject(tx.error);
+                    });
+                }
+
+                function escapeHtml(s) {
+                    return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+                }
+
+                async function saveCurrentLayout() {
+                    if (state.layers.length === 0) {
+                        alert("Nothing to save yet — upload and stitch your scans first.");
+                        return;
+                    }
+                    const defaultName = "Layout — " + new Date().toLocaleString();
+                    const name = prompt("Name this layout:", defaultName);
+                    if (!name) return;
+
+                    const thumbScale = Math.min(1, 260 / state.pageW);
+                    const thumbnail = buildStitchedCanvas(thumbScale).toDataURL("image/jpeg", 0.72);
+
+                    const record = {
+                        name: name,
+                        savedAt: Date.now(),
+                        paperKey: state.paperKey,
+                        dpi: state.dpi,
+                        thumbnail: thumbnail,
+                        layers: state.layers.map((l) => ({
+                            slot: l.slot,
+                            name: l.name,
+                            rot: l.rot,
+                            x: l.x,
+                            y: l.y,
+                            w: l.w,
+                            h: l.h,
+                            natW: l.natW,
+                            natH: l.natH,
+                            src: l.src,
+                        })),
+                    };
+
+                    try {
+                        await dbSave(record);
+                    } catch (err) {
+                        alert("Could not save layout: " + err.message);
+                    }
+                }
+                els.saveLayoutBtn.addEventListener("click", saveCurrentLayout);
+
+                async function loadLayoutRecord(record) {
+                    const loadedLayers = await Promise.all(
+                        record.layers.map((ld) => {
+                            return new Promise((resolve) => {
+                                const img = new Image();
+                                img.onload = () => resolve(Object.assign({}, ld, { img: img, placed: true, id: state.nextId++ }));
+                                img.src = ld.src;
+                            });
+                        }),
+                    );
+                    state.paperKey = record.paperKey;
+                    state.dpi = record.dpi;
+                    els.paperSize.value = state.paperKey;
+                    els.dpiSelect.value = String(state.dpi);
+                    state.layers = loadedLayers;
+                    state.selectedId = null;
+                    closeHistoryModal();
+                    renderAll();
+                }
+
+                async function openHistoryModal() {
+                    const records = await dbGetAll();
+                    const grid = els.historyGrid;
+                    grid.innerHTML = "";
+                    if (records.length === 0) {
+                        grid.innerHTML = '<p class="hint">No saved layouts yet. Stitch a page, then use "Save layout" to keep it here.</p>';
+                    } else {
+                        records.forEach((rec) => {
+                            const card = document.createElement("div");
+                            card.className = "history-card";
+                            const date = new Date(rec.savedAt).toLocaleString();
+                            card.innerHTML =
+                                '<img class="history-thumb" src="' +
+                                rec.thumbnail +
+                                '">' +
+                                '<div class="history-name">' +
+                                escapeHtml(rec.name) +
+                                "</div>" +
+                                '<div class="history-date">' +
+                                escapeHtml(date) +
+                                "</div>" +
+                                '<div class="history-actions">' +
+                                '<button class="btn small load-btn">Load</button>' +
+                                '<div class="icon-btn del-btn" title="Delete">' +
+                                svgTrash() +
+                                "</div>" +
+                                "</div>";
+                            card.querySelector(".load-btn").addEventListener("click", () => loadLayoutRecord(rec));
+                            card.querySelector(".del-btn").addEventListener("click", async () => {
+                                if (confirm('Delete "' + rec.name + "\"? This can't be undone.")) {
+                                    await dbDelete(rec.id);
+                                    openHistoryModal();
+                                }
+                            });
+                            grid.appendChild(card);
+                        });
+                    }
+                    els.historyOverlay.classList.add("open");
+                }
+                function closeHistoryModal() {
+                    els.historyOverlay.classList.remove("open");
+                }
+                els.historyBtn.addEventListener("click", openHistoryModal);
+                els.closeHistory.addEventListener("click", closeHistoryModal);
+                els.historyOverlay.addEventListener("click", (e) => {
+                    if (e.target === els.historyOverlay) closeHistoryModal();
+                });
+                document.addEventListener("keydown", (e) => {
+                    if (e.key === "Escape" && els.historyOverlay.classList.contains("open")) closeHistoryModal();
                 });
 
                 // ---------- Icon SVGs ----------
