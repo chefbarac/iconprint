@@ -1,0 +1,1129 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <!-- Google tag (gtag.js) -->
+
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-SWGDSZH41W"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag("js", new Date());
+
+            gtag("config", "G-SWGDSZH41W");
+        </script>
+        <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🧩</text></svg>' />
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Contact Sheet — Auto Collage</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+        <style id="baseStyle">
+            :root {
+                --bg: #1c1a17;
+                --panel: #262320;
+                --panel-border: #3a352f;
+                --paper: #ded5bf;
+                --strip: #57524a;
+                --accent: #c1432b;
+                --accent-dim: #8a3222;
+                --text: #ede7da;
+                --text-dim: #a89f8f;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                background: var(--bg);
+                color: var(--text);
+                font-family: "Space Mono", monospace;
+                min-height: 100vh;
+            }
+            .app {
+                max-width: 1400px;
+                margin: 0 auto;
+                padding: 28px 24px 60px;
+            }
+
+            header.topbar {
+                margin-bottom: 22px;
+            }
+            .title-row {
+                display: flex;
+                align-items: baseline;
+                gap: 14px;
+                flex-wrap: wrap;
+            }
+            h1 {
+                font-family: "Big Shoulders Display", sans-serif;
+                font-weight: 800;
+                font-size: 44px;
+                letter-spacing: 0.5px;
+                margin: 0;
+                text-transform: uppercase;
+            }
+            .frame-count-badge {
+                font-size: 12px;
+                letter-spacing: 1px;
+                color: var(--accent);
+                border: 1px solid var(--accent-dim);
+                padding: 3px 8px;
+                border-radius: 2px;
+            }
+            .subtitle {
+                color: var(--text-dim);
+                font-size: 13px;
+                margin: 4px 0 20px;
+                letter-spacing: 0.3px;
+            }
+
+            .controls {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                align-items: flex-end;
+                background: var(--panel);
+                border: 1px solid var(--panel-border);
+                padding: 14px 16px;
+                border-radius: 6px;
+            }
+            .ctrl-group {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+            .ctrl-group label {
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                color: var(--text-dim);
+            }
+            .ctrl-group input[type="number"] {
+                width: 72px;
+                background: var(--bg);
+                border: 1px solid var(--panel-border);
+                color: var(--text);
+                padding: 6px 8px;
+                font-family: "Space Mono", monospace;
+                font-size: 13px;
+                border-radius: 3px;
+            }
+            .ctrl-group input[type="range"] {
+                width: 120px;
+                accent-color: var(--accent);
+            }
+            .ctrl-group select {
+                background: var(--bg);
+                border: 1px solid var(--panel-border);
+                color: var(--text);
+                padding: 6px 8px;
+                font-family: "Space Mono", monospace;
+                font-size: 12px;
+                border-radius: 3px;
+            }
+            .seg {
+                display: flex;
+                border: 1px solid var(--panel-border);
+                border-radius: 3px;
+                overflow: hidden;
+            }
+            .seg button {
+                border: none;
+                border-radius: 0;
+                padding: 7px 10px;
+                font-size: 11px;
+            }
+            .seg button.on {
+                background: var(--accent);
+                color: #fff;
+            }
+            .spacer {
+                flex: 1;
+            }
+            button {
+                font-family: "Space Mono", monospace;
+                font-size: 12px;
+                letter-spacing: 0.5px;
+                text-transform: uppercase;
+                padding: 10px 16px;
+                border-radius: 3px;
+                border: 1px solid var(--panel-border);
+                background: var(--bg);
+                color: var(--text);
+                cursor: pointer;
+                transition:
+                    border-color 0.15s,
+                    color 0.15s;
+            }
+            button:hover {
+                border-color: var(--accent);
+                color: var(--accent);
+            }
+            button.primary {
+                background: var(--accent);
+                color: #fff;
+                border-color: var(--accent);
+            }
+            button.primary:hover {
+                background: var(--accent-dim);
+                border-color: var(--accent-dim);
+                color: #fff;
+            }
+            button:disabled {
+                opacity: 0.35;
+                cursor: not-allowed;
+            }
+
+            .stage-wrap {
+                margin-top: 24px;
+                overflow-x: auto;
+                padding-bottom: 6px;
+            }
+            .pages {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 28px;
+            }
+            .page-shell {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+            }
+            .page-label {
+                font-size: 11px;
+                letter-spacing: 1px;
+                color: var(--text-dim);
+                text-transform: uppercase;
+            }
+            .film-frame {
+                display: inline-block;
+                background: var(--strip);
+                padding: 0;
+                border-radius: 6px;
+            }
+            .sprocket {
+                height: 16px;
+                background-image: radial-gradient(circle, var(--bg) 3px, transparent 3.6px);
+                background-size: 24px 16px;
+                background-position: 12px center;
+            }
+            .page {
+                position: relative;
+                background: var(--paper);
+                background-image: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.025) 0px, rgba(0, 0, 0, 0.025) 1px, transparent 1px, transparent 3px);
+                overflow: hidden;
+            }
+
+            .empty-state {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                color: var(--strip);
+                text-align: center;
+                padding: 40px;
+                gap: 10px;
+            }
+            .empty-state .big {
+                font-family: "Big Shoulders Display", sans-serif;
+                font-size: 28px;
+                text-transform: uppercase;
+                font-weight: 800;
+            }
+            .empty-state .small {
+                font-size: 12px;
+                max-width: 340px;
+                color: #8b8570;
+            }
+            .page.drag-over {
+                outline: 3px dashed var(--accent);
+                outline-offset: -6px;
+            }
+
+            .tile {
+                position: absolute;
+                cursor: grab;
+                background: #000;
+                box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+                outline: 2px solid var(--bg);
+                outline-offset: 0;
+            }
+            .tile.dragging {
+                cursor: grabbing;
+                z-index: 999 !important;
+            }
+            .tile img {
+                width: 100%;
+                height: 100%;
+                display: block;
+                object-fit: cover;
+                pointer-events: none;
+                -webkit-user-drag: none;
+            }
+            .tile .frame-no {
+                position: absolute;
+                left: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.65);
+                color: var(--accent);
+                font-size: 10px;
+                padding: 2px 5px;
+                letter-spacing: 1px;
+                pointer-events: none;
+                user-select: none;
+            }
+            .tile .del-btn {
+                position: absolute;
+                top: -9px;
+                right: -9px;
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                background: var(--accent);
+                color: #fff;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                font-size: 13px;
+                line-height: 1;
+                cursor: pointer;
+                border: 2px solid var(--bg);
+                z-index: 5;
+            }
+            .tile:hover .del-btn,
+            .tile.selected .del-btn {
+                display: flex;
+            }
+            .tile.selected {
+                outline: 2px solid var(--accent);
+            }
+            .handle {
+                position: absolute;
+                display: none;
+                z-index: 5;
+            }
+            .tile.selected .handle {
+                display: block;
+            }
+            .resize-handle {
+                width: 14px;
+                height: 14px;
+                right: -7px;
+                bottom: -7px;
+                background: var(--accent);
+                border: 2px solid #fff;
+                border-radius: 2px;
+                cursor: nwse-resize;
+            }
+            .rotate-line {
+                width: 1px;
+                height: 24px;
+                background: var(--accent);
+                left: 50%;
+                top: -24px;
+                transform: translateX(-0.5px);
+            }
+            .rotate-handle {
+                width: 14px;
+                height: 14px;
+                left: 50%;
+                top: -38px;
+                transform: translateX(-50%);
+                background: var(--accent);
+                border: 2px solid #fff;
+                border-radius: 50%;
+                cursor: grab;
+            }
+
+            footer.hint {
+                margin-top: 14px;
+                font-size: 11px;
+                color: var(--text-dim);
+                display: flex;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            footer.hint span.accent {
+                color: var(--accent);
+            }
+            kbd {
+                background: var(--panel);
+                border: 1px solid var(--panel-border);
+                border-radius: 3px;
+                padding: 1px 5px;
+                font-size: 10px;
+            }
+
+            @media print {
+                body {
+                    background: #fff;
+                }
+                header.topbar,
+                footer.hint,
+                .page-label,
+                .sprocket,
+                .stage-wrap {
+                    margin: 0;
+                    padding: 0;
+                }
+                header.topbar,
+                footer.hint,
+                .page-label {
+                    display: none !important;
+                }
+                .app {
+                    max-width: none;
+                    padding: 0;
+                    margin: 0;
+                }
+                .stage-wrap {
+                    overflow: visible;
+                    padding: 0;
+                }
+                .pages {
+                    gap: 0;
+                }
+                .page-shell {
+                    gap: 0;
+                }
+                .film-frame {
+                    background: transparent;
+                    border-radius: 0;
+                }
+                .sprocket {
+                    display: none;
+                }
+                .page {
+                    background: #fff !important;
+                    background-image: none !important;
+                    page-break-after: always;
+                    break-after: page;
+                }
+                .page-shell:last-child .page {
+                    page-break-after: auto;
+                    break-after: auto;
+                }
+                .tile {
+                    box-shadow: none;
+                    outline: none;
+                }
+                .tile .frame-no,
+                .tile .del-btn,
+                .handle {
+                    display: none !important;
+                }
+            }
+        </style>
+        <style id="printPageSize">
+            @page {
+                size: 210mm 297mm;
+                margin: 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="app">
+            <header class="topbar">
+                <div class="title-row">
+                    <h1>Contact&nbsp;Sheet</h1>
+                    <span class="frame-count-badge" id="frameCountBadge">0 frames</span>
+                </div>
+                <p class="subtitle">
+                    Drop in photos — they're auto-arranged to fill each page edge to edge, and new pages are added automatically as needed. Drag to move, corner to resize, top handle to rotate.
+                </p>
+
+                <div class="controls">
+                    <button class="primary" id="addBtn">+ Add Images</button>
+
+                    <div class="ctrl-group">
+                        <label>Paper</label>
+                        <select id="paperSize">
+                            <option value="a4">A4 (210 × 297mm)</option>
+                            <option value="short">Short bond (8.5 × 11")</option>
+                            <option value="long" selected>Long bond (8.5 × 13")</option>
+                        </select>
+                    </div>
+
+                    <div class="ctrl-group">
+                        <label>Orientation</label>
+                        <div class="seg" id="orientSeg">
+                            <button data-v="portrait" class="on">Portrait</button>
+                            <button data-v="landscape">Landscape</button>
+                        </div>
+                    </div>
+
+                    <div class="ctrl-group">
+                        <label>Layout</label>
+                        <div class="seg" id="layoutSeg">
+                            <button data-v="fit" class="on">Shrink to 1 page</button>
+                            <button data-v="paginate">Auto-paginate</button>
+                        </div>
+                    </div>
+
+                    <div class="ctrl-group">
+                        <label>Row height <span id="rowHeightVal">200</span>px</label>
+                        <input type="range" id="rowHeight" min="80" max="380" value="200" />
+                    </div>
+
+                    <div class="ctrl-group">
+                        <label>Gap / margin <span id="gapVal">8</span>px</label>
+                        <input type="range" id="gap" min="0" max="30" value="8" />
+                    </div>
+
+                    <div class="ctrl-group">
+                        <label>Order</label>
+                        <select id="orderMode">
+                            <option value="upload">As added</option>
+                            <option value="wide">Widest first</option>
+                            <option value="tall">Tallest first</option>
+                            <option value="shuffle">Shuffle</option>
+                        </select>
+                    </div>
+
+                    <div class="spacer"></div>
+                    <button id="arrangeBtn">Auto-Arrange</button>
+                    <button id="exportBtn">Export PNG</button>
+                    <button class="primary" id="printBtn">🖨 Print</button>
+                    <button id="clearBtn">Clear All</button>
+                </div>
+            </header>
+
+            <div class="stage-wrap">
+                <div class="pages" id="pages">
+                    <div class="page-shell">
+                        <div class="page-label">Page 1</div>
+                        <div class="film-frame">
+                            <div class="sprocket"></div>
+                            <div class="page" id="firstPage">
+                                <div class="empty-state" id="emptyState">
+                                    <div class="big">No frames loaded</div>
+                                    <div class="small">Add images or drag &amp; drop them here. Pages fill automatically and overflow spills onto new pages.</div>
+                                </div>
+                            </div>
+                            <div class="sprocket"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="hint">
+                <span id="statusText">0 images · 0 pages · sheet fill 0%</span>
+                <span
+                    >Select a tile · drag <span class="accent">●</span> corner to resize · drag <span class="accent">◯</span> top handle to rotate · <kbd>Del</kbd> to remove · <kbd>Shift</kbd> while
+                    resizing = free aspect · <kbd>Shift</kbd> while rotating = snap 15°</span
+                >
+            </footer>
+        </div>
+
+        <input type="file" id="fileInput" hidden multiple accept="image/*" />
+
+        <script>
+            (function () {
+                const pagesEl = document.getElementById("pages");
+                const firstPage = document.getElementById("firstPage");
+                const emptyState = document.getElementById("emptyState");
+                const fileInput = document.getElementById("fileInput");
+                const addBtn = document.getElementById("addBtn");
+                const arrangeBtn = document.getElementById("arrangeBtn");
+                const exportBtn = document.getElementById("exportBtn");
+                const printBtn = document.getElementById("printBtn");
+                const clearBtn = document.getElementById("clearBtn");
+                const paperSizeSel = document.getElementById("paperSize");
+                const orientSeg = document.getElementById("orientSeg");
+                const layoutSeg = document.getElementById("layoutSeg");
+                let layoutMode = "fit"; // 'fit' = shrink everything onto one page, 'paginate' = auto-add pages
+                const rowHeightInput = document.getElementById("rowHeight");
+                const gapInput = document.getElementById("gap");
+                const rowHeightVal = document.getElementById("rowHeightVal");
+                const gapVal = document.getElementById("gapVal");
+                const orderMode = document.getElementById("orderMode");
+                const statusText = document.getElementById("statusText");
+                const frameCountBadge = document.getElementById("frameCountBadge");
+                const printPageSizeStyle = document.getElementById("printPageSize");
+
+                const MM_PER_PX = 25.4 / 96;
+                const PX_PER_MM = 96 / 25.4;
+
+                const PAPERS = {
+                    a4: { w: 210, h: 297, label: "A4" },
+                    short: { w: 215.9, h: 279.4, label: "Short bond" },
+                    long: { w: 215.9, h: 330.2, label: "Long bond" },
+                };
+                let orientation = "portrait";
+
+                let images = []; // {id, img, aspect}
+                let zTop = 1;
+                let idSeq = 1;
+                let selectedId = null;
+
+                function currentPaperMM() {
+                    const p = PAPERS[paperSizeSel.value];
+                    return orientation === "landscape" ? { w: p.h, h: p.w } : { w: p.w, h: p.h };
+                }
+                function currentPagePx() {
+                    const mm = currentPaperMM();
+                    return { w: Math.round(mm.w * PX_PER_MM), h: Math.round(mm.h * PX_PER_MM) };
+                }
+                function updatePrintPageSize() {
+                    const mm = currentPaperMM();
+                    printPageSizeStyle.textContent = "@page{ size: " + mm.w.toFixed(1) + "mm " + mm.h.toFixed(1) + "mm; margin:0; }";
+                }
+
+                function updateBadges() {
+                    frameCountBadge.textContent = images.length + (images.length === 1 ? " frame" : " frames");
+                }
+                function toggleEmptyState() {
+                    if (images.length === 0) {
+                        firstPage.appendChild(emptyState);
+                        emptyState.style.display = "flex";
+                    } else {
+                        emptyState.style.display = "none";
+                    }
+                }
+                function deselectAll() {
+                    selectedId = null;
+                    document.querySelectorAll(".tile.selected").forEach((t) => t.classList.remove("selected"));
+                }
+
+                // ---------- adding images ----------
+                function addFiles(fileList) {
+                    const files = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
+                    let pending = files.length;
+                    if (!pending) return;
+                    files.forEach((file) => {
+                        const url = URL.createObjectURL(file);
+                        const img = new Image();
+                        img.onload = function () {
+                            images.push({ id: idSeq++, img: img, aspect: img.naturalWidth / img.naturalHeight });
+                            pending--;
+                            if (pending === 0) {
+                                toggleEmptyState();
+                                updateBadges();
+                                layoutAll();
+                            }
+                        };
+                        img.onerror = function () {
+                            pending--;
+                            if (pending === 0) {
+                                layoutAll();
+                            }
+                        };
+                        img.src = url;
+                    });
+                }
+
+                function removeImage(id) {
+                    const idx = images.findIndex((r) => r.id === id);
+                    if (idx === -1) return;
+                    images.splice(idx, 1);
+                    toggleEmptyState();
+                    updateBadges();
+                    layoutAll();
+                }
+
+                // ---------- row-building primitives ----------
+                // Build rows greedily; stop consuming once adding a row would exceed availH.
+                // Returns { rows:[{items,rowH}], usedHeight, count }
+                function greedyWithHeightLimit(list, contentW, gapPx, T, availH) {
+                    const rows = [];
+                    let idx = 0;
+                    let used = 0;
+                    while (idx < list.length) {
+                        const row = [];
+                        let aspectSum = 0;
+                        let j = idx;
+                        let closed = false;
+                        while (j < list.length) {
+                            row.push(list[j]);
+                            aspectSum += list[j].aspect;
+                            const widthAtT = aspectSum * T + gapPx * (row.length - 1);
+                            if (widthAtT >= contentW) {
+                                closed = true;
+                                j++;
+                                break;
+                            }
+                            j++;
+                        }
+                        if (!closed) break; // ran out of images before filling the row -> leave for next pass
+                        const rowH = (contentW - gapPx * (row.length - 1)) / aspectSum;
+                        const newUsed = used + rowH + (rows.length > 0 ? gapPx : 0);
+                        if (newUsed > availH + 0.5) break;
+                        rows.push({ items: row, rowH });
+                        used = newUsed;
+                        idx = j;
+                    }
+                    const count = rows.reduce((s, r) => s + r.items.length, 0);
+                    return { rows, usedHeight: used, count };
+                }
+
+                // Search candidate target heights to best fill availH without exceeding it.
+                function packPage(remaining, contentW, gapPx, availH, userT) {
+                    const candidates = [userT];
+                    const steps = 26;
+                    for (let i = 0; i <= steps; i++) {
+                        const t = 40 + (availH - 40) * (i / steps);
+                        if (t > 10) candidates.push(t);
+                    }
+                    let best = null;
+                    candidates.forEach((T) => {
+                        const r = greedyWithHeightLimit(remaining, contentW, gapPx, T, availH);
+                        if (r.count > 0 && (!best || r.usedHeight > best.usedHeight)) {
+                            best = r;
+                        }
+                    });
+                    if (!best || best.count === 0) {
+                        // fallback: force a single small row so we always make progress
+                        best = greedyWithHeightLimit(remaining, contentW, gapPx, 40, availH * 4);
+                        if (best.count === 0 && remaining.length) {
+                            const r0 = remaining[0];
+                            const w = Math.min(contentW, 200 * r0.aspect),
+                                h = w / r0.aspect;
+                            best = { rows: [{ items: [r0], rowH: h }], usedHeight: h, count: 1 };
+                        }
+                    }
+                    return best;
+                }
+
+                // Classic justified layout (last row left natural, unstretched) - used for the final page.
+                function simpleJustify(list, contentW, gapPx, T) {
+                    const rows = [];
+                    let row = [];
+                    let aspectSum = 0;
+                    list.forEach((rec) => {
+                        row.push(rec);
+                        aspectSum += rec.aspect;
+                        const widthAtT = aspectSum * T + gapPx * (row.length - 1);
+                        if (widthAtT >= contentW) {
+                            const rowH = (contentW - gapPx * (row.length - 1)) / aspectSum;
+                            rows.push({ items: row, rowH });
+                            row = [];
+                            aspectSum = 0;
+                        }
+                    });
+                    if (row.length) rows.push({ items: row, rowH: T });
+                    return rows;
+                }
+
+                function contentHeightOf(rows, gapPx) {
+                    return rows.reduce((h, r) => h + r.rowH, 0) + gapPx * Math.max(0, rows.length - 1);
+                }
+
+                // Binary-search the row-height target so ALL images justify-pack onto one page.
+                function fitAllToOnePage(list, contentW, gapPx, availH) {
+                    let lo = 4,
+                        hi = Math.max(availH, 20);
+                    // make sure hi is big enough that content overflows at hi (otherwise lo=hi is fine, already fits)
+                    let rows = simpleJustify(list, contentW, gapPx, hi);
+                    if (contentHeightOf(rows, gapPx) <= availH) {
+                        return rows; // even the tallest reasonable target fits
+                    }
+                    let bestRows = simpleJustify(list, contentW, gapPx, lo);
+                    for (let i = 0; i < 28; i++) {
+                        const mid = (lo + hi) / 2;
+                        const r = simpleJustify(list, contentW, gapPx, mid);
+                        const h = contentHeightOf(r, gapPx);
+                        if (h <= availH) {
+                            lo = mid;
+                            bestRows = r;
+                        } else {
+                            hi = mid;
+                        }
+                    }
+                    return bestRows;
+                }
+
+                function commitRows(rows, gapPx) {
+                    let y = gapPx;
+                    rows.forEach((row) => {
+                        let x = gapPx;
+                        row.items.forEach((rec) => {
+                            const w = rec.aspect * row.rowH;
+                            rec.x = x;
+                            rec.y = y;
+                            rec.w = w;
+                            rec.h = row.rowH;
+                            rec.rot = 0;
+                            x += w + gapPx;
+                        });
+                        y += row.rowH + gapPx;
+                    });
+                    return y;
+                }
+
+                function currentOrder() {
+                    let list = images.slice();
+                    const mode = orderMode.value;
+                    if (mode === "wide") list.sort((a, b) => b.aspect - a.aspect);
+                    else if (mode === "tall") list.sort((a, b) => a.aspect - b.aspect);
+                    else if (mode === "shuffle") {
+                        for (let i = list.length - 1; i > 0; i--) {
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [list[i], list[j]] = [list[j], list[i]];
+                        }
+                    }
+                    return list;
+                }
+
+                // ---------- full pagination + render ----------
+                function layoutAll() {
+                    updatePrintPageSize();
+                    pagesEl.innerHTML = "";
+                    if (!images.length) {
+                        const shell = makePageShell(1);
+                        pagesEl.appendChild(shell.shell);
+                        toggleEmptyStateInto(shell.page);
+                        statusText.textContent = "0 images · 0 pages · sheet fill 0%";
+                        return;
+                    }
+
+                    const { w: pageW, h: pageH } = currentPagePx();
+                    const gapPx = parseInt(gapInput.value, 10);
+                    const userT = parseInt(rowHeightInput.value, 10);
+                    const contentW = pageW - gapPx * 2;
+                    const availH = pageH - gapPx * 2;
+
+                    let remaining = currentOrder();
+                    const pageDefs = []; // { rows }
+
+                    if (layoutMode === "fit") {
+                        const rows = fitAllToOnePage(remaining, contentW, gapPx, availH);
+                        pageDefs.push({ rows });
+                        remaining = [];
+                    } else {
+                        let guard = 0;
+                        while (remaining.length && guard < 500) {
+                            guard++;
+                            const packed = packPage(remaining, contentW, gapPx, availH, userT);
+                            const isLastChunk = packed.count >= remaining.length;
+                            if (isLastChunk) {
+                                const rows = simpleJustify(remaining, contentW, gapPx, userT);
+                                pageDefs.push({ rows });
+                                remaining = [];
+                            } else {
+                                pageDefs.push({ rows: packed.rows });
+                                remaining = remaining.slice(packed.count);
+                            }
+                        }
+                    }
+
+                    let totalImgArea = 0;
+                    pageDefs.forEach((def, pIdx) => {
+                        const shell = makePageShell(pIdx + 1);
+                        pagesEl.appendChild(shell.shell);
+                        commitRows(def.rows, gapPx);
+                        def.rows.forEach((row) => {
+                            row.items.forEach((rec) => {
+                                totalImgArea += rec.w * rec.h;
+                                buildTile(rec, shell.page);
+                            });
+                        });
+                    });
+
+                    updateBadges();
+                    renumber();
+                    const totalArea = pageDefs.length * pageW * pageH;
+                    const fillPct = Math.min(100, Math.round((totalImgArea / totalArea) * 100));
+                    statusText.textContent = images.length + " images · " + pageDefs.length + (pageDefs.length === 1 ? " page" : " pages") + " · sheet fill " + fillPct + "%";
+                }
+
+                function makePageShell(num) {
+                    const shell = document.createElement("div");
+                    shell.className = "page-shell";
+                    const label = document.createElement("div");
+                    label.className = "page-label";
+                    label.textContent = "Page " + num;
+                    const frame = document.createElement("div");
+                    frame.className = "film-frame";
+                    const sp1 = document.createElement("div");
+                    sp1.className = "sprocket";
+                    const sp2 = document.createElement("div");
+                    sp2.className = "sprocket";
+                    const page = document.createElement("div");
+                    page.className = "page";
+                    const { w, h } = currentPagePx();
+                    page.style.width = w + "px";
+                    page.style.height = h + "px";
+                    page.addEventListener("dragover", (e) => {
+                        e.preventDefault();
+                        page.classList.add("drag-over");
+                    });
+                    page.addEventListener("dragleave", () => page.classList.remove("drag-over"));
+                    page.addEventListener("drop", (e) => {
+                        e.preventDefault();
+                        page.classList.remove("drag-over");
+                        if (e.dataTransfer.files && e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+                    });
+                    page.addEventListener("pointerdown", (e) => {
+                        if (e.target === page) deselectAll();
+                    });
+                    frame.appendChild(sp1);
+                    frame.appendChild(page);
+                    frame.appendChild(sp2);
+                    shell.appendChild(label);
+                    shell.appendChild(frame);
+                    return { shell, page };
+                }
+
+                function toggleEmptyStateInto(page) {
+                    page.appendChild(emptyState);
+                    emptyState.style.display = "flex";
+                }
+
+                function buildTile(rec, pageEl) {
+                    const el = document.createElement("div");
+                    el.className = "tile";
+                    el.dataset.id = rec.id;
+                    el.style.zIndex = zTop++;
+
+                    const imgEl = document.createElement("img");
+                    imgEl.src = rec.img.src;
+                    imgEl.draggable = false;
+                    el.appendChild(imgEl);
+
+                    const frameNo = document.createElement("div");
+                    frameNo.className = "frame-no";
+                    el.appendChild(frameNo);
+
+                    const del = document.createElement("div");
+                    del.className = "del-btn";
+                    del.textContent = "×";
+                    del.addEventListener("pointerdown", (e) => e.stopPropagation());
+                    del.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        removeImage(rec.id);
+                    });
+                    el.appendChild(del);
+
+                    const rline = document.createElement("div");
+                    rline.className = "handle rotate-line";
+                    el.appendChild(rline);
+
+                    const rhandle = document.createElement("div");
+                    rhandle.className = "handle rotate-handle";
+                    rhandle.addEventListener("pointerdown", (e) => startRotate(e, rec));
+                    el.appendChild(rhandle);
+
+                    const shandle = document.createElement("div");
+                    shandle.className = "handle resize-handle";
+                    shandle.addEventListener("pointerdown", (e) => startResize(e, rec));
+                    el.appendChild(shandle);
+
+                    el.addEventListener("pointerdown", (e) => {
+                        if (e.target === rhandle || e.target === shandle || e.target === del) return;
+                        selectTile(rec.id);
+                        startDrag(e, rec);
+                    });
+
+                    rec.el = el;
+                    pageEl.appendChild(el);
+                    renderTile(rec);
+                }
+
+                function selectTile(id) {
+                    deselectAll();
+                    selectedId = id;
+                    const rec = images.find((r) => r.id === id);
+                    if (rec) {
+                        rec.el.classList.add("selected");
+                        rec.el.style.zIndex = zTop++;
+                    }
+                }
+
+                function renderTile(rec) {
+                    rec.el.style.left = rec.x + "px";
+                    rec.el.style.top = rec.y + "px";
+                    rec.el.style.width = rec.w + "px";
+                    rec.el.style.height = rec.h + "px";
+                    rec.el.style.transform = "rotate(" + rec.rot + "deg)";
+                }
+
+                function renumber() {
+                    images.forEach((rec, i) => {
+                        if (!rec.el) return;
+                        const label = rec.el.querySelector(".frame-no");
+                        if (label) label.textContent = "No." + String(i + 1).padStart(2, "0");
+                    });
+                }
+
+                // ---------- drag / resize / rotate ----------
+                function startDrag(e, rec) {
+                    e.preventDefault();
+                    const startX = e.clientX,
+                        startY = e.clientY,
+                        ox = rec.x,
+                        oy = rec.y;
+                    rec.el.classList.add("dragging");
+                    rec.el.style.zIndex = zTop++;
+                    rec.el.setPointerCapture(e.pointerId);
+                    function move(ev) {
+                        rec.x = ox + (ev.clientX - startX);
+                        rec.y = oy + (ev.clientY - startY);
+                        renderTile(rec);
+                    }
+                    function up() {
+                        rec.el.classList.remove("dragging");
+                        rec.el.removeEventListener("pointermove", move);
+                        rec.el.removeEventListener("pointerup", up);
+                    }
+                    rec.el.addEventListener("pointermove", move);
+                    rec.el.addEventListener("pointerup", up);
+                }
+
+                function startResize(e, rec) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    selectTile(rec.id);
+                    const startX = e.clientX,
+                        startY = e.clientY,
+                        ow = rec.w,
+                        oh = rec.h,
+                        aspect = ow / oh;
+                    rec.el.setPointerCapture(e.pointerId);
+                    function move(ev) {
+                        const dx = ev.clientX - startX,
+                            dy = ev.clientY - startY;
+                        let nw = Math.max(30, ow + dx),
+                            nh = Math.max(30, oh + dy);
+                        if (!ev.shiftKey) {
+                            if (Math.abs(dx) > Math.abs(dy)) nh = nw / aspect;
+                            else nw = nh * aspect;
+                        }
+                        rec.w = nw;
+                        rec.h = nh;
+                        renderTile(rec);
+                    }
+                    function up() {
+                        rec.el.removeEventListener("pointermove", move);
+                        rec.el.removeEventListener("pointerup", up);
+                    }
+                    rec.el.addEventListener("pointermove", move);
+                    rec.el.addEventListener("pointerup", up);
+                }
+
+                function startRotate(e, rec) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    selectTile(rec.id);
+                    rec.el.setPointerCapture(e.pointerId);
+                    function move(ev) {
+                        const r = rec.el.getBoundingClientRect();
+                        const cx = r.left + r.width / 2,
+                            cy = r.top + r.height / 2;
+                        let deg = (Math.atan2(ev.clientY - cy, ev.clientX - cx) * 180) / Math.PI + 90;
+                        if (ev.shiftKey) deg = Math.round(deg / 15) * 15;
+                        rec.rot = deg;
+                        renderTile(rec);
+                    }
+                    function up() {
+                        rec.el.removeEventListener("pointermove", move);
+                        rec.el.removeEventListener("pointerup", up);
+                    }
+                    rec.el.addEventListener("pointermove", move);
+                    rec.el.addEventListener("pointerup", up);
+                }
+
+                // ---------- export ----------
+                function exportPNG() {
+                    if (!images.length) return;
+                    const pageEls = document.querySelectorAll(".page");
+                    const { w, h } = currentPagePx();
+                    pageEls.forEach((pageEl, i) => {
+                        const canvas = document.createElement("canvas");
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext("2d");
+                        ctx.fillStyle = "#ffffff";
+                        ctx.fillRect(0, 0, w, h);
+                        const tiles = pageEl.querySelectorAll(".tile");
+                        tiles.forEach((tileEl) => {
+                            const rec = images.find((r) => String(r.id) === tileEl.dataset.id);
+                            if (!rec) return;
+                            ctx.save();
+                            ctx.translate(rec.x + rec.w / 2, rec.y + rec.h / 2);
+                            ctx.rotate((rec.rot * Math.PI) / 180);
+                            ctx.drawImage(rec.img, -rec.w / 2, -rec.h / 2, rec.w, rec.h);
+                            ctx.restore();
+                        });
+                        setTimeout(() => {
+                            canvas.toBlob((blob) => {
+                                const a = document.createElement("a");
+                                a.href = URL.createObjectURL(blob);
+                                a.download = "contact-sheet-page-" + (i + 1) + ".png";
+                                a.click();
+                            }, "image/png");
+                        }, i * 150);
+                    });
+                }
+
+                // ---------- events ----------
+                addBtn.addEventListener("click", () => fileInput.click());
+                fileInput.addEventListener("change", (e) => {
+                    addFiles(e.target.files);
+                    fileInput.value = "";
+                });
+
+                orientSeg.querySelectorAll("button").forEach((b) => {
+                    b.addEventListener("click", () => {
+                        orientation = b.dataset.v;
+                        orientSeg.querySelectorAll("button").forEach((x) => x.classList.remove("on"));
+                        b.classList.add("on");
+                        layoutAll();
+                    });
+                });
+                layoutSeg.querySelectorAll("button").forEach((b) => {
+                    b.addEventListener("click", () => {
+                        layoutMode = b.dataset.v;
+                        layoutSeg.querySelectorAll("button").forEach((x) => x.classList.remove("on"));
+                        b.classList.add("on");
+                        rowHeightInput.closest(".ctrl-group").style.opacity = layoutMode === "fit" ? "0.4" : "1";
+                        layoutAll();
+                    });
+                });
+                paperSizeSel.addEventListener("change", layoutAll);
+                rowHeightInput.addEventListener("input", () => {
+                    rowHeightVal.textContent = rowHeightInput.value;
+                });
+                rowHeightInput.addEventListener("change", layoutAll);
+                gapInput.addEventListener("input", () => {
+                    gapVal.textContent = gapInput.value;
+                });
+                gapInput.addEventListener("change", layoutAll);
+                orderMode.addEventListener("change", layoutAll);
+
+                arrangeBtn.addEventListener("click", layoutAll);
+                exportBtn.addEventListener("click", exportPNG);
+                printBtn.addEventListener("click", () => window.print());
+                clearBtn.addEventListener("click", () => {
+                    images = [];
+                    deselectAll();
+                    layoutAll();
+                });
+
+                document.addEventListener("keydown", (e) => {
+                    if ((e.key === "Delete" || e.key === "Backspace") && selectedId !== null) {
+                        const active = document.activeElement;
+                        if (active && (active.tagName === "INPUT" || active.tagName === "SELECT")) return;
+                        e.preventDefault();
+                        removeImage(selectedId);
+                    }
+                    if (e.key === "Escape") deselectAll();
+                });
+
+                rowHeightInput.closest(".ctrl-group").style.opacity = layoutMode === "fit" ? "0.4" : "1";
+                layoutAll();
+            })();
+        </script>
+        <script src="/sw-register.js"></script>
+    </body>
+</html>
