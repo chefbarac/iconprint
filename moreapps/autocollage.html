@@ -434,84 +434,86 @@
     </head>
     <body>
         <div class="app">
-            <header class="topbar">
-                <div class="title-row">
-                    <h1>Contact&nbsp;Sheet</h1>
-                    <span class="frame-count-badge" id="frameCountBadge">0 frames</span>
-                </div>
-                <p class="subtitle">
-                    Drop in photos — they're auto-arranged to fill each page edge to edge, and new pages are added automatically as needed. Drag to move, corner to resize, top handle to rotate.
-                </p>
-
-                <div class="controls">
-                    <button class="primary" id="addBtn">+ Add Images</button>
-
-                    <div class="ctrl-group">
-                        <label>Paper</label>
-                        <select id="paperSize">
-                            <option value="a4">A4 (210 × 297mm)</option>
-                            <option value="short">Short bond (8.5 × 11")</option>
-                            <option value="long" selected>Long bond (8.5 × 13")</option>
-                        </select>
+            <div style="display: flex; gap: 10px">
+                <header class="topbar" style="max-width: 25%">
+                    <div class="title-row">
+                        <h1>Contact&nbsp;Sheet</h1>
+                        <span class="frame-count-badge" id="frameCountBadge">0 frames</span>
                     </div>
+                    <p class="subtitle">
+                        Drop in photos — they're auto-arranged to fill each page edge to edge, and new pages are added automatically as needed. Drag to move, corner to resize, top handle to rotate.
+                    </p>
 
-                    <div class="ctrl-group">
-                        <label>Orientation</label>
-                        <div class="seg" id="orientSeg">
-                            <button data-v="portrait" class="on">Portrait</button>
-                            <button data-v="landscape">Landscape</button>
+                    <div class="controls">
+                        <button class="primary" id="addBtn">+ Add Images</button>
+
+                        <div class="ctrl-group">
+                            <label>Paper</label>
+                            <select id="paperSize">
+                                <option value="a4">A4 (210 × 297mm)</option>
+                                <option value="short">Short bond (8.5 × 11")</option>
+                                <option value="long" selected>Long bond (8.5 × 13")</option>
+                            </select>
                         </div>
-                    </div>
 
-                    <div class="ctrl-group">
-                        <label>Layout</label>
-                        <div class="seg" id="layoutSeg">
-                            <button data-v="fit" class="on">Shrink to 1 page</button>
-                            <button data-v="paginate">Auto-paginate</button>
-                        </div>
-                    </div>
-
-                    <div class="ctrl-group">
-                        <label>Row height <span id="rowHeightVal">200</span>px</label>
-                        <input type="range" id="rowHeight" min="80" max="380" value="200" />
-                    </div>
-
-                    <div class="ctrl-group">
-                        <label>Gap / margin <span id="gapVal">8</span>px</label>
-                        <input type="range" id="gap" min="0" max="30" value="8" />
-                    </div>
-
-                    <div class="ctrl-group">
-                        <label>Order</label>
-                        <select id="orderMode">
-                            <option value="upload">As added</option>
-                            <option value="wide">Widest first</option>
-                            <option value="tall">Tallest first</option>
-                            <option value="shuffle">Shuffle</option>
-                        </select>
-                    </div>
-
-                    <div class="spacer"></div>
-                    <button id="arrangeBtn">Auto-Arrange</button>
-                    <button id="exportBtn">Export PNG</button>
-                    <button class="primary" id="printBtn">🖨 Print</button>
-                    <button id="clearBtn">Clear All</button>
-                </div>
-            </header>
-
-            <div class="stage-wrap">
-                <div class="pages" id="pages">
-                    <div class="page-shell">
-                        <div class="page-label">Page 1</div>
-                        <div class="film-frame">
-                            <div class="sprocket"></div>
-                            <div class="page" id="firstPage">
-                                <div class="empty-state" id="emptyState">
-                                    <div class="big">No frames loaded</div>
-                                    <div class="small">Add images or drag &amp; drop them here. Pages fill automatically and overflow spills onto new pages.</div>
-                                </div>
+                        <div class="ctrl-group">
+                            <label>Orientation</label>
+                            <div class="seg" id="orientSeg">
+                                <button data-v="portrait" class="on">Portrait</button>
+                                <button data-v="landscape">Landscape</button>
                             </div>
-                            <div class="sprocket"></div>
+                        </div>
+
+                        <div class="ctrl-group">
+                            <label>Layout</label>
+                            <div class="seg" id="layoutSeg">
+                                <button data-v="fit" class="on">Shrink to 1 page</button>
+                                <button data-v="paginate">Auto-paginate</button>
+                            </div>
+                        </div>
+
+                        <div class="ctrl-group">
+                            <label>Row height <span id="rowHeightVal">200</span>px</label>
+                            <input type="range" id="rowHeight" min="80" max="380" value="200" />
+                        </div>
+
+                        <div class="ctrl-group">
+                            <label>Gap / margin <span id="gapVal">8</span>px</label>
+                            <input type="range" id="gap" min="0" max="30" value="8" />
+                        </div>
+
+                        <div class="ctrl-group">
+                            <label>Order</label>
+                            <select id="orderMode">
+                                <option value="shuffle">Shuffle</option>
+                                <option value="upload">As added</option>
+                                <option value="wide">Widest first</option>
+                                <option value="tall">Tallest first</option>
+                            </select>
+                        </div>
+
+                        <div class="spacer"></div>
+                        <button id="arrangeBtn">Auto-Arrange</button>
+                        <button id="exportBtn">Export PNG</button>
+                        <button class="primary" id="printBtn">🖨 Print</button>
+                        <button id="clearBtn">Clear All</button>
+                    </div>
+                </header>
+
+                <div class="stage-wrap">
+                    <div class="pages" id="pages">
+                        <div class="page-shell">
+                            <div class="page-label">Page 1</div>
+                            <div class="film-frame">
+                                <div class="sprocket"></div>
+                                <div class="page" id="firstPage">
+                                    <div class="empty-state" id="emptyState">
+                                        <div class="big">No frames loaded</div>
+                                        <div class="small">Add images or drag &amp; drop them here. Pages fill automatically and overflow spills onto new pages.</div>
+                                    </div>
+                                </div>
+                                <div class="sprocket"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
