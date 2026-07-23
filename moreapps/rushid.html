@@ -1,6 +1,25 @@
 <!doctype html>
 <html lang="en">
     <head>
+        <!-- Google tag (gtag.js) -->
+
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-SWGDSZH41W"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag("js", new Date());
+
+            gtag("config", "G-SWGDSZH41W");
+        </script>
+        <link
+            rel="icon"
+            href='data:image/svg+xml,<svg  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+                            <rect x="2" y="2" width="12" height="12" rx="1" />
+                            <path d="M2 11l3-3 2 2 4-5 3 4" />
+                        </svg>'
+        />
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Rush ID — Auto Layout</title>
@@ -423,6 +442,7 @@
                 overflow: hidden;
                 position: relative;
                 z-index: 2;
+                font-family: var(--name-font, "Segoe UI", Arial, Helvetica, sans-serif);
             }
 
             /* ---------- Print ---------- */
@@ -500,6 +520,13 @@
             <div class="field">
                 <label for="nameInput">Name on ID</label>
                 <input type="text" id="nameInput" placeholder="Juan Dela Cruz" maxlength="40" />
+
+                <label for="nameFontSelect" style="margin-top: 6px">Name font style</label>
+                <select id="nameFontSelect">
+                    <option value="sans" selected>Standard (sans-serif)</option>
+                    <option value="serif">Formal (serif)</option>
+                    <option value="script">Script / cursive (e.g. CSC)</option>
+                </select>
 
                 <label style="margin-top: 6px" class="checkline">
                     <input type="checkbox" id="autoFitCheck" checked />
@@ -642,6 +669,7 @@
                 const sigGapVal = document.getElementById("sigGapVal");
 
                 const nameInput = document.getElementById("nameInput");
+                const nameFontSelect = document.getElementById("nameFontSelect");
                 const autoFitCheck = document.getElementById("autoFitCheck");
                 const manualWrap = document.getElementById("manualFontWrap");
                 const fontSlider = document.getElementById("fontSlider");
@@ -685,6 +713,25 @@
                 const cameraVideo = document.getElementById("cameraVideo");
                 const cameraCancel = document.getElementById("cameraCancel");
                 const cameraCapture = document.getElementById("cameraCapture");
+
+                const NAME_FONT_STACKS = {
+                    sans: `"Segoe UI", Arial, Helvetica, sans-serif`,
+                    serif: `Georgia, "Times New Roman", Times, serif`,
+                    script: `"Segoe Script", "Brush Script MT", "Lucida Handwriting", "Apple Chancery", cursive`,
+                };
+
+                function currentNameFontStack() {
+                    return NAME_FONT_STACKS[nameFontSelect.value] || NAME_FONT_STACKS.sans;
+                }
+
+                function updateNameFontStyle() {
+                    document.getElementById("sheet").style.setProperty("--name-font", currentNameFontStack());
+                }
+
+                nameFontSelect.addEventListener("change", () => {
+                    updateNameFontStyle();
+                    applyLabelFonts(); // re-measure: script fonts render text at different widths than sans-serif
+                });
 
                 // ---------------- Upload photo ----------------
                 btnUpload.addEventListener("click", () => fileInput.click());
@@ -1033,6 +1080,7 @@
                     const margin = Math.max(0, Math.min(0.4, parseFloat(marginInput.value) || 0));
                     sheetEl.style.setProperty("--pad", margin + "in");
 
+                    updateNameFontStyle();
                     applyLabelFonts();
                     updateSignatureStyle();
                 }
@@ -1046,7 +1094,7 @@
                     if (!text) return;
                     let size = maxPx;
                     while (size > minPx) {
-                        measureCtx.font = "700 " + size + "px Segoe UI, Arial, sans-serif";
+                        measureCtx.font = "700 " + size + "px " + currentNameFontStack();
                         const w = measureCtx.measureText(text).width;
                         if (w <= cellWidthPx - 6) break;
                         size -= 0.5;
@@ -1111,5 +1159,6 @@
                 generateLayout();
             })();
         </script>
+        <script src="/sw-register.js"></script>
     </body>
 </html>
