@@ -38,7 +38,7 @@
 
 `
 
-<script src="/sw-register.js"></script>
+<script src="sw-register.js"></script>
 
 `
 
