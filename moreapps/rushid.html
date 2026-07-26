@@ -536,6 +536,10 @@
                     <input type="range" id="fontSlider" min="6" max="26" value="14" />
                     <div class="rangeval">Manual size: <span id="fontSliderVal">14</span>px</div>
                 </div>
+
+                <label for="nameVStretchSlider" style="margin-top: 6px">Vertical Stretch</label>
+                <input type="range" id="nameVStretchSlider" min="0.5" max="5" value="1" step="0.1" />
+                <div class="rangeval">scaleY(<span id="nameVStretchVal">14</span>)</div>
             </div>
 
             <div class="field">
@@ -674,6 +678,8 @@
                 const manualWrap = document.getElementById("manualFontWrap");
                 const fontSlider = document.getElementById("fontSlider");
                 const fontSliderVal = document.getElementById("fontSliderVal");
+                const nameVStretchSlider = document.getElementById("nameVStretchSlider");
+                const nameVStretchVal = document.getElementById("nameVStretchVal");
 
                 const idTypeSelect = document.getElementById("idTypeSelect");
                 const countALabel = document.getElementById("countALabel");
@@ -731,6 +737,11 @@
                 nameFontSelect.addEventListener("change", () => {
                     updateNameFontStyle();
                     applyLabelFonts(); // re-measure: script fonts render text at different widths than sans-serif
+                });
+
+                nameVStretchSlider.addEventListener("input", () => {
+                    nameVStretchVal.textContent = nameVStretchSlider.value;
+                    applyLabelFonts();
                 });
 
                 // ---------------- Upload photo ----------------
@@ -1119,9 +1130,20 @@
                         const scale = blockCfg.wIn / (cfg.blocks[0].wIn || 1);
                         const manualSize = Math.max(5, Math.round(manualSizeMax * Math.min(1, scale)));
 
+                        // apply stretch name too
+                        const stretch = parseFloat(nameVStretchSlider.value);
                         section.querySelectorAll(".name-label").forEach((label) => {
-                            if (manual) label.style.fontSize = manualSize + "px";
-                            else fitFontForLabel(label, cellPx, maxPx, minPx);
+                            const footer = label.closest(".id-footer");
+                            if (!footer) return;
+
+                            footer.style.transformOrigin = "bottom center";
+                            footer.style.transform = `scaleY(${stretch})`;
+
+                            if (manual) {
+                                label.style.fontSize = `${manualSize}px`;
+                            } else {
+                                fitFontForLabel(label, cellPx, maxPx, minPx);
+                            }
                         });
                     });
                 }
