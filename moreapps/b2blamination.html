@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
     <head>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎞️</text></svg>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Back to Back Lamination — Layout Tool</title>
@@ -443,7 +444,7 @@
             .paper {
                 width: var(--paper-w);
                 height: var(--paper-h);
-                background: var(--card-bg);
+                background: rgb(55, 55, 55);
                 position: relative;
                 display: flex;
                 flex-direction: column;
@@ -456,7 +457,7 @@
             .ruler-top,
             .ruler-left {
                 position: absolute;
-                color: var(--ink-soft);
+                color: rgb(208, 208, 208);
                 font-family: "IBM Plex Mono", monospace;
                 font-size: 8px;
                 pointer-events: none;
@@ -505,10 +506,13 @@
                 cursor: grab;
                 touch-action: none;
             }
+            .card-slot:not(.has-image) .img-wrap {
+                pointer-events: none;
+            }
             .img-wrap img {
                 position: absolute;
                 left: 50%;
-                top: 50%;
+                top: 50%;`
                 max-width: none;
                 max-height: none;
                 user-select: none;
@@ -798,7 +802,7 @@
                                 <path d="M21 21l-4.3-4.3" />
                                 <path d="M8 10h4" />
                             </svg>
-                            <input type="range" data-role="zoom" min="0" max="100" value="0" />
+                            <input type="range" data-role="zoom" min="-100" max="100" value="0" />
                             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="10" cy="10" r="6" />
                                 <path d="M21 21l-4.3-4.3" />
@@ -810,7 +814,7 @@
                             <label>Straighten <span class="mono" data-role="finerotVal" style="color: var(--ink-soft); font-weight: 400">0°</span></label>
                             <div class="zoom-line">
                                 <span class="mono" style="font-size: 10px; color: var(--ink-soft)">-45°</span>
-                                <input type="range" data-role="finerot" min="-45" max="45" value="0" step="1" />
+                                <input type="range" data-role="finerot" min="-45" max="45" value="0" step="0.05" />
                                 <span class="mono" style="font-size: 10px; color: var(--ink-soft)">+45°</span>
                             </div>
                         </div>
@@ -867,7 +871,7 @@
                                 <path d="M21 21l-4.3-4.3" />
                                 <path d="M8 10h4" />
                             </svg>
-                            <input type="range" data-role="zoom" min="0" max="100" value="0" />
+                            <input type="range" data-role="zoom" min="-100" max="100" value="0" />
                             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="10" cy="10" r="6" />
                                 <path d="M21 21l-4.3-4.3" />
@@ -889,7 +893,7 @@
                             <label>Straighten <span class="mono" data-role="finerotVal" style="color: var(--ink-soft); font-weight: 400">0°</span></label>
                             <div class="zoom-line">
                                 <span class="mono" style="font-size: 10px; color: var(--ink-soft)">-45°</span>
-                                <input type="range" data-role="finerot" min="-45" max="45" value="0" step="1" />
+                                <input type="range" data-role="finerot" min="-45" max="45" value="0" step="0.05" />
                                 <span class="mono" style="font-size: 10px; color: var(--ink-soft)">+45°</span>
                             </div>
                         </div>
@@ -912,7 +916,7 @@
                     <div class="toggle-row">
                         <span><span class="lbl">Cut guides</span><span class="sub">dashed outline around each card</span></span>
                         <label class="switch"
-                            ><input type="checkbox" id="toggleCuts" checked /><span class="track"><span class="thumb"></span></span
+                            ><input type="checkbox" id="toggleCuts" /><span class="track"><span class="thumb"></span></span
                         ></label>
                     </div>
                 </div>
@@ -931,10 +935,10 @@
 
             <!-- ============ STAGE ============ -->
             <main class="stage">
-                <div class="stage-topbar"><span class="stage-badge mono" id="stageBadge">Long Bond · 8.5 × 13 in — fold in half after cutting</span></div>
+                <!-- <div class="stage-topbar"><span class="stage-badge mono" id="stageBadge">Long Bond · 8.5 × 13 in — fold in half after cutting</span></div> -->
 
                 <div class="paper-scale-wrap" id="paperScaleWrap">
-                    <div class="paper show-fold show-cuts" id="paper">
+                    <div class="paper show-fold" id="paper">
                         <div class="ruler-top" id="rulerTop"></div>
                         <div class="ruler-left" id="rulerLeft"></div>
 
@@ -956,7 +960,7 @@
                             </div>
                         </div>
 
-                        <div class="fold-line"><span class="fold-tag">FOLD HERE</span></div>
+                        <div class="fold-line"><span class="fold-tag" style="display: none"></span></div>
 
                         <div class="card-slot" id="slotBack">
                             <div class="frame">
