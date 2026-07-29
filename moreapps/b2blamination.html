@@ -1,0 +1,1401 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Back to Back Lamination — Layout Tool</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <style>
+            :root {
+                --paper-bg: #faf9f5;
+                --ink: #1e2a33;
+                --ink-soft: #5c6b74;
+                --line: #cbc3ae;
+                --line-soft: #e4dfd2;
+                --laminate: #2e6e8e;
+                --laminate-soft: #e6eef2;
+                --amber: #d98c2b;
+                --amber-dark: #b5721c;
+                --card-bg: #ffffff;
+                --panel-bg: #fffefb;
+                --danger: #b6462c;
+
+                --card-w: 6in;
+                --card-h: 4in;
+                --gap: 0.05in;
+                --paper-w: 8.5in;
+                --paper-h: 13in;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+            html,
+            body {
+                height: 100%;
+            }
+            body {
+                margin: 0;
+                font-family: "IBM Plex Sans", system-ui, sans-serif;
+                background: radial-gradient(1200px 600px at 15% -10%, #f1ede2 0%, transparent 60%), var(--paper-bg);
+                color: var(--ink);
+                -webkit-font-smoothing: antialiased;
+            }
+            h1,
+            h2,
+            h3 {
+                margin: 0;
+            }
+            .mono {
+                font-family: "IBM Plex Mono", monospace;
+            }
+
+            /* ---------- App shell ---------- */
+            .app {
+                display: flex;
+                min-height: 100vh;
+            }
+
+            .sidebar {
+                width: 340px;
+                flex: 0 0 340px;
+                background: var(--panel-bg);
+                border-right: 1px solid var(--line-soft);
+                padding: 22px 20px 100px;
+                overflow-y: auto;
+                max-height: 100vh;
+                position: sticky;
+                top: 0;
+            }
+
+            .brand {
+                display: flex;
+                align-items: baseline;
+                gap: 9px;
+                margin-bottom: 4px;
+            }
+            .brand .swatch {
+                width: 11px;
+                height: 11px;
+                border-radius: 2px;
+                background: linear-gradient(135deg, var(--laminate), var(--amber));
+                flex: none;
+            }
+            .brand h1 {
+                font-size: 16.5px;
+                letter-spacing: 0.01em;
+                font-weight: 700;
+            }
+            .tagline {
+                font-family: "IBM Plex Mono", monospace;
+                font-size: 10.5px;
+                color: var(--ink-soft);
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                margin: 2px 0 22px;
+            }
+
+            .section {
+                margin-bottom: 22px;
+                padding-bottom: 20px;
+                border-bottom: 1px dashed var(--line-soft);
+            }
+            .section:last-of-type {
+                border-bottom: none;
+            }
+
+            .section-title {
+                font-family: "IBM Plex Mono", monospace;
+                font-size: 11px;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--laminate);
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 7px;
+                margin-bottom: 12px;
+            }
+            .section-title .num {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 17px;
+                height: 17px;
+                border-radius: 50%;
+                background: var(--laminate-soft);
+                color: var(--laminate);
+                font-size: 9.5px;
+                font-weight: 600;
+            }
+
+            .field {
+                margin-bottom: 12px;
+            }
+            .field:last-child {
+                margin-bottom: 0;
+            }
+            .field label {
+                display: block;
+                font-size: 12px;
+                color: var(--ink-soft);
+                margin-bottom: 5px;
+                font-weight: 500;
+            }
+            .row {
+                display: flex;
+                gap: 10px;
+            }
+            .row .field {
+                flex: 1;
+                margin-bottom: 0;
+            }
+
+            select,
+            input[type="number"],
+            input[type="text"] {
+                width: 100%;
+                padding: 8px 9px;
+                border: 1px solid var(--line);
+                border-radius: 6px;
+                background: #fff;
+                font-family: "IBM Plex Mono", monospace;
+                font-size: 13px;
+                color: var(--ink);
+            }
+            select:focus,
+            input:focus {
+                outline: 2px solid var(--laminate);
+                outline-offset: 1px;
+            }
+
+            .unit-suffix {
+                position: relative;
+            }
+            .unit-suffix::after {
+                content: "in";
+                position: absolute;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 11px;
+                color: var(--ink-soft);
+                pointer-events: none;
+            }
+            .unit-suffix input {
+                padding-right: 26px;
+            }
+
+            .btn {
+                appearance: none;
+                border: 1px solid var(--line);
+                background: #fff;
+                color: var(--ink);
+                padding: 8px 10px;
+                border-radius: 6px;
+                font-family: "IBM Plex Mono", monospace;
+                font-size: 12px;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                transition:
+                    background 0.12s,
+                    border-color 0.12s;
+            }
+            .btn:hover {
+                background: var(--laminate-soft);
+                border-color: var(--laminate);
+            }
+            .btn:active {
+                transform: translateY(1px);
+            }
+            .btn-block {
+                width: 100%;
+            }
+            .btn-icon {
+                padding: 8px;
+                width: 36px;
+                flex: none;
+            }
+            .btn svg {
+                width: 14px;
+                height: 14px;
+                flex: none;
+            }
+
+            .btn-row {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            .btn-row .btn {
+                flex: 1 1 auto;
+            }
+
+            .presets {
+                display: flex;
+                gap: 6px;
+                flex-wrap: wrap;
+            }
+            .presets .btn {
+                font-size: 11px;
+                padding: 6px 9px;
+            }
+
+            .toggle-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 8px 0;
+            }
+            .toggle-row .lbl {
+                font-size: 12.5px;
+                color: var(--ink);
+                font-weight: 500;
+            }
+            .toggle-row .sub {
+                font-size: 10.5px;
+                color: var(--ink-soft);
+                display: block;
+                margin-top: 1px;
+            }
+
+            .switch {
+                position: relative;
+                width: 38px;
+                height: 21px;
+                flex: none;
+            }
+            .switch input {
+                position: absolute;
+                opacity: 0;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                cursor: pointer;
+            }
+            .switch .track {
+                position: absolute;
+                inset: 0;
+                background: var(--line);
+                border-radius: 20px;
+                transition: background 0.15s;
+            }
+            .switch .thumb {
+                position: absolute;
+                top: 2px;
+                left: 2px;
+                width: 17px;
+                height: 17px;
+                border-radius: 50%;
+                background: #fff;
+                transition: transform 0.15s;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+            }
+            .switch input:checked + .track {
+                background: var(--laminate);
+            }
+            .switch input:checked + .track .thumb {
+                transform: translateX(17px);
+            }
+
+            /* ---------- Card control block ---------- */
+            .card-ctrl {
+                border: 1px solid var(--line-soft);
+                border-radius: 10px;
+                padding: 14px;
+                background: #fff;
+                margin-bottom: 14px;
+            }
+            .card-ctrl-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 10px;
+            }
+            .card-ctrl-head .tag {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                font-family: "IBM Plex Mono", monospace;
+                font-size: 11.5px;
+                font-weight: 600;
+            }
+            .dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+            }
+            .dot.front {
+                background: var(--amber);
+            }
+            .dot.back {
+                background: var(--laminate);
+            }
+            .filename {
+                font-size: 10.5px;
+                color: var(--ink-soft);
+                max-width: 120px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .zoom-line {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-top: 10px;
+            }
+            .zoom-line input[type="range"] {
+                flex: 1;
+            }
+            input[type="range"] {
+                accent-color: var(--laminate);
+                height: 4px;
+            }
+
+            .hint {
+                font-size: 10.5px;
+                color: var(--ink-soft);
+                line-height: 1.5;
+                margin-top: 8px;
+            }
+
+            /* ---------- Print button ---------- */
+            .print-cta {
+                position: sticky;
+                bottom: 0;
+                background: linear-gradient(180deg, rgba(255, 254, 251, 0) 0%, var(--panel-bg) 25%);
+                padding-top: 18px;
+                margin-top: -4px;
+            }
+            .print-btn {
+                width: 100%;
+                background: var(--amber);
+                border: 1px solid var(--amber-dark);
+                color: #fff;
+                font-family: "IBM Plex Mono", monospace;
+                font-weight: 600;
+                font-size: 13.5px;
+                padding: 13px 14px;
+                border-radius: 8px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 9px;
+                letter-spacing: 0.02em;
+                box-shadow: 0 2px 0 var(--amber-dark);
+            }
+            .print-btn:hover {
+                background: var(--amber-dark);
+            }
+            .print-btn:active {
+                transform: translateY(2px);
+                box-shadow: none;
+            }
+            .print-btn svg {
+                width: 16px;
+                height: 16px;
+            }
+
+            /* ---------- Stage ---------- */
+            .stage {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 36px;
+                overflow: auto;
+                min-height: 100vh;
+                position: relative;
+            }
+            .stage-topbar {
+                position: absolute;
+                top: 20px;
+                left: 0;
+                right: 0;
+                display: flex;
+                justify-content: center;
+                pointer-events: none;
+            }
+            .stage-badge {
+                font-family: "IBM Plex Mono", monospace;
+                font-size: 11px;
+                color: var(--ink-soft);
+                background: #fff;
+                border: 1px solid var(--line-soft);
+                padding: 6px 12px;
+                border-radius: 20px;
+                letter-spacing: 0.03em;
+            }
+
+            .paper-scale-wrap {
+                transform-origin: center center;
+                filter: drop-shadow(0 18px 34px rgba(30, 42, 51, 0.16));
+            }
+
+            .paper {
+                width: var(--paper-w);
+                height: var(--paper-h);
+                background: var(--card-bg);
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                background-image: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.015) 0px, rgba(0, 0, 0, 0.015) 1px, transparent 1px, transparent 6px);
+            }
+
+            /* ruler ticks along top & left, screen only */
+            .ruler-top,
+            .ruler-left {
+                position: absolute;
+                color: var(--ink-soft);
+                font-family: "IBM Plex Mono", monospace;
+                font-size: 8px;
+                pointer-events: none;
+            }
+            .ruler-top {
+                top: 4px;
+                left: 0;
+                right: 0;
+                display: flex;
+                justify-content: space-between;
+                padding: 0 6px;
+            }
+            .ruler-left {
+                left: 4px;
+                top: 0;
+                bottom: 0;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                padding: 6px 0;
+            }
+
+            .card-slot {
+                width: var(--card-w);
+                height: var(--card-h);
+                position: relative;
+                flex: none;
+                background: #f4f2ec;
+            }
+            .paper.show-cuts .frame {
+                outline: 1px dashed var(--ink-soft);
+                outline-offset: -1px;
+            }
+
+            .frame {
+                width: 100%;
+                height: 100%;
+                position: relative;
+                overflow: hidden;
+            }
+            .img-wrap {
+                width: 100%;
+                height: 100%;
+                position: relative;
+                overflow: hidden;
+                cursor: grab;
+                touch-action: none;
+            }
+            .img-wrap img {
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                max-width: none;
+                max-height: none;
+                user-select: none;
+                -webkit-user-drag: none;
+                display: block;
+            }
+
+            .dropzone {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                border: 2px dashed var(--line);
+                background: #f4f2ec;
+                color: var(--ink-soft);
+                cursor: pointer;
+                text-align: center;
+                padding: 10px;
+                transition:
+                    border-color 0.12s,
+                    background 0.12s;
+            }
+            .dropzone svg {
+                width: 26px;
+                height: 26px;
+                stroke: var(--ink-soft);
+            }
+            .dropzone .dz-title {
+                font-size: 12.5px;
+                font-weight: 600;
+                color: var(--ink);
+            }
+            .dropzone .dz-sub {
+                font-size: 10.5px;
+                max-width: 80%;
+            }
+            .dropzone.drag-over {
+                border-color: var(--laminate);
+                background: var(--laminate-soft);
+            }
+            .card-slot.has-image .dropzone {
+                display: none;
+            }
+
+            .corner-label {
+                position: absolute;
+                top: 0;
+                left: 0;
+                background: rgba(30, 42, 51, 0.78);
+                color: #fff;
+                font-family: "IBM Plex Mono", monospace;
+                font-size: 9.5px;
+                padding: 3px 7px;
+                letter-spacing: 0.03em;
+                border-bottom-right-radius: 6px;
+                z-index: 3;
+                pointer-events: none;
+            }
+            .card-slot.has-image .corner-label {
+                opacity: 0;
+                transition: opacity 0.15s;
+            }
+            .card-slot.has-image:hover .corner-label {
+                opacity: 1;
+            }
+
+            .change-btn {
+                position: absolute;
+                bottom: 6px;
+                right: 6px;
+                z-index: 3;
+                font-size: 10px;
+                padding: 5px 8px;
+                background: rgba(255, 255, 255, 0.92);
+                opacity: 0;
+                transition: opacity 0.15s;
+            }
+            .card-slot.has-image:hover .change-btn {
+                opacity: 1;
+            }
+
+            /* fold line */
+            .fold-line {
+                height: var(--gap);
+                align-self: stretch;
+                position: relative;
+                flex: none;
+            }
+            .fold-line::before {
+                content: "";
+                position: absolute;
+                top: 50%;
+                left: 6px;
+                right: 6px;
+                border-top: 1.4px dashed var(--laminate);
+                transform: translateY(-50%);
+            }
+            .fold-tag {
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                font-family: "IBM Plex Mono", monospace;
+                font-size: 8px;
+                letter-spacing: 0.14em;
+                color: var(--laminate);
+                background: var(--paper-bg);
+                padding: 3px 6px;
+                white-space: nowrap;
+            }
+            .paper:not(.show-fold) .fold-line::before,
+            .paper:not(.show-fold) .fold-tag {
+                display: none;
+            }
+
+            /* ---------- responsive ---------- */
+            @media (max-width: 900px) {
+                .app {
+                    flex-direction: column;
+                }
+                .sidebar {
+                    width: 100%;
+                    flex: none;
+                    max-height: none;
+                    position: relative;
+                    border-right: none;
+                    border-bottom: 1px solid var(--line-soft);
+                }
+                .stage {
+                    min-height: 70vh;
+                    padding: 24px 12px;
+                }
+            }
+
+            /* ---------- print ---------- */
+            @media print {
+                body {
+                    background: #fff !important;
+                }
+                .sidebar,
+                .stage-topbar,
+                .corner-label,
+                .change-btn {
+                    display: none !important;
+                }
+                .app {
+                    display: block;
+                }
+                .stage {
+                    padding: 0;
+                    min-height: auto;
+                    display: block;
+                    overflow: visible;
+                }
+                .paper-scale-wrap {
+                    transform: none !important;
+                    filter: none !important;
+                }
+                .paper {
+                    box-shadow: none !important;
+                    background-image: none !important;
+                }
+                .dropzone {
+                    display: none !important;
+                }
+                .card-slot {
+                    background: #fff !important;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="app">
+            <!-- ============ SIDEBAR ============ -->
+            <aside class="sidebar">
+                <div class="brand">
+                    <span class="swatch"></span>
+                    <h1>Back to Back Lamination</h1>
+                </div>
+                <div class="tagline">side-by-side print layout · fold &amp; laminate</div>
+
+                <!-- Paper -->
+                <div class="section">
+                    <div class="section-title"><span class="num">1</span>Paper</div>
+                    <div class="field">
+                        <label for="paperSize">Sheet size</label>
+                        <select id="paperSize">
+                            <option value="8.5x13" selected>Long Bond — 8.5 × 13 in</option>
+                            <option value="8.5x11">Short Bond — 8.5 × 11 in</option>
+                            <option value="8.5x14">Legal — 8.5 × 14 in</option>
+                            <option value="8.27x11.69">A4 — 8.27 × 11.69 in</option>
+                            <option value="custom">Custom…</option>
+                        </select>
+                    </div>
+                    <div class="row" id="customPaperRow" style="display: none; margin-top: 10px">
+                        <div class="field">
+                            <label for="paperW">Width</label>
+                            <div class="unit-suffix"><input type="number" id="paperW" step="0.05" value="8.5" /></div>
+                        </div>
+                        <div class="field">
+                            <label for="paperH">Height</label>
+                            <div class="unit-suffix"><input type="number" id="paperH" step="0.05" value="13" /></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card size -->
+                <div class="section">
+                    <div class="section-title"><span class="num">2</span>Card dimensions</div>
+                    <div class="row">
+                        <div class="field">
+                            <label for="cardW">Width</label>
+                            <div class="unit-suffix"><input type="number" id="cardW" step="0.05" min="0.5" value="6" /></div>
+                        </div>
+                        <div class="field">
+                            <label for="cardH">Height</label>
+                            <div class="unit-suffix"><input type="number" id="cardH" step="0.05" min="0.5" value="4" /></div>
+                        </div>
+                    </div>
+                    <div class="field" style="margin-top: 10px">
+                        <label>Presets</label>
+                        <div class="presets">
+                            <button class="btn" data-preset="6,4">6 × 4 (default)</button>
+                            <button class="btn" data-preset="4,6">4 × 6</button>
+                            <button class="btn" data-preset="3.5,2.2">License 3.5 × 2.2</button>
+                            <button class="btn" data-preset="3.375,2.125">ID/Card 3.4 × 2.1</button>
+                        </div>
+                    </div>
+                    <div class="field" style="margin-top: 10px">
+                        <button class="btn btn-block" id="swapWH">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                <path d="M7 16V4M7 4L3 8M7 4l4 4" />
+                                <path d="M17 8v12m0 0l4-4m-4 4l-4-4" />
+                            </svg>
+                            Swap width / height
+                        </button>
+                    </div>
+                    <div class="field" style="margin-top: 10px">
+                        <label for="gapIn">Fold gap between cards</label>
+                        <div class="unit-suffix"><input type="number" id="gapIn" step="0.05" min="0.05" max="1" value="0.05" /></div>
+                    </div>
+                </div>
+
+                <!-- Front card -->
+                <div class="section">
+                    <div class="section-title"><span class="num">3</span>Documents</div>
+
+                    <div class="card-ctrl" data-card="front">
+                        <div class="card-ctrl-head">
+                            <span class="tag"><span class="dot front"></span>DOC&nbsp;1 · e.g. OR</span>
+                            <span class="filename" data-role="filename">no file</span>
+                        </div>
+                        <div class="btn-row">
+                            <button class="btn" data-action="upload">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                    <path d="M12 16V4m0 0L7 9m5-5l5 5" />
+                                    <path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3" />
+                                </svg>
+                                Upload
+                            </button>
+                            <button class="btn btn-icon" data-action="rotate-l" title="Rotate left">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 12a9 9 0 1 0 3-6.7" />
+                                    <path d="M3 4v5h5" />
+                                </svg>
+                            </button>
+                            <button class="btn btn-icon" data-action="rotate-r" title="Rotate right">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12a9 9 0 1 1-3-6.7" />
+                                    <path d="M21 4v5h-5" />
+                                </svg>
+                            </button>
+                            <button class="btn btn-icon" data-action="reset" title="Reset">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 4v6h6" />
+                                    <path d="M3.5 15a9 9 0 1 0 2-9.5L1 10" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="zoom-line">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="10" cy="10" r="6" />
+                                <path d="M21 21l-4.3-4.3" />
+                                <path d="M8 10h4" />
+                            </svg>
+                            <input type="range" data-role="zoom" min="0" max="100" value="0" />
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="10" cy="10" r="6" />
+                                <path d="M21 21l-4.3-4.3" />
+                                <path d="M10 8v4M8 10h4" />
+                            </svg>
+                        </div>
+
+                        <div class="field" style="margin-top: 10px">
+                            <label>Straighten <span class="mono" data-role="finerotVal" style="color: var(--ink-soft); font-weight: 400">0°</span></label>
+                            <div class="zoom-line">
+                                <span class="mono" style="font-size: 10px; color: var(--ink-soft)">-45°</span>
+                                <input type="range" data-role="finerot" min="-45" max="45" value="0" step="1" />
+                                <span class="mono" style="font-size: 10px; color: var(--ink-soft)">+45°</span>
+                            </div>
+                        </div>
+
+                        <div class="toggle-row">
+                            <span>
+                                <span class="lbl">Stretch to fill</span>
+                                <span class="sub">off = crop &amp; pan · on = fill frame exactly</span>
+                            </span>
+                            <label class="switch"
+                                ><input type="checkbox" data-role="stretch" /><span class="track"><span class="thumb"></span></span
+                            ></label>
+                        </div>
+
+                        <input type="file" accept="image/*" data-role="file" hidden />
+                    </div>
+
+                    <div class="card-ctrl" data-card="back">
+                        <div class="card-ctrl-head">
+                            <span class="tag"><span class="dot back"></span>DOC&nbsp;2 · e.g. CR</span>
+                            <span class="filename" data-role="filename">no file</span>
+                        </div>
+                        <div class="btn-row">
+                            <button class="btn" data-action="upload">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                    <path d="M12 16V4m0 0L7 9m5-5l5 5" />
+                                    <path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3" />
+                                </svg>
+                                Upload
+                            </button>
+                            <button class="btn btn-icon" data-action="rotate-l" title="Rotate left">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 12a9 9 0 1 0 3-6.7" />
+                                    <path d="M3 4v5h5" />
+                                </svg>
+                            </button>
+                            <button class="btn btn-icon" data-action="rotate-r" title="Rotate right">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12a9 9 0 1 1-3-6.7" />
+                                    <path d="M21 4v5h-5" />
+                                </svg>
+                            </button>
+                            <button class="btn btn-icon" data-action="reset" title="Reset">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 4v6h6" />
+                                    <path d="M3.5 15a9 9 0 1 0 2-9.5L1 10" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="zoom-line">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="10" cy="10" r="6" />
+                                <path d="M21 21l-4.3-4.3" />
+                                <path d="M8 10h4" />
+                            </svg>
+                            <input type="range" data-role="zoom" min="0" max="100" value="0" />
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="10" cy="10" r="6" />
+                                <path d="M21 21l-4.3-4.3" />
+                                <path d="M10 8v4M8 10h4" />
+                            </svg>
+                        </div>
+
+                        <div class="toggle-row">
+                            <span>
+                                <span class="lbl">Stretch to fill</span>
+                                <span class="sub">off = crop &amp; pan · on = fill frame exactly</span>
+                            </span>
+                            <label class="switch"
+                                ><input type="checkbox" data-role="stretch" /><span class="track"><span class="thumb"></span></span
+                            ></label>
+                        </div>
+
+                        <div class="field" style="margin-top: 10px">
+                            <label>Straighten <span class="mono" data-role="finerotVal" style="color: var(--ink-soft); font-weight: 400">0°</span></label>
+                            <div class="zoom-line">
+                                <span class="mono" style="font-size: 10px; color: var(--ink-soft)">-45°</span>
+                                <input type="range" data-role="finerot" min="-45" max="45" value="0" step="1" />
+                                <span class="mono" style="font-size: 10px; color: var(--ink-soft)">+45°</span>
+                            </div>
+                        </div>
+
+                        <input type="file" accept="image/*" data-role="file" hidden />
+                    </div>
+
+                    <div class="hint">Drag inside an uploaded image to reposition it. Scroll, or use the slider, to zoom. Rotation snaps in 90° steps.</div>
+                </div>
+
+                <!-- Guides -->
+                <div class="section">
+                    <div class="section-title"><span class="num">4</span>Guides</div>
+                    <div class="toggle-row">
+                        <span><span class="lbl">Fold line</span><span class="sub">dashed guide down the middle</span></span>
+                        <label class="switch"
+                            ><input type="checkbox" id="toggleFold" checked /><span class="track"><span class="thumb"></span></span
+                        ></label>
+                    </div>
+                    <div class="toggle-row">
+                        <span><span class="lbl">Cut guides</span><span class="sub">dashed outline around each card</span></span>
+                        <label class="switch"
+                            ><input type="checkbox" id="toggleCuts" checked /><span class="track"><span class="thumb"></span></span
+                        ></label>
+                    </div>
+                </div>
+
+                <div class="print-cta">
+                    <button class="print-btn" id="printBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 9V2h12v7" />
+                            <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" />
+                            <path d="M6 14h12v8H6z" />
+                        </svg>
+                        Print layout
+                    </button>
+                </div>
+            </aside>
+
+            <!-- ============ STAGE ============ -->
+            <main class="stage">
+                <div class="stage-topbar"><span class="stage-badge mono" id="stageBadge">Long Bond · 8.5 × 13 in — fold in half after cutting</span></div>
+
+                <div class="paper-scale-wrap" id="paperScaleWrap">
+                    <div class="paper show-fold show-cuts" id="paper">
+                        <div class="ruler-top" id="rulerTop"></div>
+                        <div class="ruler-left" id="rulerLeft"></div>
+
+                        <div class="card-slot" id="slotFront">
+                            <div class="frame">
+                                <div class="dropzone" data-card="front">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+                                        <path d="M12 16V4m0 0L7 9m5-5l5 5" />
+                                        <path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3" />
+                                    </svg>
+                                    <span class="dz-title">Upload DOC 1</span>
+                                    <span class="dz-sub">e.g. Official Receipt (OR) — click or drop image</span>
+                                </div>
+                                <div class="img-wrap" data-card="front">
+                                    <img draggable="false" alt="" />
+                                </div>
+                                <span class="corner-label">DOC 1 · OR</span>
+                                <button class="btn change-btn" data-action="upload" data-card="front">Change</button>
+                            </div>
+                        </div>
+
+                        <div class="fold-line"><span class="fold-tag">FOLD HERE</span></div>
+
+                        <div class="card-slot" id="slotBack">
+                            <div class="frame">
+                                <div class="dropzone" data-card="back">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+                                        <path d="M12 16V4m0 0L7 9m5-5l5 5" />
+                                        <path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3" />
+                                    </svg>
+                                    <span class="dz-title">Upload DOC 2</span>
+                                    <span class="dz-sub">e.g. Certificate of Registration (CR) — click or drop image</span>
+                                </div>
+                                <div class="img-wrap" data-card="back">
+                                    <img draggable="false" alt="" />
+                                </div>
+                                <span class="corner-label">DOC 2 · CR</span>
+                                <button class="btn change-btn" data-action="upload" data-card="back">Change</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <style id="pageSizeStyle"></style>
+
+        <script>
+            (function () {
+                "use strict";
+
+                const root = document.documentElement;
+                const paperEl = document.getElementById("paper");
+                const paperScaleWrap = document.getElementById("paperScaleWrap");
+                const stageBadge = document.getElementById("stageBadge");
+                const pageSizeStyle = document.getElementById("pageSizeStyle");
+
+                const paperSizes = {
+                    "8.5x13": { w: 8.5, h: 13, label: "Long Bond · 8.5 × 13 in" },
+                    "8.5x11": { w: 8.5, h: 11, label: "Short Bond · 8.5 × 11 in" },
+                    "8.5x14": { w: 8.5, h: 14, label: "Legal · 8.5 × 14 in" },
+                    "8.27x11.69": { w: 8.27, h: 11.69, label: "A4 · 8.27 × 11.69 in" },
+                };
+
+                let paperW = 8.5,
+                    paperH = 13;
+                let paperScale = 1;
+
+                function clamp(v, min, max) {
+                    return Math.max(min, Math.min(max, v));
+                }
+
+                /* ---------------- Card state ---------------- */
+                function makeCard(key) {
+                    const ctrl = document.querySelector('.card-ctrl[data-card="' + key + '"]');
+                    const slot = document.getElementById(key === "front" ? "slotFront" : "slotBack");
+                    return {
+                        key,
+                        ctrl,
+                        slot,
+                        dropzone: slot.querySelector(".dropzone"),
+                        wrap: slot.querySelector(".img-wrap"),
+                        img: slot.querySelector(".img-wrap img"),
+                        fileInput: ctrl.querySelector('[data-role="file"]'),
+                        filenameEl: ctrl.querySelector('[data-role="filename"]'),
+                        zoomSlider: ctrl.querySelector('[data-role="zoom"]'),
+                        stretchToggle: ctrl.querySelector('[data-role="stretch"]'),
+                        fineRotSlider: ctrl.querySelector('[data-role="finerot"]'),
+                        fineRotVal: ctrl.querySelector('[data-role="finerotVal"]'),
+                        natW: 0,
+                        natH: 0,
+                        hasImage: false,
+                        mode: "crop",
+                        scale: 1,
+                        minScale: 1,
+                        tx: 0,
+                        ty: 0,
+                        baseRot: 0,
+                        fineRot: 0,
+                        dragging: false,
+                        startX: 0,
+                        startY: 0,
+                        startTx: 0,
+                        startTy: 0,
+                    };
+                }
+
+                const cards = { front: makeCard("front"), back: makeCard("back") };
+
+                function frameLocalSize(card) {
+                    return { w: card.wrap.offsetWidth, h: card.wrap.offsetHeight };
+                }
+
+                function isSwapped(card) {
+                    const r = ((card.baseRot % 360) + 360) % 360;
+                    return r === 90 || r === 270;
+                }
+
+                function minScaleFor(card) {
+                    const f = frameLocalSize(card);
+                    if (!card.natW || !card.natH) return 1;
+                    const theta = ((card.baseRot + (card.fineRot || 0)) * Math.PI) / 180;
+                    const c = Math.abs(Math.cos(theta));
+                    const s = Math.abs(Math.sin(theta));
+                    const bw = f.w * c + f.h * s;
+                    const bh = f.w * s + f.h * c;
+                    return Math.max(bw / card.natW, bh / card.natH) * 1.001;
+                }
+
+                function render(card) {
+                    if (!card.hasImage) return;
+                    if (card.mode === "crop") {
+                        const totalRot = card.baseRot + (card.fineRot || 0);
+                        card.img.style.width = card.natW + "px";
+                        card.img.style.height = card.natH + "px";
+                        card.img.style.transform = "translate(-50%,-50%) translate(" + card.tx + "px," + card.ty + "px) rotate(" + totalRot + "deg) scale(" + card.scale + ")";
+                    } else {
+                        const f = frameLocalSize(card);
+                        let w = f.w,
+                            h = f.h;
+                        if (isSwapped(card)) {
+                            w = f.h;
+                            h = f.w;
+                        }
+                        card.img.style.width = w + "px";
+                        card.img.style.height = h + "px";
+                        card.img.style.transform = "translate(-50%,-50%) rotate(" + card.baseRot + "deg)";
+                    }
+                }
+
+                function fitCover(card) {
+                    card.minScale = minScaleFor(card);
+                    card.scale = card.minScale;
+                    card.tx = 0;
+                    card.ty = 0;
+                    syncZoomSlider(card);
+                }
+
+                function syncZoomSlider(card) {
+                    const maxScale = card.minScale * 6;
+                    const pct = card.minScale >= maxScale ? 0 : clamp(((card.scale - card.minScale) / (maxScale - card.minScale)) * 100, 0, 100);
+                    card.zoomSlider.value = pct;
+                }
+
+                function applyZoomFromSlider(card) {
+                    const maxScale = card.minScale * 6;
+                    const pct = Number(card.zoomSlider.value) / 100;
+                    card.scale = card.minScale + pct * (maxScale - card.minScale);
+                    render(card);
+                }
+
+                function loadFile(card, file) {
+                    if (!file || !file.type.startsWith("image/")) return;
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        const img = new Image();
+                        img.onload = function () {
+                            card.natW = img.naturalWidth;
+                            card.natH = img.naturalHeight;
+                            card.img.src = e.target.result;
+                            card.hasImage = true;
+                            card.baseRot = 0;
+                            card.mode = card.stretchToggle.checked ? "stretch" : "crop";
+                            card.slot.classList.add("has-image");
+                            fitCover(card);
+                            render(card);
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                    card.filenameEl.textContent = file.name.length > 18 ? file.name.slice(0, 15) + "…" : file.name;
+                }
+
+                function syncFineRotUI(card) {
+                    card.fineRotSlider.value = card.fineRot;
+                    card.fineRotVal.textContent = (card.fineRot > 0 ? "+" : "") + card.fineRot + "°";
+                    card.fineRotSlider.disabled = card.mode !== "crop";
+                }
+
+                function resetCard(card) {
+                    card.baseRot = 0;
+                    card.fineRot = 0;
+                    card.mode = "crop";
+                    card.stretchToggle.checked = false;
+                    syncFineRotUI(card);
+                    if (card.hasImage) fitCover(card);
+                    render(card);
+                }
+
+                function rotateCard(card, dir) {
+                    card.baseRot = (((card.baseRot + dir * 90) % 360) + 360) % 360;
+                    if (card.mode === "crop") {
+                        const ms = minScaleFor(card);
+                        card.minScale = ms;
+                        if (card.scale < ms) card.scale = ms;
+                        card.tx = 0;
+                        card.ty = 0;
+                        syncZoomSlider(card);
+                    }
+                    render(card);
+                }
+
+                /* ---------------- wire up interactions per card ---------------- */
+                Object.values(cards).forEach(function (card) {
+                    card.dropzone.addEventListener("click", function () {
+                        card.fileInput.click();
+                    });
+                    card.ctrl.querySelector('[data-action="upload"]').addEventListener("click", function () {
+                        card.fileInput.click();
+                    });
+                    card.slot.querySelector(".change-btn").addEventListener("click", function () {
+                        card.fileInput.click();
+                    });
+
+                    card.fileInput.addEventListener("change", function (e) {
+                        if (e.target.files && e.target.files[0]) loadFile(card, e.target.files[0]);
+                    });
+
+                    ["dragover", "dragenter"].forEach(function (evt) {
+                        card.dropzone.addEventListener(evt, function (e) {
+                            e.preventDefault();
+                            card.dropzone.classList.add("drag-over");
+                        });
+                    });
+                    ["dragleave", "dragend"].forEach(function (evt) {
+                        card.dropzone.addEventListener(evt, function (e) {
+                            card.dropzone.classList.remove("drag-over");
+                        });
+                    });
+                    card.dropzone.addEventListener("drop", function (e) {
+                        e.preventDefault();
+                        card.dropzone.classList.remove("drag-over");
+                        if (e.dataTransfer.files && e.dataTransfer.files[0]) loadFile(card, e.dataTransfer.files[0]);
+                    });
+
+                    card.ctrl.querySelector('[data-action="rotate-l"]').addEventListener("click", function () {
+                        rotateCard(card, -1);
+                    });
+                    card.ctrl.querySelector('[data-action="rotate-r"]').addEventListener("click", function () {
+                        rotateCard(card, 1);
+                    });
+                    card.ctrl.querySelector('[data-action="reset"]').addEventListener("click", function () {
+                        resetCard(card);
+                    });
+
+                    card.stretchToggle.addEventListener("change", function () {
+                        card.mode = card.stretchToggle.checked ? "stretch" : "crop";
+                        card.fineRotSlider.disabled = card.mode !== "crop";
+                        if (card.hasImage) {
+                            if (card.mode === "crop") fitCover(card);
+                            render(card);
+                        }
+                    });
+
+                    card.zoomSlider.addEventListener("input", function () {
+                        if (card.mode !== "crop" || !card.hasImage) return;
+                        applyZoomFromSlider(card);
+                    });
+
+                    card.fineRotSlider.addEventListener("input", function () {
+                        card.fineRot = Number(card.fineRotSlider.value);
+                        card.fineRotVal.textContent = (card.fineRot > 0 ? "+" : "") + card.fineRot + "°";
+                        if (card.mode !== "crop" || !card.hasImage) return;
+                        const ms = minScaleFor(card);
+                        card.minScale = ms;
+                        if (card.scale < ms) card.scale = ms;
+                        syncZoomSlider(card);
+                        render(card);
+                    });
+
+                    card.wrap.addEventListener(
+                        "wheel",
+                        function (e) {
+                            if (card.mode !== "crop" || !card.hasImage) return;
+                            e.preventDefault();
+                            const factor = e.deltaY < 0 ? 1.08 : 0.93;
+                            const maxScale = card.minScale * 6;
+                            card.scale = clamp(card.scale * factor, card.minScale, maxScale);
+                            syncZoomSlider(card);
+                            render(card);
+                        },
+                        { passive: false },
+                    );
+
+                    card.wrap.addEventListener("pointerdown", function (e) {
+                        if (card.mode !== "crop" || !card.hasImage) return;
+                        card.dragging = true;
+                        card.startX = e.clientX;
+                        card.startY = e.clientY;
+                        card.startTx = card.tx;
+                        card.startTy = card.ty;
+                        card.wrap.setPointerCapture(e.pointerId);
+                        card.wrap.style.cursor = "grabbing";
+                    });
+                    card.wrap.addEventListener("pointermove", function (e) {
+                        if (!card.dragging) return;
+                        card.tx = card.startTx + (e.clientX - card.startX) / paperScale;
+                        card.ty = card.startTy + (e.clientY - card.startY) / paperScale;
+                        render(card);
+                    });
+                    ["pointerup", "pointerleave", "pointercancel"].forEach(function (evt) {
+                        card.wrap.addEventListener(evt, function () {
+                            card.dragging = false;
+                            card.wrap.style.cursor = "grab";
+                        });
+                    });
+                });
+
+                /* ---------------- dimension controls ---------------- */
+                const cardWInput = document.getElementById("cardW");
+                const cardHInput = document.getElementById("cardH");
+                const gapInput = document.getElementById("gapIn");
+
+                function applyDims() {
+                    const w = clamp(Number(cardWInput.value) || 6, 0.5, 20);
+                    const h = clamp(Number(cardHInput.value) || 4, 0.5, 20);
+                    const g = clamp(Number(gapInput.value) || 0.05, 0.05, 2);
+                    root.style.setProperty("--card-w", w + "in");
+                    root.style.setProperty("--card-h", h + "in");
+                    root.style.setProperty("--gap", g + "in");
+                    requestAnimationFrame(function () {
+                        Object.values(cards).forEach(function (card) {
+                            if (card.hasImage && card.mode === "crop") {
+                                const ms = minScaleFor(card);
+                                card.minScale = ms;
+                                if (card.scale < ms) card.scale = ms;
+                                syncZoomSlider(card);
+                            }
+                            render(card);
+                        });
+                        fitPaperToStage();
+                    });
+                }
+                cardWInput.addEventListener("input", applyDims);
+                cardHInput.addEventListener("input", applyDims);
+                gapInput.addEventListener("input", applyDims);
+
+                document.querySelectorAll("[data-preset]").forEach(function (btn) {
+                    btn.addEventListener("click", function () {
+                        const parts = btn.getAttribute("data-preset").split(",");
+                        cardWInput.value = parts[0];
+                        cardHInput.value = parts[1];
+                        applyDims();
+                    });
+                });
+
+                document.getElementById("swapWH").addEventListener("click", function () {
+                    const w = cardWInput.value;
+                    cardWInput.value = cardHInput.value;
+                    cardHInput.value = w;
+                    applyDims();
+                });
+
+                /* ---------------- paper size ---------------- */
+                const paperSizeSelect = document.getElementById("paperSize");
+                const customPaperRow = document.getElementById("customPaperRow");
+                const paperWInput = document.getElementById("paperW");
+                const paperHInput = document.getElementById("paperH");
+
+                function buildRulers() {
+                    const rulerTop = document.getElementById("rulerTop");
+                    const rulerLeft = document.getElementById("rulerLeft");
+                    rulerTop.innerHTML = "";
+                    rulerLeft.innerHTML = "";
+                    const stepsW = Math.floor(paperW);
+                    const stepsH = Math.floor(paperH);
+                    for (let i = 0; i <= stepsW; i++) {
+                        const s = document.createElement("span");
+                        s.textContent = i;
+                        rulerTop.appendChild(s);
+                    }
+                    for (let i = 0; i <= stepsH; i++) {
+                        const s = document.createElement("span");
+                        s.textContent = i;
+                        rulerLeft.appendChild(s);
+                    }
+                }
+
+                function applyPaperSize() {
+                    const val = paperSizeSelect.value;
+                    if (val === "custom") {
+                        customPaperRow.style.display = "flex";
+                        paperW = clamp(Number(paperWInput.value) || 8.5, 3, 40);
+                        paperH = clamp(Number(paperHInput.value) || 13, 3, 40);
+                        stageBadge.textContent = "Custom · " + paperW + " × " + paperH + " in — fold in half after cutting";
+                    } else {
+                        customPaperRow.style.display = "none";
+                        const p = paperSizes[val];
+                        paperW = p.w;
+                        paperH = p.h;
+                        stageBadge.textContent = p.label + " — fold in half after cutting";
+                    }
+                    root.style.setProperty("--paper-w", paperW + "in");
+                    root.style.setProperty("--paper-h", paperH + "in");
+                    buildRulers();
+                    requestAnimationFrame(fitPaperToStage);
+                }
+                paperSizeSelect.addEventListener("change", applyPaperSize);
+                paperWInput.addEventListener("input", applyPaperSize);
+                paperHInput.addEventListener("input", applyPaperSize);
+
+                /* ---------------- guides ---------------- */
+                document.getElementById("toggleFold").addEventListener("change", function (e) {
+                    paperEl.classList.toggle("show-fold", e.target.checked);
+                });
+                document.getElementById("toggleCuts").addEventListener("change", function (e) {
+                    paperEl.classList.toggle("show-cuts", e.target.checked);
+                });
+
+                /* ---------------- stage scaling ---------------- */
+                function fitPaperToStage() {
+                    const stage = document.querySelector(".stage");
+                    const availW = stage.clientWidth - 60;
+                    const availH = stage.clientHeight - 60;
+                    const pxW = paperW * 96;
+                    const pxH = paperH * 96;
+                    paperScale = Math.min(availW / pxW, availH / pxH, 1);
+                    paperScaleWrap.style.transform = "scale(" + paperScale + ")";
+                }
+                window.addEventListener("resize", function () {
+                    clearTimeout(window.__rfit);
+                    window.__rfit = setTimeout(fitPaperToStage, 80);
+                });
+
+                /* ---------------- print ---------------- */
+                document.getElementById("printBtn").addEventListener("click", function () {
+                    const missing = [];
+                    if (!cards.front.hasImage) missing.push("DOC 1");
+                    if (!cards.back.hasImage) missing.push("DOC 2");
+                    if (missing.length) {
+                        const ok = confirm(missing.join(" and ") + " still empty. Print anyway?");
+                        if (!ok) return;
+                    }
+                    pageSizeStyle.textContent = "@page{ size: " + paperW + "in " + paperH + "in; margin:0; }";
+                    window.print();
+                });
+
+                /* ---------------- init ---------------- */
+                buildRulers();
+                requestAnimationFrame(fitPaperToStage);
+            })();
+        </script>
+    </body>
+</html>
