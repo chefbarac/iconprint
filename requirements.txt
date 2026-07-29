@@ -1,0 +1,4 @@
+flask
+flask-cors
+pywin32
+pillow

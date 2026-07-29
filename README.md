@@ -42,3 +42,7 @@ console.error("SW registration failed:", err);
                 });
             }
         </script>`
+
+`source .venv/scripts/activate`
+
+`pip install flask flask-cors pywin32 pillow`

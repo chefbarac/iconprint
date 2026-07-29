@@ -724,17 +724,43 @@
                                 <path d="M8 11V3M4.5 6.5 8 3l3.5 3.5" />
                                 <path d="M2 13h12" />
                             </svg>
-                            Top scan
+                            Upload Top
                         </button>
                         <button class="btn" id="upload2">
                             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
                                 <path d="M8 11V3M4.5 6.5 8 3l3.5 3.5" />
                                 <path d="M2 13h12" />
                             </svg>
-                            Bottom scan
+                            Upload Bottom
                         </button>
                         <input type="file" id="file1" accept="image/*" hidden />
                         <input type="file" id="file2" accept="image/*" hidden />
+
+                        or
+
+                        <button class="btn" id="scanTop" title="Only works if the scan file is running locally.">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+                                <!-- Scanner body -->
+                                <rect x="3" y="5" width="10" height="6" rx="1.2" />
+                                <!-- Upload arrow -->
+                                <path d="M8 7V1.8M5.8 4 8 1.8 10.2 4" />
+                                <!-- Output paper -->
+                                <path d="M5 12.5h6" />
+                            </svg>
+                            Scan Top
+                        </button>
+
+                        <button class="btn" id="scanBottom" title="Only works if scan.py file is running locally.">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+                                <!-- Scanner body -->
+                                <rect x="3" y="5" width="10" height="6" rx="1.2" />
+                                <!-- Upload arrow -->
+                                <path d="M8 7V1.8M5.8 4 8 1.8 10.2 4" />
+                                <!-- Output paper -->
+                                <path d="M5 12.5h6" />
+                            </svg>
+                            Scan Bottom
+                        </button>
                     </div>
 
                     <button class="btn accent" id="autoFit">
@@ -865,6 +891,8 @@
                     upload2: document.getElementById("upload2"),
                     file1: document.getElementById("file1"),
                     file2: document.getElementById("file2"),
+                    scanTop: document.getElementById("scanTop"),
+                    scanBottom: document.getElementById("scanBottom"),
                     autoFit: document.getElementById("autoFit"),
                     resetBtn: document.getElementById("resetBtn"),
                     downloadBtn: document.getElementById("downloadBtn"),
@@ -1253,12 +1281,37 @@
                 // ---------- Uploads ----------
                 els.upload1.addEventListener("click", () => els.file1.click());
                 els.upload2.addEventListener("click", () => els.file2.click());
+                els.scanTop.addEventListener("click", async (e) => {
+                    els.scanTop.disabled = true;
+                    els.scanBottom.disabled = true;
+                    requestAnimationFrame(async () => {
+                        await callScanner("top");
+                        els.scanTop.disabled = false;
+                        els.scanBottom.disabled = false;
+                    });
+                });
+                els.scanBottom.addEventListener("click", async (e) => {
+                    els.scanTop.disabled = true;
+                    els.scanBottom.disabled = true;
+                    requestAnimationFrame(async () => {
+                        await callScanner("bottom");
+                        els.scanTop.disabled = false;
+                        els.scanBottom.disabled = false;
+                    });
+                });
                 els.file1.addEventListener("change", (e) => {
                     if (e.target.files[0]) loadFile(e.target.files[0], "top");
                 });
                 els.file2.addEventListener("change", (e) => {
                     if (e.target.files[0]) loadFile(e.target.files[0], "bottom");
                 });
+
+                async function callScanner(section) {
+                    const res = await fetch("http://localhost:5001/scan", { method: "POST" });
+                    const blob = await res.blob();
+                    const file = new File([blob], `${section}.png`, { type: "image/png" });
+                    loadFile(file, section);
+                }
 
                 els.autoFit.addEventListener("click", autoFitStitch);
 
