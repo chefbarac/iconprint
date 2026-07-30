@@ -21,682 +21,690 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <style>
-            :root {
-                --paper-bg: #faf9f5;
-                --ink: #1e2a33;
-                --ink-soft: #5c6b74;
-                --line: #cbc3ae;
-                --line-soft: #e4dfd2;
-                --laminate: #2e6e8e;
-                --laminate-soft: #e6eef2;
-                --amber: #d98c2b;
-                --amber-dark: #b5721c;
-                --card-bg: #ffffff;
-                --panel-bg: #fffefb;
-                --danger: #b6462c;
+                        :root {
+                            --paper-bg: #faf9f5;
+                            --ink: #1e2a33;
+                            --ink-soft: #5c6b74;
+                            --line: #cbc3ae;
+                            --line-soft: #e4dfd2;
+                            --laminate: #2e6e8e;
+                            --laminate-soft: #e6eef2;
+                            --amber: #d98c2b;
+                            --amber-dark: #b5721c;
+                            --card-bg: #ffffff;
+                            --panel-bg: #fffefb;
+                            --danger: #b6462c;
 
-                --card-w: 6in;
-                --card-h: 4in;
-                --gap: 0.05in;
-                --paper-w: 8.5in;
-                --paper-h: 13in;
-            }
+                            --card-w: 6in;
+                            --card-h: 4in;
+                            --gap: 0in;
+                            --paper-w: 8.5in;
+                            --paper-h: 13in;
+                        }
 
-            * {
-                box-sizing: border-box;
-            }
-            html,
-            body {
-                height: 100%;
-            }
-            body {
-                margin: 0;
-                font-family: "IBM Plex Sans", system-ui, sans-serif;
-                background: radial-gradient(1200px 600px at 15% -10%, #f1ede2 0%, transparent 60%), var(--paper-bg);
-                color: var(--ink);
-                -webkit-font-smoothing: antialiased;
-            }
-            h1,
-            h2,
-            h3 {
-                margin: 0;
-            }
-            .mono {
-                font-family: "IBM Plex Mono", monospace;
-            }
+                        * {
+                            box-sizing: border-box;
+                        }
+                        html,
+                        body {
+                            height: 100%;
+                        }
+                        body {
+                            margin: 0;
+                            font-family: "IBM Plex Sans", system-ui, sans-serif;
+                            background: radial-gradient(1200px 600px at 15% -10%, #f1ede2 0%, transparent 60%), var(--paper-bg);
+                            color: var(--ink);
+                            -webkit-font-smoothing: antialiased;
+                        }
+                        h1,
+                        h2,
+                        h3 {
+                            margin: 0;
+                        }
+                        .mono {
+                            font-family: "IBM Plex Mono", monospace;
+                        }
 
-            /* ---------- App shell ---------- */
-            .app {
-                display: flex;
-                min-height: 100vh;
-            }
+                        /* ---------- App shell ---------- */
+                        .app {
+                            display: flex;
+                            min-height: 100vh;
+                        }
 
-            .sidebar {
-                width: 340px;
-                flex: 0 0 340px;
-                background: var(--panel-bg);
-                border-right: 1px solid var(--line-soft);
-                padding: 22px 20px 100px;
-                overflow-y: auto;
-                max-height: 100vh;
-                position: sticky;
-                top: 0;
-            }
+                        .sidebar {
+                            width: 50%;
+                            flex: 0 0 50%;
+                            background: var(--panel-bg);
+                            border-right: 1px solid var(--line-soft);
+                            padding: 22px 20px 100px;
+                            overflow-y: auto;
+                            max-height: 100vh;
+                            position: sticky;
+                            top: 0;
+                        }
 
-            .brand {
-                display: flex;
-                align-items: baseline;
-                gap: 9px;
-                margin-bottom: 4px;
-            }
-            .brand .swatch {
-                width: 11px;
-                height: 11px;
-                border-radius: 2px;
-                background: linear-gradient(135deg, var(--laminate), var(--amber));
-                flex: none;
-            }
-            .brand h1 {
-                font-size: 16.5px;
-                letter-spacing: 0.01em;
-                font-weight: 700;
-            }
-            .tagline {
-                font-family: "IBM Plex Mono", monospace;
-                font-size: 10.5px;
-                color: var(--ink-soft);
-                letter-spacing: 0.04em;
-                text-transform: uppercase;
-                margin: 2px 0 22px;
-            }
+                        .brand {
+                            display: flex;
+                            align-items: baseline;
+                            gap: 9px;
+                            margin-bottom: 4px;
+                        }
+                        .brand .swatch {
+                            width: 11px;
+                            height: 11px;
+                            border-radius: 2px;
+                            background: linear-gradient(135deg, var(--laminate), var(--amber));
+                            flex: none;
+                        }
+                        .brand h1 {
+                            font-size: 16.5px;
+                            letter-spacing: 0.01em;
+                            font-weight: 700;
+                        }
+                        .tagline {
+                            font-family: "IBM Plex Mono", monospace;
+                            font-size: 10.5px;
+                            color: var(--ink-soft);
+                            letter-spacing: 0.04em;
+                            text-transform: uppercase;
+                            margin: 2px 0 22px;
+                        }
 
-            .section {
-                margin-bottom: 22px;
-                padding-bottom: 20px;
-                border-bottom: 1px dashed var(--line-soft);
-            }
-            .section:last-of-type {
-                border-bottom: none;
-            }
+                        .section {
+                            margin-bottom: 22px;
+                            padding-bottom: 20px;
+                            border-bottom: 1px dashed var(--line-soft);
+                        }
+                        .section:last-of-type {
+                            border-bottom: none;
+                        }
 
-            .section-title {
-                font-family: "IBM Plex Mono", monospace;
-                font-size: 11px;
-                letter-spacing: 0.08em;
-                text-transform: uppercase;
-                color: var(--laminate);
-                font-weight: 600;
-                display: flex;
-                align-items: center;
-                gap: 7px;
-                margin-bottom: 12px;
-            }
-            .section-title .num {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                width: 17px;
-                height: 17px;
-                border-radius: 50%;
-                background: var(--laminate-soft);
-                color: var(--laminate);
-                font-size: 9.5px;
-                font-weight: 600;
-            }
+                        .section-title {
+                            font-family: "IBM Plex Mono", monospace;
+                            font-size: 11px;
+                            letter-spacing: 0.08em;
+                            text-transform: uppercase;
+                            color: var(--laminate);
+                            font-weight: 600;
+                            display: flex;
+                            align-items: center;
+                            gap: 7px;
+                            margin-bottom: 12px;
+                        }
+                        .section-title .num {
+                            display: inline-flex;
+                            align-items: center;
+                            justify-content: center;
+                            width: 17px;
+                            height: 17px;
+                            border-radius: 50%;
+                            background: var(--laminate-soft);
+                            color: var(--laminate);
+                            font-size: 9.5px;
+                            font-weight: 600;
+                        }
 
-            .field {
-                margin-bottom: 12px;
-            }
-            .field:last-child {
-                margin-bottom: 0;
-            }
-            .field label {
-                display: block;
-                font-size: 12px;
-                color: var(--ink-soft);
-                margin-bottom: 5px;
-                font-weight: 500;
-            }
-            .row {
-                display: flex;
-                gap: 10px;
-            }
-            .row .field {
-                flex: 1;
-                margin-bottom: 0;
-            }
+                        .field {
+                            margin-bottom: 12px;
+                        }
+                        .field:last-child {
+                            margin-bottom: 0;
+                        }
+                        .field label {
+                            display: block;
+                            font-size: 12px;
+                            color: var(--ink-soft);
+                            margin-bottom: 5px;
+                            font-weight: 500;
+                        }
+                        .row {
+                            display: flex;
+                            gap: 10px;
+                        }
+                        .row .field {
+                            flex: 1;
+                            margin-bottom: 0;
+                        }
 
-            select,
-            input[type="number"],
-            input[type="text"] {
-                width: 100%;
-                padding: 8px 9px;
-                border: 1px solid var(--line);
-                border-radius: 6px;
-                background: #fff;
-                font-family: "IBM Plex Mono", monospace;
-                font-size: 13px;
-                color: var(--ink);
-            }
-            select:focus,
-            input:focus {
-                outline: 2px solid var(--laminate);
-                outline-offset: 1px;
-            }
+                        select,
+                        input[type="number"],
+                        input[type="text"] {
+                            width: 100%;
+                            padding: 8px 9px;
+                            border: 1px solid var(--line);
+                            border-radius: 6px;
+                            background: #fff;
+                            font-family: "IBM Plex Mono", monospace;
+                            font-size: 13px;
+                            color: var(--ink);
+                        }
+                        select:focus,
+                        input:focus {
+                            outline: 2px solid var(--laminate);
+                            outline-offset: 1px;
+                        }
 
-            .unit-suffix {
-                position: relative;
-            }
-            .unit-suffix::after {
-                content: "in";
-                position: absolute;
-                right: 10px;
-                top: 50%;
-                transform: translateY(-50%);
-                font-size: 11px;
-                color: var(--ink-soft);
-                pointer-events: none;
-            }
-            .unit-suffix input {
-                padding-right: 26px;
-            }
+                        .unit-suffix {
+                            position: relative;
+                        }
+                        .unit-suffix::after {
+                            content: "in";
+                            position: absolute;
+                            right: 10px;
+                            top: 50%;
+                            transform: translateY(-50%);
+                            font-size: 11px;
+                            color: var(--ink-soft);
+                            pointer-events: none;
+                        }
+                        .unit-suffix input {
+                            padding-right: 26px;
+                        }
 
-            .btn {
-                appearance: none;
-                border: 1px solid var(--line);
-                background: #fff;
-                color: var(--ink);
-                padding: 8px 10px;
-                border-radius: 6px;
-                font-family: "IBM Plex Mono", monospace;
-                font-size: 12px;
-                cursor: pointer;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                gap: 6px;
-                transition:
-                    background 0.12s,
-                    border-color 0.12s;
-            }
-            .btn:hover {
-                background: var(--laminate-soft);
-                border-color: var(--laminate);
-            }
-            .btn:active {
-                transform: translateY(1px);
-            }
-            .btn-block {
-                width: 100%;
-            }
-            .btn-icon {
-                padding: 8px;
-                width: 36px;
-                flex: none;
-            }
-            .btn svg {
-                width: 14px;
-                height: 14px;
-                flex: none;
-            }
+                        .btn {
+                            appearance: none;
+                            border: 1px solid var(--line);
+                            background: #fff;
+                            color: var(--ink);
+                            padding: 8px 10px;
+                            border-radius: 6px;
+                            font-family: "IBM Plex Mono", monospace;
+                            font-size: 12px;
+                            cursor: pointer;
+                            display: inline-flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 6px;
+                            transition:
+                                background 0.12s,
+                                border-color 0.12s;
+                        }
+                        .btn:hover {
+                            background: var(--laminate-soft);
+                            border-color: var(--laminate);
+                        }
+                        .btn:active {
+                            transform: translateY(1px);
+                        }
+                        .btn-block {
+                            width: 100%;
+                        }
+                        .btn-icon {
+                            padding: 8px;
+                            width: 36px;
+                            flex: none;
+                        }
+                        .btn svg {
+                            width: 14px;
+                            height: 14px;
+                            flex: none;
+                        }
 
-            .btn-row {
-                display: flex;
-                gap: 8px;
-                flex-wrap: wrap;
-            }
-            .btn-row .btn {
-                flex: 1 1 auto;
-            }
+                        .btn-row {
+                            display: flex;
+                            gap: 8px;
+                            flex-wrap: wrap;
+                        }
+                        .btn-row .btn {
+                            flex: 1 1 auto;
+                        }
 
-            .presets {
-                display: flex;
-                gap: 6px;
-                flex-wrap: wrap;
-            }
-            .presets .btn {
-                font-size: 11px;
-                padding: 6px 9px;
-            }
+                        .presets {
+                            display: flex;
+                            gap: 6px;
+                            flex-wrap: wrap;
+                        }
+                        .presets .btn {
+                            font-size: 11px;
+                            padding: 6px 9px;
+                        }
 
-            .toggle-row {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                padding: 8px 0;
-            }
-            .toggle-row .lbl {
-                font-size: 12.5px;
-                color: var(--ink);
-                font-weight: 500;
-            }
-            .toggle-row .sub {
-                font-size: 10.5px;
-                color: var(--ink-soft);
-                display: block;
-                margin-top: 1px;
-            }
+                        .toggle-row {
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            padding: 8px 0;
+                        }
+                        .toggle-row .lbl {
+                            font-size: 12.5px;
+                            color: var(--ink);
+                            font-weight: 500;
+                        }
+                        .toggle-row .sub {
+                            font-size: 10.5px;
+                            color: var(--ink-soft);
+                            display: block;
+                            margin-top: 1px;
+                        }
 
-            .switch {
-                position: relative;
-                width: 38px;
-                height: 21px;
-                flex: none;
-            }
-            .switch input {
-                position: absolute;
-                opacity: 0;
-                width: 100%;
-                height: 100%;
-                margin: 0;
-                cursor: pointer;
-            }
-            .switch .track {
-                position: absolute;
-                inset: 0;
-                background: var(--line);
-                border-radius: 20px;
-                transition: background 0.15s;
-            }
-            .switch .thumb {
-                position: absolute;
-                top: 2px;
-                left: 2px;
-                width: 17px;
-                height: 17px;
-                border-radius: 50%;
-                background: #fff;
-                transition: transform 0.15s;
-                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-            }
-            .switch input:checked + .track {
-                background: var(--laminate);
-            }
-            .switch input:checked + .track .thumb {
-                transform: translateX(17px);
-            }
+                        .switch {
+                            position: relative;
+                            width: 38px;
+                            height: 21px;
+                            flex: none;
+                        }
+                        .switch input {
+                            position: absolute;
+                            opacity: 0;
+                            width: 100%;
+                            height: 100%;
+                            margin: 0;
+                            cursor: pointer;
+                        }
+                        .switch .track {
+                            position: absolute;
+                            inset: 0;
+                            background: var(--line);
+                            border-radius: 20px;
+                            transition: background 0.15s;
+                        }
+                        .switch .thumb {
+                            position: absolute;
+                            top: 2px;
+                            left: 2px;
+                            width: 17px;
+                            height: 17px;
+                            border-radius: 50%;
+                            background: #fff;
+                            transition: transform 0.15s;
+                            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+                        }
+                        .switch input:checked + .track {
+                            background: var(--laminate);
+                        }
+                        .switch input:checked + .track .thumb {
+                            transform: translateX(17px);
+                        }
 
-            /* ---------- Card control block ---------- */
-            .card-ctrl {
-                border: 1px solid var(--line-soft);
-                border-radius: 10px;
-                padding: 14px;
-                background: #fff;
-                margin-bottom: 14px;
-            }
-            .card-ctrl-head {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                margin-bottom: 10px;
-            }
-            .card-ctrl-head .tag {
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-                font-family: "IBM Plex Mono", monospace;
-                font-size: 11.5px;
-                font-weight: 600;
-            }
-            .dot {
-                width: 8px;
-                height: 8px;
-                border-radius: 50%;
-            }
-            .dot.front {
-                background: var(--amber);
-            }
-            .dot.back {
-                background: var(--laminate);
-            }
-            .filename {
-                font-size: 10.5px;
-                color: var(--ink-soft);
-                max-width: 120px;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
+                        /* ---------- Card control block ---------- */
+                        .card-ctrl {
+                            border: 1px solid var(--line-soft);
+                            border-radius: 10px;
+                            padding: 14px;
+                            background: #fff;
+                            margin-bottom: 14px;
+                        }
+                        .card-ctrl-head {
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            margin-bottom: 10px;
+                        }
+                        .card-ctrl-head .tag {
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 6px;
+                            font-family: "IBM Plex Mono", monospace;
+                            font-size: 11.5px;
+                            font-weight: 600;
+                        }
+                        .dot {
+                            width: 8px;
+                            height: 8px;
+                            border-radius: 50%;
+                        }
+                        .dot.front {
+                            background: var(--amber);
+                        }
+                        .dot.back {
+                            background: var(--laminate);
+                        }
+                        .filename {
+                            font-size: 10.5px;
+                            color: var(--ink-soft);
+                            max-width: 120px;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                            white-space: nowrap;
+                        }
 
-            .zoom-line {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                margin-top: 10px;
-            }
-            .zoom-line input[type="range"] {
-                flex: 1;
-            }
-            input[type="range"] {
-                accent-color: var(--laminate);
-                height: 4px;
-            }
+                        .zoom-line {
+                            display: flex;
+                            align-items: center;
+                            gap: 8px;
+                            margin-top: 10px;
+                        }
+                        .zoom-line input[type="range"] {
+                            flex: 1;
+                        }
+                        input[type="range"] {
+                            accent-color: var(--laminate);
+                            height: 4px;
+                        }
 
-            .hint {
-                font-size: 10.5px;
-                color: var(--ink-soft);
-                line-height: 1.5;
-                margin-top: 8px;
-            }
+                        .hint {
+                            font-size: 10.5px;
+                            color: var(--ink-soft);
+                            line-height: 1.5;
+                            margin-top: 8px;
+                        }
 
-            /* ---------- Print button ---------- */
-            .print-cta {
-                position: sticky;
-                bottom: 0;
-                background: linear-gradient(180deg, rgba(255, 254, 251, 0) 0%, var(--panel-bg) 25%);
-                padding-top: 18px;
-                margin-top: -4px;
-            }
-            .print-btn {
-                width: 100%;
-                background: var(--amber);
-                border: 1px solid var(--amber-dark);
-                color: #fff;
-                font-family: "IBM Plex Mono", monospace;
-                font-weight: 600;
-                font-size: 13.5px;
-                padding: 13px 14px;
-                border-radius: 8px;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 9px;
-                letter-spacing: 0.02em;
-                box-shadow: 0 2px 0 var(--amber-dark);
-            }
-            .print-btn:hover {
-                background: var(--amber-dark);
-            }
-            .print-btn:active {
-                transform: translateY(2px);
-                box-shadow: none;
-            }
-            .print-btn svg {
-                width: 16px;
-                height: 16px;
-            }
+                        /* ---------- Print button ---------- */
+                        .print-cta {
+                            position: sticky;
+                            bottom: 0;
+                            background: linear-gradient(180deg, rgba(255, 254, 251, 0) 0%, var(--panel-bg) 25%);
+                            padding-top: 18px;
+                            margin-top: -4px;
+                        }
+                        .print-btn {
+                            width: 100%;
+                            background: var(--amber);
+                            border: 1px solid var(--amber-dark);
+                            color: #fff;
+                            font-family: "IBM Plex Mono", monospace;
+                            font-weight: 600;
+                            font-size: 13.5px;
+                            padding: 13px 14px;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 9px;
+                            letter-spacing: 0.02em;
+                            box-shadow: 0 2px 0 var(--amber-dark);
+                        }
+                        .print-btn:hover {
+                            background: var(--amber-dark);
+                        }
+                        .print-btn:active {
+                            transform: translateY(2px);
+                            box-shadow: none;
+                        }
+                        .print-btn svg {
+                            width: 16px;
+                            height: 16px;
+                        }
 
-            /* ---------- Stage ---------- */
-            .stage {
-                flex: 1;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 36px;
-                overflow: auto;
-                min-height: 100vh;
-                position: relative;
-            }
-            .stage-topbar {
-                position: absolute;
-                top: 20px;
-                left: 0;
-                right: 0;
-                display: flex;
-                justify-content: center;
-                pointer-events: none;
-            }
-            .stage-badge {
-                font-family: "IBM Plex Mono", monospace;
-                font-size: 11px;
-                color: var(--ink-soft);
-                background: #fff;
-                border: 1px solid var(--line-soft);
-                padding: 6px 12px;
-                border-radius: 20px;
-                letter-spacing: 0.03em;
-            }
+                        /* ---------- Stage ---------- */
+                        .stage {
+                            flex: 1;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            padding: 36px;
+                            overflow: auto;
+                            min-height: 100vh;
+                            position: relative;
+                        }
+                        .stage-topbar {
+                            position: absolute;
+                            top: 20px;
+                            left: 0;
+                            right: 0;
+                            display: flex;
+                            justify-content: center;
+                            pointer-events: none;
+                        }
+                        .stage-badge {
+                            font-family: "IBM Plex Mono", monospace;
+                            font-size: 11px;
+                            color: var(--ink-soft);
+                            background: #fff;
+                            border: 1px solid var(--line-soft);
+                            padding: 6px 12px;
+                            border-radius: 20px;
+                            letter-spacing: 0.03em;
+                        }
 
-            .paper-scale-wrap {
-                transform-origin: center center;
-                filter: drop-shadow(0 18px 34px rgba(30, 42, 51, 0.16));
-            }
+                        .paper-scale-wrap {
+                            transform-origin: center center;
+                            filter: drop-shadow(0 18px 34px rgba(30, 42, 51, 0.16));
+                        }
 
-            .paper {
-                width: var(--paper-w);
-                height: var(--paper-h);
-                background: rgb(55, 55, 55);
-                position: relative;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                background-image: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.015) 0px, rgba(0, 0, 0, 0.015) 1px, transparent 1px, transparent 6px);
-            }
+                        .paper {
+                            width: var(--paper-w);
+                            height: var(--paper-h);
+                            /* background: rgb(55, 55, 55); */
+                            background: var(--panel-bg);
+                            position: relative;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            background-image: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.015) 0px, rgba(0, 0, 0, 0.015) 1px, transparent 1px, transparent 6px);
+                        }
 
-            /* ruler ticks along top & left, screen only */
-            .ruler-top,
-            .ruler-left {
-                position: absolute;
-                color: rgb(208, 208, 208);
-                font-family: "IBM Plex Mono", monospace;
-                font-size: 8px;
-                pointer-events: none;
-            }
-            .ruler-top {
-                top: 4px;
-                left: 0;
-                right: 0;
-                display: flex;
-                justify-content: space-between;
-                padding: 0 6px;
-            }
-            .ruler-left {
-                left: 4px;
-                top: 0;
-                bottom: 0;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-                padding: 6px 0;
-            }
+                        /* ruler ticks along top & left, screen only */
+                        .ruler-top,
+                        .ruler-left {
+                            position: absolute;
+                            color: rgb(208, 208, 208);
+                            font-family: "IBM Plex Mono", monospace;
+                            font-size: 8px;
+                            pointer-events: none;
+                        }
 
-            .card-slot {
-                width: var(--card-w);
-                height: var(--card-h);
-                position: relative;
-                flex: none;
-                background: #f4f2ec;
-            }
-            .paper.show-cuts .frame {
-                outline: 1px dashed var(--ink-soft);
-                outline-offset: -1px;
-            }
+                        .ruler-top {
+                            top: 4px;
+                            left: 0;
+                            right: 0;
+                            display: none;
+                            justify-content: space-between;
+                            padding: 0 6px;
+                        }
+                        .ruler-left {
+                            left: 4px;
+                            top: 0;
+                            bottom: 0;
+                            display: none;
+                            flex-direction: column;
+                            justify-content: space-between;
+                            padding: 6px 0;
+                        }
+                        .paper.show-ruler .ruler-top,
+                        .paper.show-ruler .ruler-left {
+            display: flex;
+                        }
 
-            .frame {
-                width: 100%;
-                height: 100%;
-                position: relative;
-                overflow: hidden;
-            }
-            .img-wrap {
-                width: 100%;
-                height: 100%;
-                position: relative;
-                overflow: hidden;
-                cursor: grab;
-                touch-action: none;
-            }
-            .card-slot:not(.has-image) .img-wrap {
-                pointer-events: none;
-            }
-            .img-wrap img {
-                position: absolute;
-                left: 50%;
-                top: 50%;`
-                max-width: none;
-                max-height: none;
-                user-select: none;
-                -webkit-user-drag: none;
-                display: block;
-            }
 
-            .dropzone {
-                position: absolute;
-                inset: 0;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                border: 2px dashed var(--line);
-                background: #f4f2ec;
-                color: var(--ink-soft);
-                cursor: pointer;
-                text-align: center;
-                padding: 10px;
-                transition:
-                    border-color 0.12s,
-                    background 0.12s;
-            }
-            .dropzone svg {
-                width: 26px;
-                height: 26px;
-                stroke: var(--ink-soft);
-            }
-            .dropzone .dz-title {
-                font-size: 12.5px;
-                font-weight: 600;
-                color: var(--ink);
-            }
-            .dropzone .dz-sub {
-                font-size: 10.5px;
-                max-width: 80%;
-            }
-            .dropzone.drag-over {
-                border-color: var(--laminate);
-                background: var(--laminate-soft);
-            }
-            .card-slot.has-image .dropzone {
-                display: none;
-            }
+                        .card-slot {
+                            width: var(--card-w);
+                            height: var(--card-h);
+                            position: relative;
+                            flex: none;
+                            background: #f4f2ec;
+                        }
+                        .paper.show-cuts .frame {
+                            outline: 1px dashed var(--ink-soft);
+                            outline-offset: -1px;
+                            padding: 1px;
+                        }
 
-            .corner-label {
-                position: absolute;
-                top: 0;
-                left: 0;
-                background: rgba(30, 42, 51, 0.78);
-                color: #fff;
-                font-family: "IBM Plex Mono", monospace;
-                font-size: 9.5px;
-                padding: 3px 7px;
-                letter-spacing: 0.03em;
-                border-bottom-right-radius: 6px;
-                z-index: 3;
-                pointer-events: none;
-            }
-            .card-slot.has-image .corner-label {
-                opacity: 0;
-                transition: opacity 0.15s;
-            }
-            .card-slot.has-image:hover .corner-label {
-                opacity: 1;
-            }
+                        .frame {
+                            width: 100%;
+                            height: 100%;
+                            position: relative;
+                            overflow: hidden;
+                        }
+                        .img-wrap {
+                            width: 100%;
+                            height: 100%;
+                            position: relative;
+                            overflow: hidden;
+                            cursor: grab;
+                            touch-action: none;
+                        }
+                        .card-slot:not(.has-image) .img-wrap {
+                            pointer-events: none;
+                        }
+                        .img-wrap img {
+                            position: absolute;
+                            left: 50%;
+                            top: 50%;`
+                            max-width: none;
+                            max-height: none;
+                            user-select: none;
+                            -webkit-user-drag: none;
+                            display: block;
+                        }
 
-            .change-btn {
-                position: absolute;
-                bottom: 6px;
-                right: 6px;
-                z-index: 3;
-                font-size: 10px;
-                padding: 5px 8px;
-                background: rgba(255, 255, 255, 0.92);
-                opacity: 0;
-                transition: opacity 0.15s;
-            }
-            .card-slot.has-image:hover .change-btn {
-                opacity: 1;
-            }
+                        .dropzone {
+                            position: absolute;
+                            inset: 0;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 8px;
+                            border: 2px dashed var(--line);
+                            background: #f4f2ec;
+                            color: var(--ink-soft);
+                            cursor: pointer;
+                            text-align: center;
+                            padding: 10px;
+                            transition:
+                                border-color 0.12s,
+                                background 0.12s;
+                        }
+                        .dropzone svg {
+                            width: 26px;
+                            height: 26px;
+                            stroke: var(--ink-soft);
+                        }
+                        .dropzone .dz-title {
+                            font-size: 12.5px;
+                            font-weight: 600;
+                            color: var(--ink);
+                        }
+                        .dropzone .dz-sub {
+                            font-size: 10.5px;
+                            max-width: 80%;
+                        }
+                        .dropzone.drag-over {
+                            border-color: var(--laminate);
+                            background: var(--laminate-soft);
+                        }
+                        .card-slot.has-image .dropzone {
+                            display: none;
+                        }
 
-            /* fold line */
-            .fold-line {
-                height: var(--gap);
-                align-self: stretch;
-                position: relative;
-                flex: none;
-            }
-            .fold-line::before {
-                content: "";
-                position: absolute;
-                top: 50%;
-                left: 6px;
-                right: 6px;
-                border-top: 1.4px dashed var(--laminate);
-                transform: translateY(-50%);
-            }
-            .fold-tag {
-                position: absolute;
-                left: 50%;
-                top: 50%;
-                transform: translate(-50%, -50%);
-                font-family: "IBM Plex Mono", monospace;
-                font-size: 8px;
-                letter-spacing: 0.14em;
-                color: var(--laminate);
-                background: var(--paper-bg);
-                padding: 3px 6px;
-                white-space: nowrap;
-            }
-            .paper:not(.show-fold) .fold-line::before,
-            .paper:not(.show-fold) .fold-tag {
-                display: none;
-            }
+                        .corner-label {
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            background: rgba(30, 42, 51, 0.78);
+                            color: #fff;
+                            font-family: "IBM Plex Mono", monospace;
+                            font-size: 9.5px;
+                            padding: 3px 7px;
+                            letter-spacing: 0.03em;
+                            border-bottom-right-radius: 6px;
+                            z-index: 3;
+                            pointer-events: none;
+                        }
+                        .card-slot.has-image .corner-label {
+                            opacity: 0;
+                            transition: opacity 0.15s;
+                        }
+                        .card-slot.has-image:hover .corner-label {
+                            opacity: 1;
+                        }
 
-            /* ---------- responsive ---------- */
-            @media (max-width: 900px) {
-                .app {
-                    flex-direction: column;
-                }
-                .sidebar {
-                    width: 100%;
-                    flex: none;
-                    max-height: none;
-                    position: relative;
-                    border-right: none;
-                    border-bottom: 1px solid var(--line-soft);
-                }
-                .stage {
-                    min-height: 70vh;
-                    padding: 24px 12px;
-                }
-            }
+                        .change-btn {
+                            position: absolute;
+                            bottom: 6px;
+                            right: 6px;
+                            z-index: 3;
+                            font-size: 10px;
+                            padding: 5px 8px;
+                            background: rgba(255, 255, 255, 0.92);
+                            opacity: 0;
+                            transition: opacity 0.15s;
+                        }
+                        .card-slot.has-image:hover .change-btn {
+                            opacity: 1;
+                        }
 
-            /* ---------- print ---------- */
-            @media print {
-                body {
-                    background: #fff !important;
-                }
-                .sidebar,
-                .stage-topbar,
-                .corner-label,
-                .change-btn {
-                    display: none !important;
-                }
-                .app {
-                    display: block;
-                }
-                .stage {
-                    padding: 0;
-                    min-height: auto;
-                    display: block;
-                    overflow: visible;
-                }
-                .paper-scale-wrap {
-                    transform: none !important;
-                    filter: none !important;
-                }
-                .paper {
-                    box-shadow: none !important;
-                    background-image: none !important;
-                }
-                .dropzone {
-                    display: none !important;
-                }
-                .card-slot {
-                    background: #fff !important;
-                }
-            }
+                        /* fold line */
+                        .fold-line {
+                            height: var(--gap);
+                            align-self: stretch;
+                            position: relative;
+                            flex: none;
+                        }
+                        .fold-line::before {
+                            content: "";
+                            position: absolute;
+                            top: 50%;
+                            left: 6px;
+                            right: 6px;
+                            border-top: 1.4px dashed var(--laminate);
+                            transform: translateY(-50%);
+                        }
+                        .fold-tag {
+                            position: absolute;
+                            left: 50%;
+                            top: 50%;
+                            transform: translate(-50%, -50%);
+                            font-family: "IBM Plex Mono", monospace;
+                            font-size: 8px;
+                            letter-spacing: 0.14em;
+                            color: var(--laminate);
+                            background: var(--paper-bg);
+                            padding: 3px 6px;
+                            white-space: nowrap;
+                        }
+                        .paper:not(.show-fold) .fold-line::before,
+                        .paper:not(.show-fold) .fold-tag {
+                            display: none;
+                        }
+
+                        /* ---------- responsive ---------- */
+                        @media (max-width: 900px) {
+                            .app {
+                                flex-direction: column;
+                            }
+                            .sidebar {
+                                width: 100%;
+                                flex: none;
+                                max-height: none;
+                                position: relative;
+                                border-right: none;
+                                border-bottom: 1px solid var(--line-soft);
+                            }
+                            .stage {
+                                min-height: 70vh;
+                                padding: 24px 12px;
+                            }
+                        }
+
+                        /* ---------- print ---------- */
+                        @media print {
+                            body {
+                                background: #fff !important;
+                            }
+                            .sidebar,
+                            .stage-topbar,
+                            .corner-label,
+                            .change-btn {
+                                display: none !important;
+                            }
+                            .app {
+                                display: block;
+                            }
+                            .stage {
+                                padding: 0;
+                                min-height: auto;
+                                display: block;
+                                overflow: visible;
+                            }
+                            .paper-scale-wrap {
+                                transform: none !important;
+                                filter: none !important;
+                            }
+                            .paper {
+                                box-shadow: none !important;
+                                background-image: none !important;
+                            }
+                            .dropzone {
+                                display: none !important;
+                            }
+                            .card-slot {
+                                background: #fff !important;
+                            }
+                        }
         </style>
     </head>
     <body>
@@ -750,10 +758,10 @@
                     <div class="field" style="margin-top: 10px">
                         <label>Presets</label>
                         <div class="presets">
-                            <button class="btn" data-preset="6,4">6 × 4 (default)</button>
-                            <button class="btn" data-preset="4,6">4 × 6</button>
-                            <button class="btn" data-preset="3.5,2.2">License 3.5 × 2.2</button>
-                            <button class="btn" data-preset="3.375,2.125">ID/Card 3.4 × 2.1</button>
+                            <button class="btn" data-preset="6,4">6 x 4 (Rehistro)</button>
+                            <button class="btn" data-preset="3.375,2.125">3.4 x 2.1 (Regular PVC ID/Card)</button>
+                            <button class="btn" data-preset="3.543,2.362">3.5 x 2.4 (Philhealth ID)</button>
+                            <button class="btn" data-preset="3.937,2.716">3.9 x 2.7 (Temp. National ID)</button>
                         </div>
                     </div>
                     <div class="field" style="margin-top: 10px">
@@ -767,7 +775,7 @@
                     </div>
                     <div class="field" style="margin-top: 10px">
                         <label for="gapIn">Fold gap between cards</label>
-                        <div class="unit-suffix"><input type="number" id="gapIn" step="0.05" min="0.05" max="1" value="0.05" /></div>
+                        <div class="unit-suffix"><input type="number" id="gapIn" step="0.05" min="0" max="1" value="0" /></div>
                     </div>
                 </div>
 
@@ -814,7 +822,7 @@
                                 <path d="M21 21l-4.3-4.3" />
                                 <path d="M8 10h4" />
                             </svg>
-                            <input type="range" data-role="zoom" min="-100" max="100" value="0" />
+                            <input type="range" data-role="zoom" min="-50" max="50" value="0" step="0.05" />
                             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="10" cy="10" r="6" />
                                 <path d="M21 21l-4.3-4.3" />
@@ -883,7 +891,7 @@
                                 <path d="M21 21l-4.3-4.3" />
                                 <path d="M8 10h4" />
                             </svg>
-                            <input type="range" data-role="zoom" min="-100" max="100" value="0" />
+                            <input type="range" data-role="zoom" min="-50" max="50" value="0" step="0.05" />
                             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="10" cy="10" r="6" />
                                 <path d="M21 21l-4.3-4.3" />
@@ -922,13 +930,19 @@
                     <div class="toggle-row">
                         <span><span class="lbl">Fold line</span><span class="sub">dashed guide down the middle</span></span>
                         <label class="switch"
-                            ><input type="checkbox" id="toggleFold" checked /><span class="track"><span class="thumb"></span></span
+                            ><input type="checkbox" id="toggleFold" /><span class="track"><span class="thumb"></span></span
                         ></label>
                     </div>
                     <div class="toggle-row">
                         <span><span class="lbl">Cut guides</span><span class="sub">dashed outline around each card</span></span>
                         <label class="switch"
-                            ><input type="checkbox" id="toggleCuts" /><span class="track"><span class="thumb"></span></span
+                            ><input type="checkbox" id="toggleCuts" checked /><span class="track"><span class="thumb"></span></span
+                        ></label>
+                    </div>
+                    <div class="toggle-row">
+                        <span><span class="lbl">Rulers</span><span class="sub">page size indicators</span></span>
+                        <label class="switch"
+                            ><input type="checkbox" id="toggleRuler" checked /><span class="track"><span class="thumb"></span></span
                         ></label>
                     </div>
                 </div>
@@ -950,7 +964,7 @@
                 <div class="stage-topbar"><span class="stage-badge mono" id="stageBadge">Long Bond · 8.5 × 13 in — fold in half after cutting</span></div>
 
                 <div class="paper-scale-wrap" id="paperScaleWrap">
-                    <div class="paper show-fold" id="paper">
+                    <div class="paper show-cuts show-ruler" id="paper">
                         <div class="ruler-top" id="rulerTop"></div>
                         <div class="ruler-left" id="rulerLeft"></div>
 
@@ -1287,7 +1301,7 @@
                 function applyDims() {
                     const w = clamp(Number(cardWInput.value) || 6, 0.5, 20);
                     const h = clamp(Number(cardHInput.value) || 4, 0.5, 20);
-                    const g = clamp(Number(gapInput.value) || 0.05, 0.05, 2);
+                    const g = clamp(Number(gapInput.value) || 0, 0, 2);
                     root.style.setProperty("--card-w", w + "in");
                     root.style.setProperty("--card-h", h + "in");
                     root.style.setProperty("--gap", g + "in");
@@ -1378,6 +1392,9 @@
                 });
                 document.getElementById("toggleCuts").addEventListener("change", function (e) {
                     paperEl.classList.toggle("show-cuts", e.target.checked);
+                });
+                document.getElementById("toggleRuler").addEventListener("change", function (e) {
+                    paperEl.classList.toggle("show-ruler", e.target.checked);
                 });
 
                 /* ---------------- stage scaling ---------------- */
