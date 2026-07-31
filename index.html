@@ -691,7 +691,7 @@
                         Coming soon
                     </a> -->
                 </nav>
-                <div class="sidebar-footer">Icon Print v1.4.3<br />Bond Paper Stitcher</div>
+                <div class="sidebar-footer">Icon Print v1.4.6<br />Bond Paper Stitcher</div>
             </aside>
 
             <!-- ============ MAIN ============ -->
@@ -1329,9 +1329,8 @@
                     els.scanTop.disabled = true;
                     els.scanBottom.disabled = true;
                     requestAnimationFrame(async () => {
-                        await callScanner("top")
-                            .then(playPing)
-                            .catch(() => alert("Failed to connect to the backend scan process. Make sure to run the scan file."));
+                        await callScanner("top").catch(() => alert("Failed to connect to the backend scan process. Make sure to run the scan file."));
+                        playPing();
                         els.scanTop.disabled = false;
                         els.scanBottom.disabled = false;
                     });
@@ -1340,9 +1339,8 @@
                     els.scanTop.disabled = true;
                     els.scanBottom.disabled = true;
                     requestAnimationFrame(async () => {
-                        await callScanner("bottom")
-                            .then(playPing)
-                            .catch(() => alert("Failed to connect to the backend scan process. Make sure to run the scan file."));
+                        await callScanner("bottom").catch(() => alert("Failed to connect to the backend scan process. Make sure to run the scan file."));
+                        playPing();
                         els.scanTop.disabled = false;
                         els.scanBottom.disabled = false;
                     });
