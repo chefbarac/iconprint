@@ -1,7 +1,7 @@
 from flask import Flask, request, send_file, jsonify, after_this_request
 import win32com.client
 import pythoncom
-import os, uuid, logging, threading
+import os, uuid, logging, threading, io
 from PIL import Image
 from flask_cors import CORS
 
@@ -19,6 +19,10 @@ os.makedirs(SCAN_DIR, exist_ok=True)
 WIA_FORMAT_BMP = "{B96B3CAB-0728-11D3-9D7B-0000F81EF32E}"
 WIA_PROP_XRES = 6147
 WIA_PROP_YRES = 6148
+
+# US Letter size in inches
+LETTER_WIDTH_IN = 8.5
+LETTER_HEIGHT_IN = 11.0
 
 scan_lock = threading.Lock()  # WIA devices generally can't handle concurrent transfers
 
@@ -49,6 +53,38 @@ def set_resolution(item, dpi):
     return actual_x, actual_y
 
 
+def set_letter_scan_area(item, dpi_x, dpi_y):
+    """Constrain the scan area to US Letter (8.5x11in) instead of the full
+    flatbed. Start offsets are 0,0 and extents are computed in pixels from
+    the actual reported resolution, then clamped to the driver's max extent
+    so this doesn't throw on flatbeds smaller than letter size."""
+    width_px = int(LETTER_WIDTH_IN * dpi_x)
+    height_px = int(LETTER_HEIGHT_IN * dpi_y)
+
+    try:
+        max_width = item.Properties("Horizontal Extent").SubTypeMax
+        max_height = item.Properties("Vertical Extent").SubTypeMax
+        if max_width:
+            width_px = min(width_px, int(max_width))
+        if max_height:
+            height_px = min(height_px, int(max_height))
+    except Exception as e:
+        logger.warning(f"Could not read max extent, using computed letter size as-is: {e}")
+
+    for prop_name, value in (
+        ("Horizontal Start Position", 0),
+        ("Vertical Start Position", 0),
+        ("Horizontal Extent", width_px),
+        ("Vertical Extent", height_px),
+    ):
+        try:
+            item.Properties(prop_name).Value = value
+        except Exception as e:
+            logger.warning(f"Failed to set {prop_name} to {value}: {e}")
+
+    logger.info(f"Scan area set to letter size: {width_px}x{height_px}px @ {dpi_x}x{dpi_y} dpi")
+
+
 def validate_resolution(raw_value, default=300, min_dpi=75, max_dpi=1200):
     try:
         dpi = int(raw_value)
@@ -72,6 +108,7 @@ def scan():
 
         item = get_scanner_item()
         actual_x, actual_y = set_resolution(item, resolution)
+        set_letter_scan_area(item, actual_x, actual_y)
 
         image = item.Transfer(WIA_FORMAT_BMP)
 
@@ -86,16 +123,20 @@ def scan():
         img.close()
         os.remove(bmp_path)
 
-        @after_this_request
-        def cleanup(response):
-            try:
-                if png_path and os.path.exists(png_path):
-                    os.remove(png_path)
-            except Exception as e:
-                logger.warning(f"Failed to clean up {png_path}: {e}")
-            return response
+        # Read the PNG into memory and remove it from disk immediately,
+        # rather than deleting after the response streams. On Windows,
+        # send_file's dev-server file wrapper can still hold the handle
+        # open when after_this_request fires, causing WinError 32.
+        with open(png_path, "rb") as f:
+            png_bytes = f.read()
+        os.remove(png_path)
+        png_path = None
 
-        return send_file(png_path, mimetype="image/png")
+        return send_file(
+            io.BytesIO(png_bytes),
+            mimetype="image/png",
+            download_name="scan.png",
+        )
 
     except Exception as e:
         logger.exception("Scan failed")
