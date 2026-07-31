@@ -1285,7 +1285,7 @@
                     els.scanTop.disabled = true;
                     els.scanBottom.disabled = true;
                     requestAnimationFrame(async () => {
-                        await callScanner("top");
+                        await callScanner("top").catch(() => alert("Failed to connect to the backend scan process. Make sure to run the scan file."));
                         els.scanTop.disabled = false;
                         els.scanBottom.disabled = false;
                     });
@@ -1294,7 +1294,7 @@
                     els.scanTop.disabled = true;
                     els.scanBottom.disabled = true;
                     requestAnimationFrame(async () => {
-                        await callScanner("bottom");
+                        await callScanner("bottom").catch(() => alert("Failed to connect to the backend scan process. Make sure to run the scan file."));
                         els.scanTop.disabled = false;
                         els.scanBottom.disabled = false;
                     });
