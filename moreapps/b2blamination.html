@@ -1255,7 +1255,7 @@
                         render(card);
                     });
 
-                    card.wrap.addEventListener(
+                    /* card.wrap.addEventListener(
                         "wheel",
                         function (e) {
                             if (card.mode !== "crop" || !card.hasImage) return;
@@ -1267,7 +1267,7 @@
                             render(card);
                         },
                         { passive: false },
-                    );
+                    ); */
 
                     card.wrap.addEventListener("pointerdown", function (e) {
                         if (card.mode !== "crop" || !card.hasImage) return;
