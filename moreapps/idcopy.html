@@ -1,0 +1,1740 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>ID Card Scan &amp; Print</title>
+        <style>
+            /* ============================================================
+     DESIGN TOKENS
+     ============================================================ */
+            :root {
+                --ink: #101820; /* near-black text on light chrome */
+                --paper: #f6f4ef; /* body background */
+                --panel: #1c2530; /* dark control-rail surface */
+                --panel-2: #26313f; /* raised card within panel */
+                --line: #3a4655; /* hairline on dark panel */
+                --text-lo: #a9b4c0; /* muted text on dark panel */
+                --text-hi: #f1eee7; /* bright text on dark panel */
+                --amber: #e3a542; /* primary accent - "badge" gold */
+                --amber-dim: #b8842f;
+                --teal: #4fa98c; /* success */
+                --rust: #d9603f; /* error */
+                --card-edge: #8891a0; /* cut-guide dashed lines */
+                --radius: 10px;
+                --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+                --sans: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                --display: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                background: var(--paper);
+                color: var(--ink);
+                font-family: var(--sans);
+                line-height: 1.45;
+            }
+
+            /* ============================================================
+     APP CHROME
+     ============================================================ */
+            header.app-head {
+                padding: 22px 28px 18px;
+                border-bottom: 1px solid #dcd7cb;
+                background: var(--paper);
+            }
+            header.app-head h1 {
+                font-family: var(--display);
+                font-weight: 600;
+                font-size: 1.5rem;
+                margin: 0 0 2px;
+                letter-spacing: 0.2px;
+            }
+            header.app-head p {
+                margin: 0;
+                color: #6b675c;
+                font-size: 0.92rem;
+            }
+            header.app-head .badge-dot {
+                display: inline-block;
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: var(--amber);
+                margin-right: 8px;
+            }
+
+            main.layout {
+                display: grid;
+                grid-template-columns: 360px 1fr;
+                gap: 0;
+                min-height: calc(100vh - 84px);
+            }
+            @media (max-width: 860px) {
+                main.layout {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            /* ---------- control rail (dark) ---------- */
+            section.controls {
+                background: var(--panel);
+                color: var(--text-hi);
+                padding: 24px 22px 40px;
+            }
+            .ctrl-group {
+                background: var(--panel-2);
+                border: 1px solid var(--line);
+                border-radius: var(--radius);
+                padding: 16px;
+                margin-bottom: 16px;
+            }
+            .ctrl-group h2 {
+                font-size: 0.72rem;
+                text-transform: uppercase;
+                letter-spacing: 1.4px;
+                color: var(--text-lo);
+                margin: 0 0 12px;
+                font-weight: 700;
+            }
+
+            .scan-row {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                margin-bottom: 12px;
+            }
+            .scan-row:last-child {
+                margin-bottom: 0;
+            }
+            .scan-row-btns {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                flex-shrink: 0;
+            }
+            .btn-adjust {
+                border-color: var(--line);
+                color: var(--text-lo);
+                padding: 6px 14px;
+                font-size: 0.74rem;
+            }
+            .btn-adjust:hover:not(:disabled) {
+                border-color: var(--text-hi);
+                color: var(--text-hi);
+                background: transparent;
+            }
+
+            .thumb {
+                width: 56px;
+                height: 36px;
+                border-radius: 5px;
+                background: #0f1620;
+                border: 1px solid var(--line);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+                flex-shrink: 0;
+            }
+            .thumb img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+            }
+            .thumb .empty-dash {
+                color: var(--text-lo);
+                font-size: 0.7rem;
+            }
+
+            .scan-meta {
+                flex: 1;
+                min-width: 0;
+            }
+            .scan-meta .label {
+                font-weight: 600;
+                font-size: 0.9rem;
+            }
+            .scan-meta .status {
+                font-family: var(--mono);
+                font-size: 0.72rem;
+                color: var(--text-lo);
+                margin-top: 2px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .scan-meta .status.ok {
+                color: var(--teal);
+            }
+            .scan-meta .status.err {
+                color: var(--rust);
+            }
+            .scan-meta .status.busy {
+                color: var(--amber);
+            }
+
+            button {
+                font-family: var(--sans);
+                cursor: pointer;
+                border: none;
+                border-radius: 7px;
+                font-weight: 600;
+                transition:
+                    transform 0.08s ease,
+                    filter 0.12s ease;
+            }
+            button:active {
+                transform: translateY(1px);
+            }
+            button:disabled {
+                opacity: 0.4;
+                cursor: not-allowed;
+            }
+
+            .btn-scan {
+                background: transparent;
+                border: 1px solid var(--amber);
+                color: var(--amber);
+                padding: 9px 14px;
+                font-size: 0.82rem;
+                white-space: nowrap;
+                width: 100%;
+            }
+            .btn-scan:hover:not(:disabled) {
+                background: rgba(227, 165, 66, 0.12);
+            }
+
+            .btn-primary {
+                width: 100%;
+                background: var(--amber);
+                color: #1b1304;
+                padding: 13px 16px;
+                font-size: 0.95rem;
+            }
+            .btn-primary:hover:not(:disabled) {
+                filter: brightness(1.08);
+            }
+
+            .field {
+                margin-bottom: 12px;
+            }
+            .field:last-child {
+                margin-bottom: 0;
+            }
+            .field label {
+                display: block;
+                font-size: 0.78rem;
+                color: var(--text-lo);
+                margin-bottom: 6px;
+            }
+            .field select,
+            .field input[type="number"] {
+                width: 100%;
+                background: #0f1620;
+                border: 1px solid var(--line);
+                color: var(--text-hi);
+                padding: 9px 10px;
+                border-radius: 6px;
+                font-family: var(--mono);
+                font-size: 0.85rem;
+            }
+            .field .hint {
+                font-size: 0.7rem;
+                color: var(--text-lo);
+                margin-top: 5px;
+            }
+            .field.two-col {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            .field.two-col label {
+                margin-bottom: 6px;
+            }
+
+            .checkbox-label {
+                display: flex !important;
+                align-items: center;
+                gap: 8px;
+                color: var(--text-hi);
+                font-size: 0.82rem;
+                cursor: pointer;
+            }
+            .checkbox-label input[type="checkbox"] {
+                width: 15px;
+                height: 15px;
+                accent-color: var(--amber);
+            }
+
+            .preset-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 7px;
+            }
+            .btn {
+                background: #0f1620;
+                border: 1px solid var(--line);
+                color: var(--text-hi);
+                padding: 7px 10px;
+                border-radius: 6px;
+                font-size: 0.72rem;
+                line-height: 1.25;
+                text-align: left;
+                flex: 1 1 calc(50% - 7px);
+            }
+            .btn:hover {
+                border-color: var(--amber);
+                color: var(--amber);
+            }
+            .btn.active {
+                background: rgba(227, 165, 66, 0.15);
+                border-color: var(--amber);
+                color: var(--amber);
+            }
+
+            .log {
+                font-family: var(--mono);
+                font-size: 0.72rem;
+                color: var(--text-lo);
+                max-height: 150px;
+                overflow-y: auto;
+                border-top: 1px solid var(--line);
+                margin-top: 14px;
+                padding-top: 10px;
+            }
+            .log div {
+                margin-bottom: 4px;
+            }
+            .log div.err {
+                color: var(--rust);
+            }
+            .log div.ok {
+                color: var(--teal);
+            }
+
+            /* ---------- preview panel (light) ---------- */
+            section.preview {
+                padding: 28px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+            .preview-toolbar {
+                width: 100%;
+                max-width: 640px;
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+                margin-bottom: 14px;
+            }
+            .preview-toolbar h2 {
+                font-family: var(--display);
+                font-size: 1.05rem;
+                margin: 0;
+            }
+            .preview-toolbar .dims {
+                font-family: var(--mono);
+                font-size: 0.75rem;
+                color: #77726a;
+            }
+
+            .page-frame {
+                background: #fff;
+                box-shadow:
+                    0 2px 4px rgba(0, 0, 0, 0.08),
+                    0 14px 34px rgba(20, 16, 8, 0.16);
+                position: relative;
+                overflow: hidden;
+            }
+            .page-scale-wrap {
+                /* JS sets a transform:scale() here so the mm-sized page fits the panel */
+                transform-origin: top left;
+            }
+
+            #printPage {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                background: #fff;
+            }
+            .card-slot {
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .card-slot img {
+                display: block;
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+            }
+            .card-slot .cut-guide {
+                position: absolute;
+                inset: 0;
+                border: 1px dashed var(--card-edge);
+                pointer-events: none;
+            }
+            .card-slot .empty-card {
+                width: 100%;
+                height: 100%;
+                border: 1px dashed #c9c4b8;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #b4aea0;
+                font-family: var(--mono);
+                font-size: 0.65rem;
+                text-align: center;
+            }
+
+            .empty-preview-note {
+                color: #8b8678;
+                font-size: 0.85rem;
+                max-width: 340px;
+                text-align: center;
+                margin-top: 40px;
+            }
+
+            /* ============================================================
+     MANUAL EDITOR MODAL (rotate / zoom / crop)
+     ============================================================ */
+            .modal-backdrop {
+                position: fixed;
+                inset: 0;
+                background: rgba(10, 13, 18, 0.72);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 100;
+                padding: 20px;
+            }
+            .modal-backdrop.open {
+                display: flex;
+            }
+
+            .editor-panel {
+                background: var(--panel);
+                color: var(--text-hi);
+                border: 1px solid var(--line);
+                border-radius: var(--radius);
+                padding: 22px;
+                width: 100%;
+                max-width: 560px;
+                max-height: 92vh;
+                overflow-y: auto;
+            }
+            .editor-panel h3 {
+                font-family: var(--display);
+                margin: 0 0 4px;
+                font-size: 1.1rem;
+            }
+            .editor-panel .editor-sub {
+                color: var(--text-lo);
+                font-size: 0.8rem;
+                margin: 0 0 16px;
+            }
+
+            .editor-viewport-wrap {
+                display: flex;
+                justify-content: center;
+                margin-bottom: 18px;
+            }
+            .editor-viewport {
+                position: relative;
+                border-radius: 6px;
+                overflow: hidden;
+                border: 1px solid var(--line);
+                cursor: grab;
+                /* checkerboard pattern shows through any gaps left by pan/zoom/rotate */
+                background-image:
+                    linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%),
+                    linear-gradient(-45deg, transparent 75%, #333 75%);
+                background-size: 16px 16px;
+                background-position:
+                    0 0,
+                    0 8px,
+                    8px -8px,
+                    -8px 0;
+                background-color: #1a1a1a;
+            }
+            .editor-viewport.dragging {
+                cursor: grabbing;
+            }
+            .editor-viewport canvas {
+                display: block;
+                touch-action: none;
+            }
+            .editor-viewport .safe-frame {
+                position: absolute;
+                inset: 0;
+                pointer-events: none;
+                box-shadow: inset 0 0 0 1px rgba(227, 165, 66, 0.7);
+            }
+
+            .editor-controls .field {
+                margin-bottom: 14px;
+            }
+            .editor-controls .slider-row {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .editor-controls input[type="range"] {
+                flex: 1;
+                accent-color: var(--amber);
+            }
+            .editor-controls .slider-val {
+                font-family: var(--mono);
+                font-size: 0.75rem;
+                color: var(--text-lo);
+                width: 52px;
+                text-align: right;
+                flex-shrink: 0;
+            }
+            .rotate-quick {
+                display: flex;
+                gap: 8px;
+                margin-top: 8px;
+            }
+            .rotate-quick button {
+                flex: 1;
+                background: #0f1620;
+                border: 1px solid var(--line);
+                color: var(--text-hi);
+                padding: 7px 8px;
+                font-size: 0.74rem;
+                border-radius: 6px;
+            }
+            .rotate-quick button:hover {
+                border-color: var(--amber);
+                color: var(--amber);
+            }
+
+            .editor-actions {
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+                margin-top: 18px;
+                border-top: 1px solid var(--line);
+                padding-top: 16px;
+            }
+            .btn-secondary {
+                background: transparent;
+                border: 1px solid var(--line);
+                color: var(--text-hi);
+                padding: 10px 16px;
+                font-size: 0.85rem;
+            }
+            .btn-secondary:hover {
+                border-color: var(--text-hi);
+            }
+
+            /* ============================================================
+     PRINT
+     ============================================================ */
+            @media print {
+                body * {
+                    visibility: hidden;
+                }
+                header.app-head,
+                section.controls,
+                .preview-toolbar,
+                .empty-preview-note {
+                    display: none !important;
+                }
+                .modal-backdrop {
+                    display: none !important;
+                }
+                .page-scale-wrap {
+                    transform: none !important;
+                }
+                #printPage,
+                #printPage * {
+                    visibility: visible;
+                }
+                .page-frame {
+                    box-shadow: none !important;
+                    position: static !important;
+                }
+                #printPage {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    margin: 0;
+                }
+                .card-slot .cut-guide {
+                    border-color: #999;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <header class="app-head">
+            <h1><span class="badge-dot"></span>ID Card Scan &amp; Print</h1>
+            <p>Scan front and back, then print a true-to-size layout ready for lamination.</p>
+        </header>
+
+        <main class="layout">
+            <!-- ============================================================
+         CONTROL RAIL
+         ============================================================ -->
+            <section class="controls">
+                <div class="ctrl-group">
+                    <h2>Scanner</h2>
+
+                    <div class="scan-row">
+                        <div class="thumb" id="thumbFront"><span class="empty-dash">—</span></div>
+                        <div class="scan-meta">
+                            <div class="label">Front side</div>
+                            <div class="status" id="statusFront">Not scanned</div>
+                        </div>
+                        <div class="scan-row-btns">
+                            <button class="btn-scan" id="btnScanFront">Scan Front</button>
+                            <button class="btn-scan btn-adjust" id="btnAdjustFront" disabled>Adjust</button>
+                        </div>
+                    </div>
+
+                    <div class="scan-row">
+                        <div class="thumb" id="thumbBack"><span class="empty-dash">—</span></div>
+                        <div class="scan-meta">
+                            <div class="label">Back side</div>
+                            <div class="status" id="statusBack">Not scanned</div>
+                        </div>
+                        <div class="scan-row-btns">
+                            <button class="btn-scan" id="btnScanBack">Scan Back</button>
+                            <button class="btn-scan btn-adjust" id="btnAdjustBack" disabled>Adjust</button>
+                        </div>
+                    </div>
+
+                    <div class="log" id="logBox"></div>
+                </div>
+
+                <div class="ctrl-group">
+                    <h2>Print Setup</h2>
+
+                    <div class="field">
+                        <label for="paperSize">Paper size</label>
+                        <select id="paperSize">
+                            <option value="letter">Letter — 8.5 × 11 in</option>
+                            <option value="a4">A4 — 210 × 297 mm</option>
+                            <option value="legal">Legal — 8.5 × 14 in</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label>Card size presets (inches)</label>
+                        <div class="preset-row">
+                            <button type="button" class="btn" data-preset="6,4">6 x 4 (OR CR)</button>
+                            <button type="button" class="btn" data-preset="3.375,2.125">3.4 x 2.1 (Regular PVC ID/Card)</button>
+                            <button type="button" class="btn" data-preset="3.543,2.362">3.5 x 2.4 (Philhealth ID)</button>
+                            <button type="button" class="btn" data-preset="3.937,2.716">3.9 x 2.7 (Temp. National ID)</button>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="cardUnit">Size unit</label>
+                        <select id="cardUnit">
+                            <option value="mm">Millimetres (mm)</option>
+                            <option value="in">Inches (in)</option>
+                        </select>
+                    </div>
+
+                    <div class="field two-col">
+                        <div>
+                            <label for="cardWidth">Width</label>
+                            <input type="number" id="cardWidth" value="85.6" min="10" max="500" step="0.01" />
+                        </div>
+                        <div>
+                            <label for="cardHeight">Height</label>
+                            <input type="number" id="cardHeight" value="54" min="10" max="500" step="0.01" />
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="autoHeight" checked />
+                            Auto height from scanned aspect ratio
+                        </label>
+                        <div class="hint">Uncheck to set an exact height yourself (presets do this automatically). 85.6&nbsp;mm × 54&nbsp;mm is the standard CR-80 card size.</div>
+                    </div>
+
+                    <div class="field">
+                        <label for="cardGap">Gap between front &amp; back (mm)</label>
+                        <input type="number" id="cardGap" value="12" min="10" max="15" step="0.5" />
+                    </div>
+                </div>
+
+                <button class="btn-primary" id="btnPrint" disabled>Print Layout</button>
+                <div class="field hint" style="margin-top: 10px">In the print dialog, set <strong>Scale</strong> to <strong>100%</strong> (not "Fit to page") for accurate physical dimensions.</div>
+            </section>
+
+            <!-- ============================================================
+         PREVIEW PANEL
+         ============================================================ -->
+            <section class="preview">
+                <div class="preview-toolbar">
+                    <h2>Printable Layout</h2>
+                    <div class="dims" id="pageDims"></div>
+                </div>
+
+                <div class="page-frame" id="pageFrame">
+                    <div class="page-scale-wrap" id="pageScaleWrap">
+                        <div id="printPage">
+                            <div class="card-slot" id="slotFront">
+                                <div class="empty-card">FRONT<br />not scanned</div>
+                            </div>
+                            <div class="card-slot" id="slotBack">
+                                <div class="empty-card">BACK<br />not scanned</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="empty-preview-note" id="emptyNote">Scan the front and back of the ID to see the printable layout here.</p>
+            </section>
+        </main>
+
+        <!-- ============================================================
+       MANUAL EDITOR MODAL — rotate / zoom / pan (crop)
+       ============================================================ -->
+        <div class="modal-backdrop" id="editorBackdrop">
+            <div class="editor-panel">
+                <h3 id="editorTitle">Adjust Front</h3>
+                <p class="editor-sub">Drag the image to reposition it. The gold frame is what will be printed.</p>
+
+                <div class="editor-viewport-wrap">
+                    <div class="editor-viewport" id="editorViewport">
+                        <canvas id="editorCanvas"></canvas>
+                        <div class="safe-frame"></div>
+                    </div>
+                </div>
+
+                <div class="editor-controls">
+                    <div class="field">
+                        <label for="rotateSlider">Rotation</label>
+                        <div class="slider-row">
+                            <input type="range" id="rotateSlider" min="-180" max="180" step="1" value="0" />
+                            <span class="slider-val" id="rotateVal">0°</span>
+                        </div>
+                        <div class="rotate-quick">
+                            <button type="button" id="rotateLeft90">⟲ Rotate 90°</button>
+                            <button type="button" id="rotateRight90">⟳ Rotate 90°</button>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="zoomSlider">Zoom</label>
+                        <div class="slider-row">
+                            <input type="range" id="zoomSlider" min="1" max="4" step="0.01" value="1" />
+                            <span class="slider-val" id="zoomVal">1.00×</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="editor-actions">
+                    <button type="button" class="btn-secondary" id="editorReset">Reset</button>
+                    <button type="button" class="btn-secondary" id="editorCancel">Cancel</button>
+                    <button type="button" class="btn-primary" id="editorApply" style="width: auto">Apply</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            /* ================================================================
+   CONFIGURATION
+   ================================================================ */
+
+            // Change this single constant if the scanner service moves.
+            const SCAN_ENDPOINT = "http://localhost:5001/scan";
+
+            // Physical paper sizes in millimetres.
+            const PAPER_SIZES_MM = {
+                letter: { w: 215.9, h: 279.4, pageKeyword: "letter" },
+                a4: { w: 210.0, h: 297.0, pageKeyword: "a4" },
+                legal: { w: 215.9, h: 355.6, pageKeyword: "legal" },
+            };
+
+            // CSS reference pixel ratio (browsers define 1in = 96px, so 1mm = 96/25.4 px).
+            const PX_PER_MM = 96 / 25.4;
+            const MM_PER_IN = 25.4;
+
+            /* ================================================================
+   APPLICATION STATE
+   ================================================================ */
+
+            const state = {
+                front: null, // { canvas, widthPx, heightPx, aspect }  -- processed result
+                back: null,
+            };
+
+            /* ================================================================
+   SMALL UI HELPERS
+   ================================================================ */
+
+            function log(message, kind) {
+                const box = document.getElementById("logBox");
+                const line = document.createElement("div");
+                if (kind) line.className = kind;
+                const t = new Date().toLocaleTimeString();
+                line.textContent = `[${t}] ${message}`;
+                box.appendChild(line);
+                box.scrollTop = box.scrollHeight;
+            }
+
+            function setStatus(side, text, kind) {
+                const el = document.getElementById(side === "front" ? "statusFront" : "statusBack");
+                el.textContent = text;
+                el.className = "status" + (kind ? " " + kind : "");
+            }
+
+            function setButtonsBusy(busy) {
+                document.getElementById("btnScanFront").disabled = busy;
+                document.getElementById("btnScanBack").disabled = busy;
+            }
+
+            /* ================================================================
+   1. SCANNER COMMUNICATION
+   ================================================================ */
+
+            /**
+             * Requests a fresh scan from the local scanner backend.
+             * Returns a Blob (PNG) of the raw, unprocessed scan.
+             * Encapsulated here so the endpoint / protocol can change without
+             * touching any other part of the app.
+             */
+            async function scanDocument() {
+                const controller = new AbortController();
+                // Scanners (especially flatbeds warming up / doing a preview + final pass)
+                // can take a while — give it a generous 2 minutes before giving up.
+                const timeout = setTimeout(() => controller.abort(), 120000);
+
+                try {
+                    const response = await fetch(SCAN_ENDPOINT, {
+                        method: "POST",
+                        signal: controller.signal,
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Scanner returned HTTP ${response.status}`);
+                    }
+                    const blob = await response.blob();
+                    return blob;
+                } catch (err) {
+                    if (err.name === "AbortError") {
+                        throw new Error("Scan request timed out after 2 minutes. Is the scanner service running?");
+                    }
+                    // A generic "Failed to fetch" almost always means the service is
+                    // offline, or the page's origin isn't allowed by the backend's CORS
+                    // policy (it must be served from an origin the Flask service allows).
+                    throw new Error("Could not reach scanner service at " + SCAN_ENDPOINT + " (" + err.message + ")");
+                } finally {
+                    clearTimeout(timeout);
+                }
+            }
+
+            /** Decodes a Blob into a ready-to-draw HTMLImageElement. */
+            function loadImageFromBlob(blob) {
+                return new Promise((resolve, reject) => {
+                    const url = URL.createObjectURL(blob);
+                    const img = new Image();
+                    img.onload = () => {
+                        resolve(img);
+                    };
+                    img.onerror = () => {
+                        reject(new Error("Could not decode scanned image"));
+                    };
+                    img.src = url;
+                });
+            }
+
+            /* ================================================================
+   2. IMAGE PROCESSING PIPELINE
+   ------------------------------------------------------------------
+   This is a lightweight, dependency-free heuristic pipeline (no
+   OpenCV / vision library is used, per the "no frameworks" brief).
+   It assumes the ID is scanned on a plain, roughly uniform backing
+   sheet, and that any rotation is slight (a few degrees), not a
+   dramatic perspective tilt. Steps:
+
+     A. Trim solid scanner-bed borders (near-uniform dark/light strips
+        at the very edge of the scan).
+     B. Estimate the background (paper) colour from the trimmed
+        image's border ring.
+     C. Build a foreground/background mask by colour distance.
+     D. Clean up the mask (majority-filter denoise).
+     E. Keep only the largest connected foreground region (the ID).
+     F. Search for the small rotation angle that minimises that
+        region's bounding-box area (deskew).
+     G. Rotate the full-resolution image by that angle and crop
+        tightly to the (re-computed) bounding box.
+   ================================================================ */
+
+            /** Draws `img` onto a new canvas at 1:1 resolution and returns it. */
+            function toCanvas(img) {
+                const c = document.createElement("canvas");
+                c.width = img.naturalWidth || img.width;
+                c.height = img.naturalHeight || img.height;
+                c.getContext("2d").drawImage(img, 0, 0);
+                return c;
+            }
+
+            /** Returns a downscaled copy of a canvas, capped at maxDim on the long side. */
+            function downscaleCanvas(srcCanvas, maxDim) {
+                const scale = Math.min(1, maxDim / Math.max(srcCanvas.width, srcCanvas.height));
+                const w = Math.max(1, Math.round(srcCanvas.width * scale));
+                const h = Math.max(1, Math.round(srcCanvas.height * scale));
+                const c = document.createElement("canvas");
+                c.width = w;
+                c.height = h;
+                c.getContext("2d").drawImage(srcCanvas, 0, 0, w, h);
+                return { canvas: c, scale };
+            }
+
+            /* ---- A. Trim solid scanner-bed borders ---- */
+            function trimScannerBorders(canvas) {
+                const ctx = canvas.getContext("2d");
+                const { width: w, height: h } = canvas;
+                const data = ctx.getImageData(0, 0, w, h).data;
+
+                const gray = (x, y) => {
+                    const i = (y * w + x) * 4;
+                    return 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                };
+
+                const STD_THRESHOLD = 6; // "uniform strip" if stddev below this
+                const MAX_TRIM_FRACTION = 0.08; // never trim more than 8% per side (safety)
+
+                function rowStats(y) {
+                    let sum = 0,
+                        sumSq = 0;
+                    for (let x = 0; x < w; x++) {
+                        const v = gray(x, y);
+                        sum += v;
+                        sumSq += v * v;
+                    }
+                    const mean = sum / w;
+                    const variance = Math.max(0, sumSq / w - mean * mean);
+                    return Math.sqrt(variance);
+                }
+                function colStats(x) {
+                    let sum = 0,
+                        sumSq = 0;
+                    for (let y = 0; y < h; y++) {
+                        const v = gray(x, y);
+                        sum += v;
+                        sumSq += v * v;
+                    }
+                    const mean = sum / h;
+                    const variance = Math.max(0, sumSq / h - mean * mean);
+                    return Math.sqrt(variance);
+                }
+
+                let top = 0,
+                    bottom = h - 1,
+                    left = 0,
+                    right = w - 1;
+                const maxTrimV = Math.floor(h * MAX_TRIM_FRACTION);
+                const maxTrimH = Math.floor(w * MAX_TRIM_FRACTION);
+
+                while (top < h / 2 && top < maxTrimV && rowStats(top) < STD_THRESHOLD) top++;
+                while (bottom > h / 2 && h - 1 - bottom < maxTrimV && rowStats(bottom) < STD_THRESHOLD) bottom--;
+                while (left < w / 2 && left < maxTrimH && colStats(left) < STD_THRESHOLD) left++;
+                while (right > w / 2 && w - 1 - right < maxTrimH && colStats(right) < STD_THRESHOLD) right--;
+
+                const newW = Math.max(1, right - left + 1);
+                const newH = Math.max(1, bottom - top + 1);
+                const out = document.createElement("canvas");
+                out.width = newW;
+                out.height = newH;
+                out.getContext("2d").drawImage(canvas, left, top, newW, newH, 0, 0, newW, newH);
+                return out;
+            }
+
+            /* ---- B. Estimate background colour from the border ring ---- */
+            function estimateBackgroundColor(imageData, w, h) {
+                const data = imageData.data;
+                const ring = Math.max(4, Math.round(Math.min(w, h) * 0.03));
+                let r = 0,
+                    g = 0,
+                    b = 0,
+                    n = 0;
+
+                function sample(x, y) {
+                    const i = (y * w + x) * 4;
+                    r += data[i];
+                    g += data[i + 1];
+                    b += data[i + 2];
+                    n++;
+                }
+                for (let x = 0; x < w; x += 2) {
+                    for (let yy = 0; yy < ring; yy++) sample(x, yy);
+                    for (let yy = h - ring; yy < h; yy++) sample(x, yy);
+                }
+                for (let y = 0; y < h; y += 2) {
+                    for (let xx = 0; xx < ring; xx++) sample(xx, y);
+                    for (let xx = w - ring; xx < w; xx++) sample(xx, y);
+                }
+                return { r: r / n, g: g / n, b: b / n };
+            }
+
+            /* ---- C. Build foreground mask by colour distance ---- */
+            function buildForegroundMask(imageData, w, h, bg, threshold) {
+                const data = imageData.data;
+                const mask = new Uint8Array(w * h);
+                for (let p = 0, i = 0; p < w * h; p++, i += 4) {
+                    const dr = data[i] - bg.r,
+                        dg = data[i + 1] - bg.g,
+                        db = data[i + 2] - bg.b;
+                    const dist = Math.sqrt(dr * dr + dg * dg + db * db);
+                    mask[p] = dist > threshold ? 1 : 0;
+                }
+                return mask;
+            }
+
+            /* ---- D. Majority-filter denoise (removes speckle, fills small gaps) ---- */
+            function denoiseMask(mask, w, h, passes) {
+                let current = mask;
+                for (let p = 0; p < passes; p++) {
+                    const next = new Uint8Array(w * h);
+                    for (let y = 0; y < h; y++) {
+                        for (let x = 0; x < w; x++) {
+                            let count = 0,
+                                total = 0;
+                            for (let dy = -1; dy <= 1; dy++) {
+                                for (let dx = -1; dx <= 1; dx++) {
+                                    const nx = x + dx,
+                                        ny = y + dy;
+                                    if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+                                        total++;
+                                        count += current[ny * w + nx];
+                                    }
+                                }
+                            }
+                            next[y * w + x] = count / total >= 0.5 ? 1 : 0;
+                        }
+                    }
+                    current = next;
+                }
+                return current;
+            }
+
+            /* ---- E. Largest connected component (iterative flood fill) ---- */
+            function largestConnectedComponent(mask, w, h) {
+                const visited = new Uint8Array(w * h);
+                let bestSize = 0;
+                let bestMask = null;
+
+                const stackX = new Int32Array(w * h);
+                const stackY = new Int32Array(w * h);
+
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        const idx = y * w + x;
+                        if (mask[idx] !== 1 || visited[idx]) continue;
+
+                        // flood fill this component
+                        let sp = 0;
+                        stackX[sp] = x;
+                        stackY[sp] = y;
+                        sp++;
+                        visited[idx] = 1;
+                        const componentPixels = [];
+
+                        while (sp > 0) {
+                            sp--;
+                            const cx = stackX[sp],
+                                cy = stackY[sp];
+                            componentPixels.push(cy * w + cx);
+                            const neighbors = [
+                                [cx + 1, cy],
+                                [cx - 1, cy],
+                                [cx, cy + 1],
+                                [cx, cy - 1],
+                            ];
+                            for (const [nx, ny] of neighbors) {
+                                if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+                                    const nidx = ny * w + nx;
+                                    if (mask[nidx] === 1 && !visited[nidx]) {
+                                        visited[nidx] = 1;
+                                        stackX[sp] = nx;
+                                        stackY[sp] = ny;
+                                        sp++;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (componentPixels.length > bestSize) {
+                            bestSize = componentPixels.length;
+                            bestMask = componentPixels;
+                        }
+                    }
+                }
+
+                const out = new Uint8Array(w * h);
+                if (bestMask) for (const idx of bestMask) out[idx] = 1;
+                return out;
+            }
+
+            /* ---- F. Minimum-area rotation search (deskew angle) ---- */
+            function extractPoints(mask, w, h, maxPoints) {
+                const all = [];
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        if (mask[y * w + x]) all.push({ x, y });
+                    }
+                }
+                if (all.length <= maxPoints) return all;
+                const step = all.length / maxPoints;
+                const out = [];
+                for (let i = 0; i < maxPoints; i++) out.push(all[Math.floor(i * step)]);
+                return out;
+            }
+
+            function bboxAreaAtAngle(points, angleRad, cx, cy) {
+                const cos = Math.cos(angleRad),
+                    sin = Math.sin(angleRad);
+                let minX = Infinity,
+                    maxX = -Infinity,
+                    minY = Infinity,
+                    maxY = -Infinity;
+                for (const p of points) {
+                    const dx = p.x - cx,
+                        dy = p.y - cy;
+                    const rx = dx * cos - dy * sin;
+                    const ry = dx * sin + dy * cos;
+                    if (rx < minX) minX = rx;
+                    if (rx > maxX) maxX = rx;
+                    if (ry < minY) minY = ry;
+                    if (ry > maxY) maxY = ry;
+                }
+                return { area: (maxX - minX) * (maxY - minY), minX, maxX, minY, maxY };
+            }
+
+            function findDeskewAngleDeg(mask, w, h) {
+                const points = extractPoints(mask, w, h, 4000);
+                if (points.length < 20) return 0; // not enough signal, skip deskew
+
+                let sx = 0,
+                    sy = 0;
+                for (const p of points) {
+                    sx += p.x;
+                    sy += p.y;
+                }
+                const cx = sx / points.length,
+                    cy = sy / points.length;
+
+                let best = { angle: 0, area: Infinity };
+
+                // coarse search
+                for (let deg = -20; deg <= 20; deg += 0.5) {
+                    const rad = (deg * Math.PI) / 180;
+                    const { area } = bboxAreaAtAngle(points, rad, cx, cy);
+                    if (area < best.area) best = { angle: deg, area };
+                }
+                // fine refine around the coarse best
+                const coarse = best.angle;
+                for (let deg = coarse - 0.5; deg <= coarse + 0.5; deg += 0.05) {
+                    const rad = (deg * Math.PI) / 180;
+                    const { area } = bboxAreaAtAngle(points, rad, cx, cy);
+                    if (area < best.area) best = { angle: deg, area };
+                }
+                return best.angle;
+            }
+
+            /* ---- G. Rotate full-resolution canvas by a given angle ---- */
+            function rotateCanvasByDegrees(canvas, deg) {
+                const rad = (deg * Math.PI) / 180;
+                const w = canvas.width,
+                    h = canvas.height;
+                const newW = Math.round(Math.abs(w * Math.cos(rad)) + Math.abs(h * Math.sin(rad)));
+                const newH = Math.round(Math.abs(w * Math.sin(rad)) + Math.abs(h * Math.cos(rad)));
+
+                const out = document.createElement("canvas");
+                out.width = newW;
+                out.height = newH;
+                const ctx = out.getContext("2d");
+                ctx.translate(newW / 2, newH / 2);
+                ctx.rotate(rad);
+                ctx.drawImage(canvas, -w / 2, -h / 2);
+                return out;
+            }
+
+            /**
+             * Maps a point from the original (unrotated) canvas's coordinate space
+             * into the coordinate space of the canvas produced by rotateCanvasByDegrees.
+             */
+            function mapPointThroughRotation(x, y, origW, origH, newW, newH, deg) {
+                const rad = (deg * Math.PI) / 180;
+                const cos = Math.cos(rad),
+                    sin = Math.sin(rad);
+                const dx = x - origW / 2,
+                    dy = y - origH / 2;
+                const rx = dx * cos - dy * sin;
+                const ry = dx * sin + dy * cos;
+                return { x: rx + newW / 2, y: ry + newH / 2 };
+            }
+
+            /**
+             * Full pipeline: takes a raw scanned <img>, returns a tightly-cropped,
+             * deskewed, background-free canvas of just the ID card.
+             */
+            async function processScannedImage(img) {
+                const fullResCanvas = toCanvas(img);
+
+                // Work on a downscaled copy for fast analysis.
+                const ANALYSIS_MAX_DIM = 500;
+                const { canvas: trimmedFull } = { canvas: trimScannerBorders(fullResCanvas) };
+                const { canvas: analysisCanvas, scale } = downscaleCanvas(trimmedFull, ANALYSIS_MAX_DIM);
+                const actx = analysisCanvas.getContext("2d");
+                const aData = actx.getImageData(0, 0, analysisCanvas.width, analysisCanvas.height);
+
+                // Background estimate + mask + cleanup + largest region.
+                const bg = estimateBackgroundColor(aData, analysisCanvas.width, analysisCanvas.height);
+                let mask = buildForegroundMask(aData, analysisCanvas.width, analysisCanvas.height, bg, 32);
+                mask = denoiseMask(mask, analysisCanvas.width, analysisCanvas.height, 2);
+                mask = largestConnectedComponent(mask, analysisCanvas.width, analysisCanvas.height);
+
+                // Deskew angle from the cleaned mask.
+                const angleDeg = findDeskewAngleDeg(mask, analysisCanvas.width, analysisCanvas.height);
+
+                // Bounding box of the mask, in analysis-canvas coordinates.
+                const pts = extractPoints(mask, analysisCanvas.width, analysisCanvas.height, 4000);
+                let minX = Infinity,
+                    maxX = -Infinity,
+                    minY = Infinity,
+                    maxY = -Infinity;
+                for (const p of pts) {
+                    if (p.x < minX) minX = p.x;
+                    if (p.x > maxX) maxX = p.x;
+                    if (p.y < minY) minY = p.y;
+                    if (p.y > maxY) maxY = p.y;
+                }
+                if (!isFinite(minX)) {
+                    // Detection failed (e.g. blank scan) -- fall back to the full trimmed image.
+                    minX = 0;
+                    minY = 0;
+                    maxX = analysisCanvas.width;
+                    maxY = analysisCanvas.height;
+                }
+
+                // Scale bbox corners up to the trimmed full-resolution image.
+                const inv = 1 / scale;
+                const corners = [
+                    { x: minX * inv, y: minY * inv },
+                    { x: maxX * inv, y: minY * inv },
+                    { x: minX * inv, y: maxY * inv },
+                    { x: maxX * inv, y: maxY * inv },
+                ];
+
+                // Rotate the full-resolution (trimmed) image by the found angle.
+                const rotatedFull = rotateCanvasByDegrees(trimmedFull, angleDeg);
+
+                // Map the bbox corners through the same rotation to find the crop rect.
+                let rMinX = Infinity,
+                    rMaxX = -Infinity,
+                    rMinY = Infinity,
+                    rMaxY = -Infinity;
+                for (const c of corners) {
+                    const m = mapPointThroughRotation(c.x, c.y, trimmedFull.width, trimmedFull.height, rotatedFull.width, rotatedFull.height, angleDeg);
+                    if (m.x < rMinX) rMinX = m.x;
+                    if (m.x > rMaxX) rMaxX = m.x;
+                    if (m.y < rMinY) rMinY = m.y;
+                    if (m.y > rMaxY) rMaxY = m.y;
+                }
+                rMinX = Math.max(0, Math.floor(rMinX));
+                rMinY = Math.max(0, Math.floor(rMinY));
+                rMaxX = Math.min(rotatedFull.width, Math.ceil(rMaxX));
+                rMaxY = Math.min(rotatedFull.height, Math.ceil(rMaxY));
+
+                const cropW = Math.max(1, rMaxX - rMinX);
+                const cropH = Math.max(1, rMaxY - rMinY);
+
+                const finalCanvas = document.createElement("canvas");
+                finalCanvas.width = cropW;
+                finalCanvas.height = cropH;
+                finalCanvas.getContext("2d").drawImage(rotatedFull, rMinX, rMinY, cropW, cropH, 0, 0, cropW, cropH);
+
+                return {
+                    canvas: finalCanvas,
+                    widthPx: cropW,
+                    heightPx: cropH,
+                    aspect: cropW / cropH,
+                    deskewDeg: angleDeg,
+                    raw: fullResCanvas, // untouched original scan, kept for the manual rotate/zoom/crop editor
+                };
+            }
+
+            /* ================================================================
+   3. SCAN BUTTON HANDLERS
+   ================================================================ */
+
+            async function handleScan(side) {
+                setButtonsBusy(true);
+                setStatus(side, "Scanning… this can take a minute", "busy");
+                log(`Starting ${side} scan…`);
+
+                try {
+                    const blob = await scanDocument();
+                    setStatus(side, "Processing image…", "busy");
+
+                    const img = await loadImageFromBlob(blob);
+                    const result = await processScannedImage(img);
+
+                    state[side] = result;
+                    updateThumbnail(side);
+                    document.getElementById(side === "front" ? "btnAdjustFront" : "btnAdjustBack").disabled = false;
+
+                    setStatus(side, `Ready — ${result.widthPx}×${result.heightPx}px, deskew ${result.deskewDeg.toFixed(1)}°`, "ok");
+                    log(`${side} scan processed successfully.`, "ok");
+
+                    renderLayout();
+                } catch (err) {
+                    setStatus(side, err.message, "err");
+                    log(`${side} scan failed: ${err.message}`, "err");
+                } finally {
+                    setButtonsBusy(false);
+                }
+            }
+
+            /** Refreshes the small thumbnail preview for a side from current state. */
+            function updateThumbnail(side) {
+                const thumbEl = document.getElementById(side === "front" ? "thumbFront" : "thumbBack");
+                thumbEl.innerHTML = "";
+                const thumbImg = document.createElement("img");
+                thumbImg.src = state[side].canvas.toDataURL("image/png");
+                thumbEl.appendChild(thumbImg);
+            }
+
+            document.getElementById("btnScanFront").addEventListener("click", () => handleScan("front"));
+            document.getElementById("btnScanBack").addEventListener("click", () => handleScan("back"));
+
+            /* ================================================================
+   4. PRINTABLE LAYOUT
+   ================================================================ */
+
+            function currentPaper() {
+                const key = document.getElementById("paperSize").value;
+                return PAPER_SIZES_MM[key];
+            }
+
+            /** Converts a value from the given unit ("mm" | "in") into millimetres. */
+            function toMm(value, unit) {
+                return unit === "in" ? value * MM_PER_IN : value;
+            }
+            /** Converts a millimetre value into the given unit ("mm" | "in"). */
+            function fromMm(valueMm, unit) {
+                return unit === "in" ? valueMm / MM_PER_IN : valueMm;
+            }
+
+            let lastUnit = document.getElementById("cardUnit").value;
+
+            /** Rebuilds the #printPage element's sizing and slot contents. */
+            function renderLayout() {
+                const paper = currentPaper();
+                const unit = document.getElementById("cardUnit").value;
+                const gapMm = parseFloat(document.getElementById("cardGap").value) || 12;
+                const autoHeight = document.getElementById("autoHeight").checked;
+
+                const widthInput = document.getElementById("cardWidth");
+                const heightInput = document.getElementById("cardHeight");
+                heightInput.disabled = autoHeight;
+
+                let cardWidthMm = toMm(parseFloat(widthInput.value) || 85.6, unit);
+                let cardHeightMm;
+
+                if (autoHeight) {
+                    // Front and back must render at exactly the same physical size.
+                    // Use the front image's aspect ratio as the canonical shape; if only
+                    // the back has been scanned so far, use its aspect ratio instead.
+                    const reference = state.front || state.back;
+                    const aspect = reference ? reference.aspect : 85.6 / 54; // CR-80 fallback
+                    cardHeightMm = cardWidthMm / aspect;
+                    heightInput.value = fromMm(cardHeightMm, unit).toFixed(unit === "in" ? 3 : 1);
+                } else {
+                    cardHeightMm = toMm(parseFloat(heightInput.value) || 54, unit);
+                }
+
+                const page = document.getElementById("printPage");
+                page.style.width = paper.w + "mm";
+                page.style.height = paper.h + "mm";
+                page.style.gap = gapMm + "mm";
+
+                const unitLabel = unit === "in" ? "in" : "mm";
+                const wDisplay = fromMm(cardWidthMm, unit);
+                const hDisplay = fromMm(cardHeightMm, unit);
+                document.getElementById("pageDims").textContent =
+                    `${paper.w} × ${paper.h} mm · card ${wDisplay.toFixed(unit === "in" ? 3 : 1)} × ${hDisplay.toFixed(unit === "in" ? 3 : 1)} ${unitLabel}`;
+
+                fillSlot("slotFront", state.front, cardWidthMm, cardHeightMm, "FRONT");
+                fillSlot("slotBack", state.back, cardWidthMm, cardHeightMm, "BACK");
+
+                // Update the @page CSS rule so the print dialog picks the right paper size.
+                let pageStyle = document.getElementById("pageSizeStyle");
+                if (!pageStyle) {
+                    pageStyle = document.createElement("style");
+                    pageStyle.id = "pageSizeStyle";
+                    document.head.appendChild(pageStyle);
+                }
+                pageStyle.textContent = `@page { size: ${paper.pageKeyword}; margin: 0; }`;
+
+                document.getElementById("btnPrint").disabled = !(state.front && state.back);
+                document.getElementById("emptyNote").style.display = state.front || state.back ? "none" : "block";
+
+                fitPreviewScale(paper);
+            }
+
+            function fillSlot(slotId, data, wMm, hMm, labelText) {
+                const slot = document.getElementById(slotId);
+                slot.style.width = wMm + "mm";
+                slot.style.height = hMm + "mm";
+                slot.innerHTML = "";
+
+                if (data) {
+                    const img = document.createElement("img");
+                    img.src = data.canvas.toDataURL("image/png");
+                    slot.appendChild(img);
+                    const guide = document.createElement("div");
+                    guide.className = "cut-guide";
+                    slot.appendChild(guide);
+                } else {
+                    const empty = document.createElement("div");
+                    empty.className = "empty-card";
+                    empty.textContent = labelText + "\nnot scanned";
+                    slot.appendChild(empty);
+                }
+            }
+
+            /** Scales the on-screen preview so the (physically-sized) page fits the panel. */
+            function fitPreviewScale(paper) {
+                const frame = document.getElementById("pageFrame");
+                const wrap = document.getElementById("pageScaleWrap");
+                const pageWidthPx = paper.w * PX_PER_MM;
+                const pageHeightPx = paper.h * PX_PER_MM;
+
+                const availableWidth = Math.min(640, frame.parentElement.clientWidth - 4);
+                const scale = Math.min(1, availableWidth / pageWidthPx);
+
+                wrap.style.transform = `scale(${scale})`;
+                frame.style.width = pageWidthPx * scale + "px";
+                frame.style.height = pageHeightPx * scale + "px";
+            }
+
+            document.getElementById("paperSize").addEventListener("change", renderLayout);
+            document.getElementById("cardWidth").addEventListener("input", () => {
+                clearPresetActive();
+                renderLayout();
+            });
+            document.getElementById("cardHeight").addEventListener("input", () => {
+                clearPresetActive();
+                renderLayout();
+            });
+            document.getElementById("cardGap").addEventListener("input", renderLayout);
+            document.getElementById("autoHeight").addEventListener("change", () => {
+                clearPresetActive();
+                renderLayout();
+            });
+
+            // When the unit selector changes, convert the currently-entered numbers
+            // so the physical size they represent stays the same.
+            document.getElementById("cardUnit").addEventListener("change", (e) => {
+                const newUnit = e.target.value;
+                const widthInput = document.getElementById("cardWidth");
+                const heightInput = document.getElementById("cardHeight");
+
+                const widthMm = toMm(parseFloat(widthInput.value) || 0, lastUnit);
+                const heightMm = toMm(parseFloat(heightInput.value) || 0, lastUnit);
+
+                widthInput.value = fromMm(widthMm, newUnit).toFixed(newUnit === "in" ? 3 : 1);
+                heightInput.value = fromMm(heightMm, newUnit).toFixed(newUnit === "in" ? 3 : 1);
+
+                lastUnit = newUnit;
+                renderLayout();
+            });
+
+            function clearPresetActive() {
+                document.querySelectorAll(".btn[data-preset]").forEach((b) => b.classList.remove("active"));
+            }
+
+            // Preset size buttons -- values are "width,height" in inches.
+            document.querySelectorAll(".btn[data-preset]").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const [wIn, hIn] = btn.dataset.preset.split(",").map(Number);
+
+                    document.getElementById("cardUnit").value = "in";
+                    lastUnit = "in";
+                    document.getElementById("cardWidth").value = wIn.toFixed(3);
+                    document.getElementById("cardHeight").value = hIn.toFixed(3);
+                    document.getElementById("autoHeight").checked = false;
+
+                    clearPresetActive();
+                    btn.classList.add("active");
+
+                    renderLayout();
+                });
+            });
+
+            window.addEventListener("resize", () => renderLayout());
+
+            /* ================================================================
+   5. MANUAL EDITOR (rotate / zoom / crop)
+   ------------------------------------------------------------------
+   A fixed-aspect "viewport" acts as the crop frame -- the same idea
+   used by most avatar croppers. The user drags the raw scan to pan
+   it, and uses sliders to rotate and zoom. Whatever is visible
+   inside the gold frame at "Apply" time is exactly what gets baked
+   into a new canvas and used for that side's printed card.
+   ================================================================ */
+
+            const editor = {
+                side: null,
+                img: null, // raw scan canvas being edited
+                vw: 0,
+                vh: 0, // viewport size in CSS px (this defines the crop's aspect ratio)
+                panX: 0,
+                panY: 0, // user pan offset, in viewport CSS px
+                rotDeg: 0,
+                zoom: 1,
+                baseScale: 1, // scale that makes the raw image just cover the viewport at zoom=1
+                dragging: false,
+                dragStartX: 0,
+                dragStartY: 0,
+                panStartX: 0,
+                panStartY: 0,
+            };
+
+            const PREVIEW_DPR = 2; // supersampling for a crisp on-screen preview
+
+            /** Works out the crop frame's aspect ratio from the current card-size settings. */
+            function getTargetAspect() {
+                const unit = document.getElementById("cardUnit").value;
+                const autoHeight = document.getElementById("autoHeight").checked;
+                const wMm = toMm(parseFloat(document.getElementById("cardWidth").value) || 85.6, unit);
+                if (autoHeight) {
+                    const reference = state.front || state.back;
+                    return reference ? reference.aspect : 85.6 / 54;
+                }
+                const hMm = toMm(parseFloat(document.getElementById("cardHeight").value) || 54, unit);
+                return wMm / hMm;
+            }
+
+            /** Shared draw routine -- used for both the live preview and the final bake,
+             *  just with a different pixel density (k). */
+            function drawEditorFrame(ctx, img, vw, vh, panX, panY, rotDeg, scale, k) {
+                ctx.save();
+                ctx.clearRect(0, 0, vw * k, vh * k);
+                ctx.scale(k, k);
+                ctx.translate(vw / 2 + panX, vh / 2 + panY);
+                ctx.rotate((rotDeg * Math.PI) / 180);
+                ctx.scale(scale, scale);
+                ctx.drawImage(img, -img.width / 2, -img.height / 2);
+                ctx.restore();
+            }
+
+            function redrawEditor() {
+                const canvas = document.getElementById("editorCanvas");
+                const ctx = canvas.getContext("2d");
+                const totalScale = editor.baseScale * editor.zoom;
+                drawEditorFrame(ctx, editor.img, editor.vw, editor.vh, editor.panX, editor.panY, editor.rotDeg, totalScale, PREVIEW_DPR);
+            }
+
+            /** Opens the editor modal for "front" or "back", seeded from that side's raw scan. */
+            function openEditor(side) {
+                const data = state[side];
+                if (!data || !data.raw) return;
+
+                editor.side = side;
+                editor.img = data.raw;
+                editor.panX = 0;
+                editor.panY = 0;
+                editor.rotDeg = 0;
+                editor.zoom = 1;
+
+                // Size the viewport to the current target card aspect ratio, capped to
+                // something that comfortably fits the modal.
+                const aspect = getTargetAspect();
+                let vw = 460,
+                    vh = 460 / aspect;
+                if (vh > 420) {
+                    vh = 420;
+                    vw = 420 * aspect;
+                }
+                editor.vw = vw;
+                editor.vh = vh;
+
+                editor.baseScale = Math.max(vw / editor.img.width, vh / editor.img.height);
+
+                const canvas = document.getElementById("editorCanvas");
+                canvas.width = vw * PREVIEW_DPR;
+                canvas.height = vh * PREVIEW_DPR;
+                canvas.style.width = vw + "px";
+                canvas.style.height = vh + "px";
+                document.getElementById("editorViewport").style.width = vw + "px";
+                document.getElementById("editorViewport").style.height = vh + "px";
+
+                document.getElementById("rotateSlider").value = 0;
+                document.getElementById("rotateVal").textContent = "0°";
+                document.getElementById("zoomSlider").value = 1;
+                document.getElementById("zoomVal").textContent = "1.00×";
+
+                document.getElementById("editorTitle").textContent = "Adjust " + (side === "front" ? "Front" : "Back");
+
+                document.getElementById("editorBackdrop").classList.add("open");
+                redrawEditor();
+            }
+
+            function closeEditor() {
+                document.getElementById("editorBackdrop").classList.remove("open");
+                editor.side = null;
+                editor.img = null;
+            }
+
+            /** Bakes the current editor view into a new canvas and replaces that side's card. */
+            function applyEditor() {
+                if (!editor.side || !editor.img) return;
+
+                // Render at a higher resolution than the on-screen preview for print quality.
+                const OUTPUT_LONG_SIDE = 1400;
+                const k = editor.vw >= editor.vh ? OUTPUT_LONG_SIDE / editor.vw : (OUTPUT_LONG_SIDE * (editor.vw / editor.vh)) / editor.vw;
+
+                const outCanvas = document.createElement("canvas");
+                outCanvas.width = Math.round(editor.vw * k);
+                outCanvas.height = Math.round(editor.vh * k);
+                const ctx = outCanvas.getContext("2d");
+
+                const totalScale = editor.baseScale * editor.zoom;
+                drawEditorFrame(ctx, editor.img, editor.vw, editor.vh, editor.panX, editor.panY, editor.rotDeg, totalScale, k);
+
+                const side = editor.side;
+                state[side].canvas = outCanvas;
+                state[side].widthPx = outCanvas.width;
+                state[side].heightPx = outCanvas.height;
+                state[side].aspect = outCanvas.width / outCanvas.height;
+
+                updateThumbnail(side);
+                setStatus(side, `Manually adjusted — ${outCanvas.width}×${outCanvas.height}px`, "ok");
+                log(`${side} crop manually adjusted.`, "ok");
+
+                closeEditor();
+                renderLayout();
+            }
+
+            /* ---- editor control wiring ---- */
+
+            document.getElementById("btnAdjustFront").addEventListener("click", () => openEditor("front"));
+            document.getElementById("btnAdjustBack").addEventListener("click", () => openEditor("back"));
+            document.getElementById("editorCancel").addEventListener("click", closeEditor);
+            document.getElementById("editorBackdrop").addEventListener("click", (e) => {
+                if (e.target.id === "editorBackdrop") closeEditor();
+            });
+            document.getElementById("editorApply").addEventListener("click", applyEditor);
+            document.getElementById("editorReset").addEventListener("click", () => {
+                editor.panX = 0;
+                editor.panY = 0;
+                editor.rotDeg = 0;
+                editor.zoom = 1;
+                document.getElementById("rotateSlider").value = 0;
+                document.getElementById("rotateVal").textContent = "0°";
+                document.getElementById("zoomSlider").value = 1;
+                document.getElementById("zoomVal").textContent = "1.00×";
+                redrawEditor();
+            });
+
+            document.getElementById("rotateSlider").addEventListener("input", (e) => {
+                editor.rotDeg = parseFloat(e.target.value);
+                document.getElementById("rotateVal").textContent = editor.rotDeg.toFixed(0) + "°";
+                redrawEditor();
+            });
+
+            function normalizeAngle(deg) {
+                let d = ((((deg + 180) % 360) + 360) % 360) - 180;
+                return d;
+            }
+            document.getElementById("rotateLeft90").addEventListener("click", () => {
+                editor.rotDeg = normalizeAngle(editor.rotDeg - 90);
+                document.getElementById("rotateSlider").value = editor.rotDeg;
+                document.getElementById("rotateVal").textContent = editor.rotDeg.toFixed(0) + "°";
+                redrawEditor();
+            });
+            document.getElementById("rotateRight90").addEventListener("click", () => {
+                editor.rotDeg = normalizeAngle(editor.rotDeg + 90);
+                document.getElementById("rotateSlider").value = editor.rotDeg;
+                document.getElementById("rotateVal").textContent = editor.rotDeg.toFixed(0) + "°";
+                redrawEditor();
+            });
+
+            document.getElementById("zoomSlider").addEventListener("input", (e) => {
+                editor.zoom = parseFloat(e.target.value);
+                document.getElementById("zoomVal").textContent = editor.zoom.toFixed(2) + "×";
+                redrawEditor();
+            });
+
+            /* ---- drag-to-pan (mouse + touch, via Pointer Events) ---- */
+            const editorViewportEl = document.getElementById("editorViewport");
+
+            editorViewportEl.addEventListener("pointerdown", (e) => {
+                editor.dragging = true;
+                editorViewportEl.classList.add("dragging");
+                editorViewportEl.setPointerCapture(e.pointerId);
+                editor.dragStartX = e.clientX;
+                editor.dragStartY = e.clientY;
+                editor.panStartX = editor.panX;
+                editor.panStartY = editor.panY;
+            });
+            editorViewportEl.addEventListener("pointermove", (e) => {
+                if (!editor.dragging) return;
+                editor.panX = editor.panStartX + (e.clientX - editor.dragStartX);
+                editor.panY = editor.panStartY + (e.clientY - editor.dragStartY);
+                redrawEditor();
+            });
+            function endDrag(e) {
+                editor.dragging = false;
+                editorViewportEl.classList.remove("dragging");
+            }
+            editorViewportEl.addEventListener("pointerup", endDrag);
+            editorViewportEl.addEventListener("pointercancel", endDrag);
+
+            /* ---- wheel-to-zoom ---- */
+            editorViewportEl.addEventListener(
+                "wheel",
+                (e) => {
+                    e.preventDefault();
+                    const zoomSlider = document.getElementById("zoomSlider");
+                    const step = e.deltaY < 0 ? 0.05 : -0.05;
+                    editor.zoom = Math.min(4, Math.max(1, editor.zoom + step));
+                    zoomSlider.value = editor.zoom;
+                    document.getElementById("zoomVal").textContent = editor.zoom.toFixed(2) + "×";
+                    redrawEditor();
+                },
+                { passive: false },
+            );
+
+            /* ================================================================
+   6. PRINTING
+   ================================================================ */
+
+            function printLayout() {
+                if (!state.front || !state.back) return;
+                window.print();
+            }
+            document.getElementById("btnPrint").addEventListener("click", printLayout);
+
+            /* ================================================================
+   INITIALISE
+   ================================================================ */
+            renderLayout();
+            log("Ready. Scanner endpoint: " + SCAN_ENDPOINT);
+        </script>
+    </body>
+</html>
