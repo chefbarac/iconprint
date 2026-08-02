@@ -20,9 +20,22 @@ WIA_FORMAT_BMP = "{B96B3CAB-0728-11D3-9D7B-0000F81EF32E}"
 WIA_PROP_XRES = 6147
 WIA_PROP_YRES = 6148
 
-# US Letter size in inches
+# Named presets (width_in, height_in). "letter" is the default/fallback.
+# "id" is 1/4 letter (half width, half height) — a quadrant of the flatbed,
+# roomy enough to fit most ID card sizes/orientations without scanning the
+# whole bed, so it transfers much faster than a full letter scan.
 LETTER_WIDTH_IN = 8.5
 LETTER_HEIGHT_IN = 11.0
+
+SCAN_AREA_PRESETS = {
+    "letter": (LETTER_WIDTH_IN, LETTER_HEIGHT_IN),
+    "id": (LETTER_WIDTH_IN / 2, LETTER_HEIGHT_IN / 2),  # 4.25 x 5.5in, 1/4 letter
+}
+
+DEFAULT_PRESET = "letter"
+MAX_WIDTH_IN = LETTER_WIDTH_IN
+MAX_HEIGHT_IN = LETTER_HEIGHT_IN
+MIN_DIM_IN = 0.5
 
 scan_lock = threading.Lock()  # WIA devices generally can't handle concurrent transfers
 
@@ -53,13 +66,16 @@ def set_resolution(item, dpi):
     return actual_x, actual_y
 
 
-def set_letter_scan_area(item, dpi_x, dpi_y):
-    """Constrain the scan area to US Letter (8.5x11in) instead of the full
-    flatbed. Start offsets are 0,0 and extents are computed in pixels from
-    the actual reported resolution, then clamped to the driver's max extent
-    so this doesn't throw on flatbeds smaller than letter size."""
-    width_px = int(LETTER_WIDTH_IN * dpi_x)
-    height_px = int(LETTER_HEIGHT_IN * dpi_y)
+def set_scan_area(item, dpi_x, dpi_y, width_in, height_in):
+    """Constrain the scan area to the requested width/height (in inches)
+    instead of the full flatbed. Smaller areas transfer far fewer pixels
+    at a given DPI, so e.g. an ID card scan finishes much faster than a
+    full letter-size scan. Start offsets are 0,0 and extents are computed
+    in pixels from the actual reported resolution, then clamped to the
+    driver's max extent so this doesn't throw on flatbeds smaller than
+    the requested area."""
+    width_px = int(width_in * dpi_x)
+    height_px = int(height_in * dpi_y)
 
     try:
         max_width = item.Properties("Horizontal Extent").SubTypeMax
@@ -69,7 +85,7 @@ def set_letter_scan_area(item, dpi_x, dpi_y):
         if max_height:
             height_px = min(height_px, int(max_height))
     except Exception as e:
-        logger.warning(f"Could not read max extent, using computed letter size as-is: {e}")
+        logger.warning(f"Could not read max extent, using computed size as-is: {e}")
 
     for prop_name, value in (
         ("Horizontal Start Position", 0),
@@ -82,7 +98,7 @@ def set_letter_scan_area(item, dpi_x, dpi_y):
         except Exception as e:
             logger.warning(f"Failed to set {prop_name} to {value}: {e}")
 
-    logger.info(f"Scan area set to letter size: {width_px}x{height_px}px @ {dpi_x}x{dpi_y} dpi")
+    logger.info(f"Scan area set to {width_in}x{height_in}in -> {width_px}x{height_px}px @ {dpi_x}x{dpi_y} dpi")
 
 
 def validate_resolution(raw_value, default=300, min_dpi=75, max_dpi=1200):
@@ -95,6 +111,43 @@ def validate_resolution(raw_value, default=300, min_dpi=75, max_dpi=1200):
     return dpi
 
 
+def validate_dimension(raw_value, default, min_in=MIN_DIM_IN, max_in=MAX_WIDTH_IN):
+    try:
+        val = float(raw_value)
+    except (TypeError, ValueError):
+        return default
+    if not (min_in <= val <= max_in):
+        return default
+    return val
+
+
+def resolve_scan_area(payload):
+    """Figure out (width_in, height_in) from the request body.
+
+    Priority:
+      1. Explicit width_in/height_in (custom dimensions, clamped to sane bounds)
+      2. Named preset via "size" (e.g. "id", "letter", "a4")
+      3. Default preset (letter)
+    """
+    if payload:
+        raw_w = payload.get("width_in")
+        raw_h = payload.get("height_in")
+        if raw_w is not None and raw_h is not None:
+            default_w, default_h = SCAN_AREA_PRESETS[DEFAULT_PRESET]
+            width_in = validate_dimension(raw_w, default_w, max_in=MAX_WIDTH_IN)
+            height_in = validate_dimension(raw_h, default_h, max_in=MAX_HEIGHT_IN)
+            return width_in, height_in
+
+        size_name = payload.get("size")
+        if size_name:
+            preset = SCAN_AREA_PRESETS.get(str(size_name).lower())
+            if preset:
+                return preset
+            logger.warning(f"Unknown size preset '{size_name}', falling back to {DEFAULT_PRESET}")
+
+    return SCAN_AREA_PRESETS[DEFAULT_PRESET]
+
+
 @app.route("/scan", methods=["POST"])
 def scan():
     if not scan_lock.acquire(blocking=False):
@@ -103,12 +156,14 @@ def scan():
     pythoncom.CoInitialize()
     png_path = None
     try:
-        requested_dpi = request.json.get("resolution", 300) if request.is_json else 300
+        payload = request.get_json(silent=True) or {}
+        requested_dpi = payload.get("resolution", 300)
         resolution = validate_resolution(requested_dpi)
+        width_in, height_in = resolve_scan_area(payload)
 
         item = get_scanner_item()
         actual_x, actual_y = set_resolution(item, resolution)
-        set_letter_scan_area(item, actual_x, actual_y)
+        set_scan_area(item, actual_x, actual_y, width_in, height_in)
 
         image = item.Transfer(WIA_FORMAT_BMP)
 
@@ -116,7 +171,10 @@ def scan():
         image.SaveFile(bmp_path)
 
         img = Image.open(bmp_path)
-        logger.info(f"Scanned image size: {img.size}, requested DPI: {resolution}, actual DPI: {actual_x}x{actual_y}")
+        logger.info(
+            f"Scanned image size: {img.size}, area: {width_in}x{height_in}in, "
+            f"requested DPI: {resolution}, actual DPI: {actual_x}x{actual_y}"
+        )
 
         png_path = bmp_path.replace(".bmp", ".png")
         img.save(png_path)
@@ -167,6 +225,14 @@ def scanner_info():
         return jsonify({"error": str(e)}), 500
     finally:
         pythoncom.CoUninitialize()
+
+@app.route("/scan-sizes", methods=["GET"])
+def scan_sizes():
+    """Lets the frontend populate a size dropdown without hardcoding presets."""
+    return jsonify({
+        "default": DEFAULT_PRESET,
+        "presets": {name: {"width_in": w, "height_in": h} for name, (w, h) in SCAN_AREA_PRESETS.items()},
+    })
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001)

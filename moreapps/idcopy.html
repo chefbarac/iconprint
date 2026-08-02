@@ -766,7 +766,9 @@
                 try {
                     const response = await fetch(SCAN_ENDPOINT, {
                         method: "POST",
+                        headers: { "Content-Type": "application/json" },
                         signal: controller.signal,
+                        body: JSON.stringify({ resolution: 150, size: "id" }),
                     });
                     if (!response.ok) throw new Error(`Scanner returned HTTP ${response.status}`);
                     return await response.blob();
@@ -930,8 +932,8 @@
             function imagePhysicalSizeMm(data) {
                 const origW = data.originalCanvas.width;
                 const scaleMmPerPx = REFERENCE_WIDTH_MM / origW;
-                const wMm = data.widthPx * scaleMmPerPx;
-                const hMm = data.heightPx * scaleMmPerPx;
+                const wMm = (data.widthPx * scaleMmPerPx) / 2;
+                const hMm = (data.heightPx * scaleMmPerPx) / 2;
                 return { wMm, hMm };
             }
 
