@@ -363,7 +363,7 @@
                 user-select: none;
                 height: auto;
                 max-width: none;
-                /* box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08); */
+                /* box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);  */
             }
             .page-img.dragging {
                 cursor: grabbing;
@@ -674,6 +674,8 @@
         </div>
 
         <script>
+            const SCAN_ENDPOINT = "http://localhost:5001/scan";
+
             let audioCtx;
 
             async function playPing() {
@@ -718,15 +720,13 @@
                 }
             }
 
-            const SCAN_ENDPOINT = "http://localhost:5001/scan";
-
             // Fixed reference width (Short / Letter). Image physical size is always
             // based on this, so on narrower A4 the image overflows a little.
             const REFERENCE_WIDTH_MM = 215.9;
 
             const PAPER_SIZES_MM = {
                 short: { w: 215.9, h: 279.4, pageKeyword: "letter", label: "Short" },
-                long: { w: 215.9, h: 330.2, pageKeyword: "long", label: "Long" },
+                long: { w: 215.9, h: 330.2, pageKeyword: "215.9mm 330.2mm", label: "Long" }, // 8.5 × 13 in
                 a4: { w: 210.0, h: 297.0, pageKeyword: "a4", label: "A4" },
             };
 
@@ -769,7 +769,6 @@
                         signal: controller.signal,
                     });
                     if (!response.ok) throw new Error(`Scanner returned HTTP ${response.status}`);
-                    playPing();
                     return await response.blob();
                 } catch (err) {
                     if (err.name === "AbortError") {
@@ -799,6 +798,72 @@
                 return c;
             }
 
+            /**
+             * Epson-style "auto white background" / Remove Background.
+             * Estimates the light background from the border, then gently
+             * pushes near-background pixels toward pure white while leaving
+             * darker content (text, photos, logos) intact.
+             */
+            function autoWhiteBackground(srcCanvas) {
+                const w = srcCanvas.width;
+                const h = srcCanvas.height;
+                const ctx = srcCanvas.getContext("2d");
+                const imageData = ctx.getImageData(0, 0, w, h);
+                const data = imageData.data;
+
+                // --- Estimate background from a thin border ring ---
+                const ring = Math.max(3, Math.round(Math.min(w, h) * 0.025));
+                let rSum = 0,
+                    gSum = 0,
+                    bSum = 0,
+                    n = 0;
+
+                function sample(x, y) {
+                    const i = (y * w + x) * 4;
+                    rSum += data[i];
+                    gSum += data[i + 1];
+                    bSum += data[i + 2];
+                    n++;
+                }
+                for (let x = 0; x < w; x += 2) {
+                    for (let yy = 0; yy < ring; yy++) sample(x, yy);
+                    for (let yy = h - ring; yy < h; yy++) sample(x, yy);
+                }
+                for (let y = ring; y < h - ring; y += 2) {
+                    for (let xx = 0; xx < ring; xx++) sample(xx, y);
+                    for (let xx = w - ring; xx < w; xx++) sample(xx, y);
+                }
+                if (n < 10) return srcCanvas; // safety
+
+                const bgR = rSum / n;
+                const bgG = gSum / n;
+                const bgB = bSum / n;
+
+                // Distance threshold: pixels closer than this are treated as background.
+                // Soft falloff keeps edges natural (Epson-like, not hard clip).
+                const THRESH = 48;
+                const SOFT = 28;
+
+                for (let i = 0; i < data.length; i += 4) {
+                    const dr = data[i] - bgR;
+                    const dg = data[i + 1] - bgG;
+                    const db = data[i + 2] - bgB;
+                    const dist = Math.sqrt(dr * dr + dg * dg + db * db);
+
+                    if (dist < THRESH) {
+                        // How strongly to push toward white (1 = full white)
+                        const t = dist < THRESH - SOFT ? 1 : 1 - (dist - (THRESH - SOFT)) / SOFT;
+
+                        data[i] = Math.round(data[i] + (255 - data[i]) * t);
+                        data[i + 1] = Math.round(data[i + 1] + (255 - data[i + 1]) * t);
+                        data[i + 2] = Math.round(data[i + 2] + (255 - data[i + 2]) * t);
+                    }
+                }
+
+                ctx.putImageData(imageData, 0, 0);
+                return srcCanvas;
+            }
+
             async function handleScan(side) {
                 setButtonsBusy(true);
                 setStatus(side, "Scanning… this can take a minute", "busy");
@@ -809,7 +874,11 @@
                     setStatus(side, "Loading image…", "busy");
 
                     const img = await loadImageFromBlob(blob);
-                    const canvas = toCanvas(img);
+                    let canvas = toCanvas(img);
+
+                    // Epson L3210-style auto white background (Remove Background)
+                    setStatus(side, "Applying white background…", "busy");
+                    canvas = autoWhiteBackground(canvas);
 
                     const paper = currentPaper();
                     const defaultY = side === "front" ? 8 : paper.h * 0.5 + 4;
@@ -827,7 +896,8 @@
                     document.getElementById(side === "front" ? "btnCropFront" : "btnCropBack").disabled = false;
 
                     setStatus(side, `Ready — ${canvas.width}×${canvas.height}px`, "ok");
-                    log(`${side} scan loaded (${canvas.width}×${canvas.height}px).`, "ok");
+                    log(`${side} scan loaded (${canvas.width}×${canvas.height}px), white background applied.`, "ok");
+                    playPing();
                     renderLayout();
                 } catch (err) {
                     setStatus(side, err.message, "err");
