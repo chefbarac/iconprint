@@ -932,8 +932,8 @@
             function imagePhysicalSizeMm(data) {
                 const origW = data.originalCanvas.width;
                 const scaleMmPerPx = REFERENCE_WIDTH_MM / origW;
-                const wMm = (data.widthPx * scaleMmPerPx) / 2;
-                const hMm = (data.heightPx * scaleMmPerPx) / 2;
+                const wMm = data.widthPx * scaleMmPerPx * (3 / 4);
+                const hMm = data.heightPx * scaleMmPerPx * (3 / 4);
                 return { wMm, hMm };
             }
 
