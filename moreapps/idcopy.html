@@ -1,26 +1,35 @@
 <!doctype html>
 <html lang="en">
     <head>
+        <!-- Google tag (gtag.js) -->
+
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-SWGDSZH41W"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag("js", new Date());
+
+            gtag("config", "G-SWGDSZH41W");
+        </script>
+        <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🪪</text></svg>' />
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>ID Card Scan &amp; Print</title>
         <style>
-            /* ============================================================
-     DESIGN TOKENS
-     ============================================================ */
             :root {
-                --ink: #101820; /* near-black text on light chrome */
-                --paper: #f6f4ef; /* body background */
-                --panel: #1c2530; /* dark control-rail surface */
-                --panel-2: #26313f; /* raised card within panel */
-                --line: #3a4655; /* hairline on dark panel */
-                --text-lo: #a9b4c0; /* muted text on dark panel */
-                --text-hi: #f1eee7; /* bright text on dark panel */
-                --amber: #e3a542; /* primary accent - "badge" gold */
+                --ink: #101820;
+                --paper: #f6f4ef;
+                --panel: #1c2530;
+                --panel-2: #26313f;
+                --line: #3a4655;
+                --text-lo: #a9b4c0;
+                --text-hi: #f1eee7;
+                --amber: #e3a542;
                 --amber-dim: #b8842f;
-                --teal: #4fa98c; /* success */
-                --rust: #d9603f; /* error */
-                --card-edge: #8891a0; /* cut-guide dashed lines */
+                --teal: #4fa98c;
+                --rust: #d9603f;
                 --radius: 10px;
                 --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
                 --sans: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -42,9 +51,6 @@
                 line-height: 1.45;
             }
 
-            /* ============================================================
-     APP CHROME
-     ============================================================ */
             header.app-head {
                 padding: 22px 28px 18px;
                 border-bottom: 1px solid #dcd7cb;
@@ -73,17 +79,16 @@
 
             main.layout {
                 display: grid;
-                grid-template-columns: 360px 1fr;
+                grid-template-columns: 320px 1fr;
                 gap: 0;
                 min-height: calc(100vh - 84px);
             }
-            @media (max-width: 860px) {
+            @media (max-width: 800px) {
                 main.layout {
                     grid-template-columns: 1fr;
                 }
             }
 
-            /* ---------- control rail (dark) ---------- */
             section.controls {
                 background: var(--panel);
                 color: var(--text-hi);
@@ -119,17 +124,6 @@
                 flex-direction: column;
                 gap: 6px;
                 flex-shrink: 0;
-            }
-            .btn-adjust {
-                border-color: var(--line);
-                color: var(--text-lo);
-                padding: 6px 14px;
-                font-size: 0.74rem;
-            }
-            .btn-adjust:hover:not(:disabled) {
-                border-color: var(--text-hi);
-                color: var(--text-hi);
-                background: transparent;
             }
 
             .thumb {
@@ -212,6 +206,17 @@
             .btn-scan:hover:not(:disabled) {
                 background: rgba(227, 165, 66, 0.12);
             }
+            .btn-adjust {
+                border-color: var(--line);
+                color: var(--text-lo);
+                padding: 6px 14px;
+                font-size: 0.74rem;
+            }
+            .btn-adjust:hover:not(:disabled) {
+                border-color: var(--text-hi);
+                color: var(--text-hi);
+                background: transparent;
+            }
 
             .btn-primary {
                 width: 100%;
@@ -237,7 +242,7 @@
                 margin-bottom: 6px;
             }
             .field select,
-            .field input[type="number"] {
+            .field input[type="color"] {
                 width: 100%;
                 background: #0f1620;
                 border: 1px solid var(--line);
@@ -247,55 +252,42 @@
                 font-family: var(--mono);
                 font-size: 0.85rem;
             }
+            .field input[type="color"] {
+                height: 40px;
+                padding: 4px;
+                cursor: pointer;
+            }
             .field .hint {
                 font-size: 0.7rem;
                 color: var(--text-lo);
                 margin-top: 5px;
             }
-            .field.two-col {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 10px;
-            }
-            .field.two-col label {
-                margin-bottom: 6px;
-            }
 
-            .checkbox-label {
-                display: flex !important;
-                align-items: center;
-                gap: 8px;
-                color: var(--text-hi);
-                font-size: 0.82rem;
-                cursor: pointer;
-            }
-            .checkbox-label input[type="checkbox"] {
-                width: 15px;
-                height: 15px;
-                accent-color: var(--amber);
-            }
-
-            .preset-row {
+            .color-row {
                 display: flex;
-                flex-wrap: wrap;
-                gap: 7px;
+                gap: 8px;
+                align-items: center;
             }
-            .btn {
+            .color-row input[type="color"] {
+                width: 48px;
+                flex-shrink: 0;
+                height: 36px;
+                padding: 3px;
+            }
+            .btn-pick {
+                flex: 1;
                 background: #0f1620;
                 border: 1px solid var(--line);
                 color: var(--text-hi);
-                padding: 7px 10px;
+                padding: 8px 10px;
+                font-size: 0.78rem;
                 border-radius: 6px;
-                font-size: 0.72rem;
-                line-height: 1.25;
-                text-align: left;
-                flex: 1 1 calc(50% - 7px);
             }
-            .btn:hover {
+            .btn-pick:hover:not(:disabled) {
                 border-color: var(--amber);
                 color: var(--amber);
             }
-            .btn.active {
+            .btn-pick.active {
                 background: rgba(227, 165, 66, 0.15);
                 border-color: var(--amber);
                 color: var(--amber);
@@ -321,7 +313,6 @@
                 color: var(--teal);
             }
 
-            /* ---------- preview panel (light) ---------- */
             section.preview {
                 padding: 28px;
                 display: flex;
@@ -356,46 +347,29 @@
                 overflow: hidden;
             }
             .page-scale-wrap {
-                /* JS sets a transform:scale() here so the mm-sized page fits the panel */
                 transform-origin: top left;
             }
 
             #printPage {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                background: #fff;
-            }
-            .card-slot {
                 position: relative;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                background: #ffffff;
+                overflow: hidden;
             }
-            .card-slot img {
-                display: block;
-                width: 100%;
-                height: 100%;
-                object-fit: contain;
-            }
-            .card-slot .cut-guide {
+
+            .page-img {
                 position: absolute;
-                inset: 0;
-                border: 1px dashed var(--card-edge);
-                pointer-events: none;
+                display: block;
+                cursor: grab;
+                user-select: none;
+                height: auto;
+                max-width: none;
+                /* box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08); */
             }
-            .card-slot .empty-card {
-                width: 100%;
-                height: 100%;
-                border: 1px dashed #c9c4b8;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: #b4aea0;
-                font-family: var(--mono);
-                font-size: 0.65rem;
-                text-align: center;
+            .page-img.dragging {
+                cursor: grabbing;
+            }
+            .page-img.picking {
+                cursor: crosshair !important;
             }
 
             .empty-preview-note {
@@ -406,9 +380,7 @@
                 margin-top: 40px;
             }
 
-            /* ============================================================
-     MANUAL EDITOR MODAL (rotate / zoom / crop)
-     ============================================================ */
+            /* Crop modal */
             .modal-backdrop {
                 position: fixed;
                 inset: 0;
@@ -423,105 +395,113 @@
                 display: flex;
             }
 
-            .editor-panel {
+            .crop-panel {
                 background: var(--panel);
                 color: var(--text-hi);
                 border: 1px solid var(--line);
                 border-radius: var(--radius);
                 padding: 22px;
                 width: 100%;
-                max-width: 560px;
-                max-height: 92vh;
+                max-width: 720px;
+                max-height: 94vh;
                 overflow-y: auto;
             }
-            .editor-panel h3 {
+            .crop-panel h3 {
                 font-family: var(--display);
                 margin: 0 0 4px;
                 font-size: 1.1rem;
             }
-            .editor-panel .editor-sub {
+            .crop-panel .editor-sub {
                 color: var(--text-lo);
                 font-size: 0.8rem;
                 margin: 0 0 16px;
             }
 
-            .editor-viewport-wrap {
+            .crop-viewport-wrap {
                 display: flex;
                 justify-content: center;
                 margin-bottom: 18px;
-            }
-            .editor-viewport {
-                position: relative;
-                border-radius: 6px;
-                overflow: hidden;
-                border: 1px solid var(--line);
-                cursor: grab;
-                /* checkerboard pattern shows through any gaps left by pan/zoom/rotate */
-                background-image:
-                    linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%),
-                    linear-gradient(-45deg, transparent 75%, #333 75%);
-                background-size: 16px 16px;
-                background-position:
-                    0 0,
-                    0 8px,
-                    8px -8px,
-                    -8px 0;
-                background-color: #1a1a1a;
-            }
-            .editor-viewport.dragging {
-                cursor: grabbing;
-            }
-            .editor-viewport canvas {
-                display: block;
-                touch-action: none;
-            }
-            .editor-viewport .safe-frame {
-                position: absolute;
-                inset: 0;
-                pointer-events: none;
-                box-shadow: inset 0 0 0 1px rgba(227, 165, 66, 0.7);
-            }
-
-            .editor-controls .field {
-                margin-bottom: 14px;
-            }
-            .editor-controls .slider-row {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-            }
-            .editor-controls input[type="range"] {
-                flex: 1;
-                accent-color: var(--amber);
-            }
-            .editor-controls .slider-val {
-                font-family: var(--mono);
-                font-size: 0.75rem;
-                color: var(--text-lo);
-                width: 52px;
-                text-align: right;
-                flex-shrink: 0;
-            }
-            .rotate-quick {
-                display: flex;
-                gap: 8px;
-                margin-top: 8px;
-            }
-            .rotate-quick button {
-                flex: 1;
                 background: #0f1620;
-                border: 1px solid var(--line);
-                color: var(--text-hi);
-                padding: 7px 8px;
-                font-size: 0.74rem;
                 border-radius: 6px;
+                border: 1px solid var(--line);
+                padding: 12px;
+                overflow: auto;
+                max-height: 55vh;
             }
-            .rotate-quick button:hover {
-                border-color: var(--amber);
-                color: var(--amber);
+            .crop-stage {
+                position: relative;
+                display: inline-block;
+                line-height: 0;
+                user-select: none;
+            }
+            .crop-stage img {
+                display: block;
+                max-width: 100%;
+                max-height: 50vh;
+                pointer-events: none;
+            }
+            .crop-box {
+                position: absolute;
+                border: 2px solid var(--amber);
+                box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+                cursor: move;
+                box-sizing: border-box;
+            }
+            .crop-handle {
+                position: absolute;
+                width: 12px;
+                height: 12px;
+                background: var(--amber);
+                border: 1px solid #1b1304;
+                border-radius: 2px;
+                z-index: 2;
+            }
+            .crop-handle.nw {
+                top: -6px;
+                left: -6px;
+                cursor: nw-resize;
+            }
+            .crop-handle.ne {
+                top: -6px;
+                right: -6px;
+                cursor: ne-resize;
+            }
+            .crop-handle.sw {
+                bottom: -6px;
+                left: -6px;
+                cursor: sw-resize;
+            }
+            .crop-handle.se {
+                bottom: -6px;
+                right: -6px;
+                cursor: se-resize;
+            }
+            .crop-handle.n {
+                top: -6px;
+                left: 50%;
+                margin-left: -6px;
+                cursor: n-resize;
+            }
+            .crop-handle.s {
+                bottom: -6px;
+                left: 50%;
+                margin-left: -6px;
+                cursor: s-resize;
+            }
+            .crop-handle.w {
+                left: -6px;
+                top: 50%;
+                margin-top: -6px;
+                cursor: w-resize;
+            }
+            .crop-handle.e {
+                right: -6px;
+                top: 50%;
+                margin-top: -6px;
+                cursor: e-resize;
             }
 
-            .editor-actions {
+            .crop-actions {
                 display: flex;
                 justify-content: flex-end;
                 gap: 10px;
@@ -540,9 +520,13 @@
                 border-color: var(--text-hi);
             }
 
-            /* ============================================================
-     PRINT
-     ============================================================ */
+            .crop-info {
+                font-family: var(--mono);
+                font-size: 0.72rem;
+                color: var(--text-lo);
+                margin-bottom: 10px;
+            }
+
             @media print {
                 body * {
                     visibility: hidden;
@@ -550,9 +534,7 @@
                 header.app-head,
                 section.controls,
                 .preview-toolbar,
-                .empty-preview-note {
-                    display: none !important;
-                }
+                .empty-preview-note,
                 .modal-backdrop {
                     display: none !important;
                 }
@@ -573,8 +555,9 @@
                     left: 0;
                     margin: 0;
                 }
-                .card-slot .cut-guide {
-                    border-color: #999;
+                .page-img {
+                    box-shadow: none !important;
+                    cursor: default !important;
                 }
             }
         </style>
@@ -582,13 +565,10 @@
     <body>
         <header class="app-head">
             <h1><span class="badge-dot"></span>ID Card Scan &amp; Print</h1>
-            <p>Scan front and back, then print a true-to-size layout ready for lamination.</p>
+            <p>Scan front and back, crop if needed, then print. Drag images to reposition.</p>
         </header>
 
         <main class="layout">
-            <!-- ============================================================
-         CONTROL RAIL
-         ============================================================ -->
             <section class="controls">
                 <div class="ctrl-group">
                     <h2>Scanner</h2>
@@ -601,7 +581,7 @@
                         </div>
                         <div class="scan-row-btns">
                             <button class="btn-scan" id="btnScanFront">Scan Front</button>
-                            <button class="btn-scan btn-adjust" id="btnAdjustFront" disabled>Adjust</button>
+                            <button class="btn-scan btn-adjust" id="btnCropFront" disabled>Crop</button>
                         </div>
                     </div>
 
@@ -613,7 +593,7 @@
                         </div>
                         <div class="scan-row-btns">
                             <button class="btn-scan" id="btnScanBack">Scan Back</button>
-                            <button class="btn-scan btn-adjust" id="btnAdjustBack" disabled>Adjust</button>
+                            <button class="btn-scan btn-adjust" id="btnCropBack" disabled>Crop</button>
                         </div>
                     </div>
 
@@ -622,66 +602,30 @@
 
                 <div class="ctrl-group">
                     <h2>Print Setup</h2>
-
                     <div class="field">
                         <label for="paperSize">Paper size</label>
                         <select id="paperSize">
-                            <option value="letter">Letter — 8.5 × 11 in</option>
+                            <option value="short">Short — 8.5 × 11 in (Letter)</option>
+                            <option value="long">Long — 8.5 × 13 in</option>
                             <option value="a4">A4 — 210 × 297 mm</option>
-                            <option value="legal">Legal — 8.5 × 14 in</option>
                         </select>
                     </div>
+                    <div class="field hint">Image size is fixed to Short/Letter width. On A4 the image overflows slightly (narrower page).</div>
 
-                    <div class="field">
-                        <label>Card size presets (inches)</label>
-                        <div class="preset-row">
-                            <button type="button" class="btn" data-preset="6,4">6 x 4 (OR CR)</button>
-                            <button type="button" class="btn" data-preset="3.375,2.125">3.4 x 2.1 (Regular PVC ID/Card)</button>
-                            <button type="button" class="btn" data-preset="3.543,2.362">3.5 x 2.4 (Philhealth ID)</button>
-                            <button type="button" class="btn" data-preset="3.937,2.716">3.9 x 2.7 (Temp. National ID)</button>
+                    <div class="field" style="margin-top: 14px">
+                        <label>Paper background color</label>
+                        <div class="color-row">
+                            <input type="color" id="bgColor" value="#ffffff" title="Paper background" />
+                            <button type="button" class="btn-pick" id="btnPickColor">Pick from image</button>
                         </div>
-                    </div>
-
-                    <div class="field">
-                        <label for="cardUnit">Size unit</label>
-                        <select id="cardUnit">
-                            <option value="mm">Millimetres (mm)</option>
-                            <option value="in">Inches (in)</option>
-                        </select>
-                    </div>
-
-                    <div class="field two-col">
-                        <div>
-                            <label for="cardWidth">Width</label>
-                            <input type="number" id="cardWidth" value="85.6" min="10" max="500" step="0.01" />
-                        </div>
-                        <div>
-                            <label for="cardHeight">Height</label>
-                            <input type="number" id="cardHeight" value="54" min="10" max="500" step="0.01" />
-                        </div>
-                    </div>
-
-                    <div class="field">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="autoHeight" checked />
-                            Auto height from scanned aspect ratio
-                        </label>
-                        <div class="hint">Uncheck to set an exact height yourself (presets do this automatically). 85.6&nbsp;mm × 54&nbsp;mm is the standard CR-80 card size.</div>
-                    </div>
-
-                    <div class="field">
-                        <label for="cardGap">Gap between front &amp; back (mm)</label>
-                        <input type="number" id="cardGap" value="12" min="10" max="15" step="0.5" />
+                        <div class="field hint">Sample a color from the scan so the paper matches the image background.</div>
                     </div>
                 </div>
 
                 <button class="btn-primary" id="btnPrint" disabled>Print Layout</button>
-                <div class="field hint" style="margin-top: 10px">In the print dialog, set <strong>Scale</strong> to <strong>100%</strong> (not "Fit to page") for accurate physical dimensions.</div>
+                <div class="field hint" style="margin-top: 10px">In the print dialog, set <strong>Scale</strong> to <strong>100%</strong> (not “Fit to page”).</div>
             </section>
 
-            <!-- ============================================================
-         PREVIEW PANEL
-         ============================================================ -->
             <section class="preview">
                 <div class="preview-toolbar">
                     <h2>Printable Layout</h2>
@@ -690,14 +634,7 @@
 
                 <div class="page-frame" id="pageFrame">
                     <div class="page-scale-wrap" id="pageScaleWrap">
-                        <div id="printPage">
-                            <div class="card-slot" id="slotFront">
-                                <div class="empty-card">FRONT<br />not scanned</div>
-                            </div>
-                            <div class="card-slot" id="slotBack">
-                                <div class="empty-card">BACK<br />not scanned</div>
-                            </div>
-                        </div>
+                        <div id="printPage"></div>
                     </div>
                 </div>
 
@@ -705,82 +642,102 @@
             </section>
         </main>
 
-        <!-- ============================================================
-       MANUAL EDITOR MODAL — rotate / zoom / pan (crop)
-       ============================================================ -->
-        <div class="modal-backdrop" id="editorBackdrop">
-            <div class="editor-panel">
-                <h3 id="editorTitle">Adjust Front</h3>
-                <p class="editor-sub">Drag the image to reposition it. The gold frame is what will be printed.</p>
+        <!-- Word-style crop modal -->
+        <div class="modal-backdrop" id="cropBackdrop">
+            <div class="crop-panel">
+                <h3 id="cropTitle">Crop Front</h3>
+                <p class="editor-sub">Drag the box or its handles to crop. Original pixel size is preserved (no resize).</p>
+                <div class="crop-info" id="cropInfo">—</div>
 
-                <div class="editor-viewport-wrap">
-                    <div class="editor-viewport" id="editorViewport">
-                        <canvas id="editorCanvas"></canvas>
-                        <div class="safe-frame"></div>
-                    </div>
-                </div>
-
-                <div class="editor-controls">
-                    <div class="field">
-                        <label for="rotateSlider">Rotation</label>
-                        <div class="slider-row">
-                            <input type="range" id="rotateSlider" min="-180" max="180" step="1" value="0" />
-                            <span class="slider-val" id="rotateVal">0°</span>
-                        </div>
-                        <div class="rotate-quick">
-                            <button type="button" id="rotateLeft90">⟲ Rotate 90°</button>
-                            <button type="button" id="rotateRight90">⟳ Rotate 90°</button>
-                        </div>
-                    </div>
-
-                    <div class="field">
-                        <label for="zoomSlider">Zoom</label>
-                        <div class="slider-row">
-                            <input type="range" id="zoomSlider" min="1" max="4" step="0.01" value="1" />
-                            <span class="slider-val" id="zoomVal">1.00×</span>
+                <div class="crop-viewport-wrap">
+                    <div class="crop-stage" id="cropStage">
+                        <img id="cropImg" alt="Scan to crop" />
+                        <div class="crop-box" id="cropBox">
+                            <div class="crop-handle nw" data-handle="nw"></div>
+                            <div class="crop-handle n" data-handle="n"></div>
+                            <div class="crop-handle ne" data-handle="ne"></div>
+                            <div class="crop-handle e" data-handle="e"></div>
+                            <div class="crop-handle se" data-handle="se"></div>
+                            <div class="crop-handle s" data-handle="s"></div>
+                            <div class="crop-handle sw" data-handle="sw"></div>
+                            <div class="crop-handle w" data-handle="w"></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="editor-actions">
-                    <button type="button" class="btn-secondary" id="editorReset">Reset</button>
-                    <button type="button" class="btn-secondary" id="editorCancel">Cancel</button>
-                    <button type="button" class="btn-primary" id="editorApply" style="width: auto">Apply</button>
+                <div class="crop-actions">
+                    <button type="button" class="btn-secondary" id="cropReset">Reset</button>
+                    <button type="button" class="btn-secondary" id="cropCancel">Cancel</button>
+                    <button type="button" class="btn-primary" id="cropApply" style="width: auto">Apply Crop</button>
                 </div>
             </div>
         </div>
 
         <script>
-            /* ================================================================
-   CONFIGURATION
-   ================================================================ */
+            let audioCtx;
 
-            // Change this single constant if the scanner service moves.
+            async function playPing() {
+                try {
+                    if (!audioCtx) {
+                        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+
+                    if (audioCtx.state === "suspended") {
+                        await audioCtx.resume();
+                    }
+
+                    const notes = [
+                        { freq: 880, duration: 0.18 },
+                        { freq: 1175, duration: 0.18 },
+                        { freq: 1568, duration: 0.35 },
+                    ];
+
+                    let start = audioCtx.currentTime;
+
+                    notes.forEach(({ freq, duration }) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+
+                        osc.type = "triangle";
+                        osc.frequency.value = freq;
+
+                        gain.gain.setValueAtTime(0.0001, start);
+                        gain.gain.exponentialRampToValueAtTime(0.18, start + 0.02);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+
+                        osc.start(start);
+                        osc.stop(start + duration);
+
+                        start += duration * 0.85;
+                    });
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+
             const SCAN_ENDPOINT = "http://localhost:5001/scan";
 
-            // Physical paper sizes in millimetres.
+            // Fixed reference width (Short / Letter). Image physical size is always
+            // based on this, so on narrower A4 the image overflows a little.
+            const REFERENCE_WIDTH_MM = 215.9;
+
             const PAPER_SIZES_MM = {
-                letter: { w: 215.9, h: 279.4, pageKeyword: "letter" },
-                a4: { w: 210.0, h: 297.0, pageKeyword: "a4" },
-                legal: { w: 215.9, h: 355.6, pageKeyword: "legal" },
+                short: { w: 215.9, h: 279.4, pageKeyword: "letter", label: "Short" },
+                long: { w: 215.9, h: 330.2, pageKeyword: "long", label: "Long" },
+                a4: { w: 210.0, h: 297.0, pageKeyword: "a4", label: "A4" },
             };
 
-            // CSS reference pixel ratio (browsers define 1in = 96px, so 1mm = 96/25.4 px).
             const PX_PER_MM = 96 / 25.4;
-            const MM_PER_IN = 25.4;
-
-            /* ================================================================
-   APPLICATION STATE
-   ================================================================ */
 
             const state = {
-                front: null, // { canvas, widthPx, heightPx, aspect }  -- processed result
+                front: null,
                 back: null,
+                paperBg: "#ffffff",
+                pickingColor: false,
             };
-
-            /* ================================================================
-   SMALL UI HELPERS
-   ================================================================ */
 
             function log(message, kind) {
                 const box = document.getElementById("logBox");
@@ -803,84 +760,37 @@
                 document.getElementById("btnScanBack").disabled = busy;
             }
 
-            /* ================================================================
-   1. SCANNER COMMUNICATION
-   ================================================================ */
-
-            /**
-             * Requests a fresh scan from the local scanner backend.
-             * Returns a Blob (PNG) of the raw, unprocessed scan.
-             * Encapsulated here so the endpoint / protocol can change without
-             * touching any other part of the app.
-             */
             async function scanDocument() {
                 const controller = new AbortController();
-                // Scanners (especially flatbeds warming up / doing a preview + final pass)
-                // can take a while — give it a generous 2 minutes before giving up.
                 const timeout = setTimeout(() => controller.abort(), 120000);
-
                 try {
                     const response = await fetch(SCAN_ENDPOINT, {
                         method: "POST",
                         signal: controller.signal,
                     });
-
-                    if (!response.ok) {
-                        throw new Error(`Scanner returned HTTP ${response.status}`);
-                    }
-                    const blob = await response.blob();
-                    return blob;
+                    if (!response.ok) throw new Error(`Scanner returned HTTP ${response.status}`);
+                    playPing();
+                    return await response.blob();
                 } catch (err) {
                     if (err.name === "AbortError") {
                         throw new Error("Scan request timed out after 2 minutes. Is the scanner service running?");
                     }
-                    // A generic "Failed to fetch" almost always means the service is
-                    // offline, or the page's origin isn't allowed by the backend's CORS
-                    // policy (it must be served from an origin the Flask service allows).
                     throw new Error("Could not reach scanner service at " + SCAN_ENDPOINT + " (" + err.message + ")");
                 } finally {
                     clearTimeout(timeout);
                 }
             }
 
-            /** Decodes a Blob into a ready-to-draw HTMLImageElement. */
             function loadImageFromBlob(blob) {
                 return new Promise((resolve, reject) => {
                     const url = URL.createObjectURL(blob);
                     const img = new Image();
-                    img.onload = () => {
-                        resolve(img);
-                    };
-                    img.onerror = () => {
-                        reject(new Error("Could not decode scanned image"));
-                    };
+                    img.onload = () => resolve(img);
+                    img.onerror = () => reject(new Error("Could not decode scanned image"));
                     img.src = url;
                 });
             }
 
-            /* ================================================================
-   2. IMAGE PROCESSING PIPELINE
-   ------------------------------------------------------------------
-   This is a lightweight, dependency-free heuristic pipeline (no
-   OpenCV / vision library is used, per the "no frameworks" brief).
-   It assumes the ID is scanned on a plain, roughly uniform backing
-   sheet, and that any rotation is slight (a few degrees), not a
-   dramatic perspective tilt. Steps:
-
-     A. Trim solid scanner-bed borders (near-uniform dark/light strips
-        at the very edge of the scan).
-     B. Estimate the background (paper) colour from the trimmed
-        image's border ring.
-     C. Build a foreground/background mask by colour distance.
-     D. Clean up the mask (majority-filter denoise).
-     E. Keep only the largest connected foreground region (the ID).
-     F. Search for the small rotation angle that minimises that
-        region's bounding-box area (deskew).
-     G. Rotate the full-resolution image by that angle and crop
-        tightly to the (re-computed) bounding box.
-   ================================================================ */
-
-            /** Draws `img` onto a new canvas at 1:1 resolution and returns it. */
             function toCanvas(img) {
                 const c = document.createElement("canvas");
                 c.width = img.naturalWidth || img.width;
@@ -889,397 +799,6 @@
                 return c;
             }
 
-            /** Returns a downscaled copy of a canvas, capped at maxDim on the long side. */
-            function downscaleCanvas(srcCanvas, maxDim) {
-                const scale = Math.min(1, maxDim / Math.max(srcCanvas.width, srcCanvas.height));
-                const w = Math.max(1, Math.round(srcCanvas.width * scale));
-                const h = Math.max(1, Math.round(srcCanvas.height * scale));
-                const c = document.createElement("canvas");
-                c.width = w;
-                c.height = h;
-                c.getContext("2d").drawImage(srcCanvas, 0, 0, w, h);
-                return { canvas: c, scale };
-            }
-
-            /* ---- A. Trim solid scanner-bed borders ---- */
-            function trimScannerBorders(canvas) {
-                const ctx = canvas.getContext("2d");
-                const { width: w, height: h } = canvas;
-                const data = ctx.getImageData(0, 0, w, h).data;
-
-                const gray = (x, y) => {
-                    const i = (y * w + x) * 4;
-                    return 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-                };
-
-                const STD_THRESHOLD = 6; // "uniform strip" if stddev below this
-                const MAX_TRIM_FRACTION = 0.08; // never trim more than 8% per side (safety)
-
-                function rowStats(y) {
-                    let sum = 0,
-                        sumSq = 0;
-                    for (let x = 0; x < w; x++) {
-                        const v = gray(x, y);
-                        sum += v;
-                        sumSq += v * v;
-                    }
-                    const mean = sum / w;
-                    const variance = Math.max(0, sumSq / w - mean * mean);
-                    return Math.sqrt(variance);
-                }
-                function colStats(x) {
-                    let sum = 0,
-                        sumSq = 0;
-                    for (let y = 0; y < h; y++) {
-                        const v = gray(x, y);
-                        sum += v;
-                        sumSq += v * v;
-                    }
-                    const mean = sum / h;
-                    const variance = Math.max(0, sumSq / h - mean * mean);
-                    return Math.sqrt(variance);
-                }
-
-                let top = 0,
-                    bottom = h - 1,
-                    left = 0,
-                    right = w - 1;
-                const maxTrimV = Math.floor(h * MAX_TRIM_FRACTION);
-                const maxTrimH = Math.floor(w * MAX_TRIM_FRACTION);
-
-                while (top < h / 2 && top < maxTrimV && rowStats(top) < STD_THRESHOLD) top++;
-                while (bottom > h / 2 && h - 1 - bottom < maxTrimV && rowStats(bottom) < STD_THRESHOLD) bottom--;
-                while (left < w / 2 && left < maxTrimH && colStats(left) < STD_THRESHOLD) left++;
-                while (right > w / 2 && w - 1 - right < maxTrimH && colStats(right) < STD_THRESHOLD) right--;
-
-                const newW = Math.max(1, right - left + 1);
-                const newH = Math.max(1, bottom - top + 1);
-                const out = document.createElement("canvas");
-                out.width = newW;
-                out.height = newH;
-                out.getContext("2d").drawImage(canvas, left, top, newW, newH, 0, 0, newW, newH);
-                return out;
-            }
-
-            /* ---- B. Estimate background colour from the border ring ---- */
-            function estimateBackgroundColor(imageData, w, h) {
-                const data = imageData.data;
-                const ring = Math.max(4, Math.round(Math.min(w, h) * 0.03));
-                let r = 0,
-                    g = 0,
-                    b = 0,
-                    n = 0;
-
-                function sample(x, y) {
-                    const i = (y * w + x) * 4;
-                    r += data[i];
-                    g += data[i + 1];
-                    b += data[i + 2];
-                    n++;
-                }
-                for (let x = 0; x < w; x += 2) {
-                    for (let yy = 0; yy < ring; yy++) sample(x, yy);
-                    for (let yy = h - ring; yy < h; yy++) sample(x, yy);
-                }
-                for (let y = 0; y < h; y += 2) {
-                    for (let xx = 0; xx < ring; xx++) sample(xx, y);
-                    for (let xx = w - ring; xx < w; xx++) sample(xx, y);
-                }
-                return { r: r / n, g: g / n, b: b / n };
-            }
-
-            /* ---- C. Build foreground mask by colour distance ---- */
-            function buildForegroundMask(imageData, w, h, bg, threshold) {
-                const data = imageData.data;
-                const mask = new Uint8Array(w * h);
-                for (let p = 0, i = 0; p < w * h; p++, i += 4) {
-                    const dr = data[i] - bg.r,
-                        dg = data[i + 1] - bg.g,
-                        db = data[i + 2] - bg.b;
-                    const dist = Math.sqrt(dr * dr + dg * dg + db * db);
-                    mask[p] = dist > threshold ? 1 : 0;
-                }
-                return mask;
-            }
-
-            /* ---- D. Majority-filter denoise (removes speckle, fills small gaps) ---- */
-            function denoiseMask(mask, w, h, passes) {
-                let current = mask;
-                for (let p = 0; p < passes; p++) {
-                    const next = new Uint8Array(w * h);
-                    for (let y = 0; y < h; y++) {
-                        for (let x = 0; x < w; x++) {
-                            let count = 0,
-                                total = 0;
-                            for (let dy = -1; dy <= 1; dy++) {
-                                for (let dx = -1; dx <= 1; dx++) {
-                                    const nx = x + dx,
-                                        ny = y + dy;
-                                    if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
-                                        total++;
-                                        count += current[ny * w + nx];
-                                    }
-                                }
-                            }
-                            next[y * w + x] = count / total >= 0.5 ? 1 : 0;
-                        }
-                    }
-                    current = next;
-                }
-                return current;
-            }
-
-            /* ---- E. Largest connected component (iterative flood fill) ---- */
-            function largestConnectedComponent(mask, w, h) {
-                const visited = new Uint8Array(w * h);
-                let bestSize = 0;
-                let bestMask = null;
-
-                const stackX = new Int32Array(w * h);
-                const stackY = new Int32Array(w * h);
-
-                for (let y = 0; y < h; y++) {
-                    for (let x = 0; x < w; x++) {
-                        const idx = y * w + x;
-                        if (mask[idx] !== 1 || visited[idx]) continue;
-
-                        // flood fill this component
-                        let sp = 0;
-                        stackX[sp] = x;
-                        stackY[sp] = y;
-                        sp++;
-                        visited[idx] = 1;
-                        const componentPixels = [];
-
-                        while (sp > 0) {
-                            sp--;
-                            const cx = stackX[sp],
-                                cy = stackY[sp];
-                            componentPixels.push(cy * w + cx);
-                            const neighbors = [
-                                [cx + 1, cy],
-                                [cx - 1, cy],
-                                [cx, cy + 1],
-                                [cx, cy - 1],
-                            ];
-                            for (const [nx, ny] of neighbors) {
-                                if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
-                                    const nidx = ny * w + nx;
-                                    if (mask[nidx] === 1 && !visited[nidx]) {
-                                        visited[nidx] = 1;
-                                        stackX[sp] = nx;
-                                        stackY[sp] = ny;
-                                        sp++;
-                                    }
-                                }
-                            }
-                        }
-
-                        if (componentPixels.length > bestSize) {
-                            bestSize = componentPixels.length;
-                            bestMask = componentPixels;
-                        }
-                    }
-                }
-
-                const out = new Uint8Array(w * h);
-                if (bestMask) for (const idx of bestMask) out[idx] = 1;
-                return out;
-            }
-
-            /* ---- F. Minimum-area rotation search (deskew angle) ---- */
-            function extractPoints(mask, w, h, maxPoints) {
-                const all = [];
-                for (let y = 0; y < h; y++) {
-                    for (let x = 0; x < w; x++) {
-                        if (mask[y * w + x]) all.push({ x, y });
-                    }
-                }
-                if (all.length <= maxPoints) return all;
-                const step = all.length / maxPoints;
-                const out = [];
-                for (let i = 0; i < maxPoints; i++) out.push(all[Math.floor(i * step)]);
-                return out;
-            }
-
-            function bboxAreaAtAngle(points, angleRad, cx, cy) {
-                const cos = Math.cos(angleRad),
-                    sin = Math.sin(angleRad);
-                let minX = Infinity,
-                    maxX = -Infinity,
-                    minY = Infinity,
-                    maxY = -Infinity;
-                for (const p of points) {
-                    const dx = p.x - cx,
-                        dy = p.y - cy;
-                    const rx = dx * cos - dy * sin;
-                    const ry = dx * sin + dy * cos;
-                    if (rx < minX) minX = rx;
-                    if (rx > maxX) maxX = rx;
-                    if (ry < minY) minY = ry;
-                    if (ry > maxY) maxY = ry;
-                }
-                return { area: (maxX - minX) * (maxY - minY), minX, maxX, minY, maxY };
-            }
-
-            function findDeskewAngleDeg(mask, w, h) {
-                const points = extractPoints(mask, w, h, 4000);
-                if (points.length < 20) return 0; // not enough signal, skip deskew
-
-                let sx = 0,
-                    sy = 0;
-                for (const p of points) {
-                    sx += p.x;
-                    sy += p.y;
-                }
-                const cx = sx / points.length,
-                    cy = sy / points.length;
-
-                let best = { angle: 0, area: Infinity };
-
-                // coarse search
-                for (let deg = -20; deg <= 20; deg += 0.5) {
-                    const rad = (deg * Math.PI) / 180;
-                    const { area } = bboxAreaAtAngle(points, rad, cx, cy);
-                    if (area < best.area) best = { angle: deg, area };
-                }
-                // fine refine around the coarse best
-                const coarse = best.angle;
-                for (let deg = coarse - 0.5; deg <= coarse + 0.5; deg += 0.05) {
-                    const rad = (deg * Math.PI) / 180;
-                    const { area } = bboxAreaAtAngle(points, rad, cx, cy);
-                    if (area < best.area) best = { angle: deg, area };
-                }
-                return best.angle;
-            }
-
-            /* ---- G. Rotate full-resolution canvas by a given angle ---- */
-            function rotateCanvasByDegrees(canvas, deg) {
-                const rad = (deg * Math.PI) / 180;
-                const w = canvas.width,
-                    h = canvas.height;
-                const newW = Math.round(Math.abs(w * Math.cos(rad)) + Math.abs(h * Math.sin(rad)));
-                const newH = Math.round(Math.abs(w * Math.sin(rad)) + Math.abs(h * Math.cos(rad)));
-
-                const out = document.createElement("canvas");
-                out.width = newW;
-                out.height = newH;
-                const ctx = out.getContext("2d");
-                ctx.translate(newW / 2, newH / 2);
-                ctx.rotate(rad);
-                ctx.drawImage(canvas, -w / 2, -h / 2);
-                return out;
-            }
-
-            /**
-             * Maps a point from the original (unrotated) canvas's coordinate space
-             * into the coordinate space of the canvas produced by rotateCanvasByDegrees.
-             */
-            function mapPointThroughRotation(x, y, origW, origH, newW, newH, deg) {
-                const rad = (deg * Math.PI) / 180;
-                const cos = Math.cos(rad),
-                    sin = Math.sin(rad);
-                const dx = x - origW / 2,
-                    dy = y - origH / 2;
-                const rx = dx * cos - dy * sin;
-                const ry = dx * sin + dy * cos;
-                return { x: rx + newW / 2, y: ry + newH / 2 };
-            }
-
-            /**
-             * Full pipeline: takes a raw scanned <img>, returns a tightly-cropped,
-             * deskewed, background-free canvas of just the ID card.
-             */
-            async function processScannedImage(img) {
-                const fullResCanvas = toCanvas(img);
-
-                // Work on a downscaled copy for fast analysis.
-                const ANALYSIS_MAX_DIM = 500;
-                const { canvas: trimmedFull } = { canvas: trimScannerBorders(fullResCanvas) };
-                const { canvas: analysisCanvas, scale } = downscaleCanvas(trimmedFull, ANALYSIS_MAX_DIM);
-                const actx = analysisCanvas.getContext("2d");
-                const aData = actx.getImageData(0, 0, analysisCanvas.width, analysisCanvas.height);
-
-                // Background estimate + mask + cleanup + largest region.
-                const bg = estimateBackgroundColor(aData, analysisCanvas.width, analysisCanvas.height);
-                let mask = buildForegroundMask(aData, analysisCanvas.width, analysisCanvas.height, bg, 32);
-                mask = denoiseMask(mask, analysisCanvas.width, analysisCanvas.height, 2);
-                mask = largestConnectedComponent(mask, analysisCanvas.width, analysisCanvas.height);
-
-                // Deskew angle from the cleaned mask.
-                const angleDeg = findDeskewAngleDeg(mask, analysisCanvas.width, analysisCanvas.height);
-
-                // Bounding box of the mask, in analysis-canvas coordinates.
-                const pts = extractPoints(mask, analysisCanvas.width, analysisCanvas.height, 4000);
-                let minX = Infinity,
-                    maxX = -Infinity,
-                    minY = Infinity,
-                    maxY = -Infinity;
-                for (const p of pts) {
-                    if (p.x < minX) minX = p.x;
-                    if (p.x > maxX) maxX = p.x;
-                    if (p.y < minY) minY = p.y;
-                    if (p.y > maxY) maxY = p.y;
-                }
-                if (!isFinite(minX)) {
-                    // Detection failed (e.g. blank scan) -- fall back to the full trimmed image.
-                    minX = 0;
-                    minY = 0;
-                    maxX = analysisCanvas.width;
-                    maxY = analysisCanvas.height;
-                }
-
-                // Scale bbox corners up to the trimmed full-resolution image.
-                const inv = 1 / scale;
-                const corners = [
-                    { x: minX * inv, y: minY * inv },
-                    { x: maxX * inv, y: minY * inv },
-                    { x: minX * inv, y: maxY * inv },
-                    { x: maxX * inv, y: maxY * inv },
-                ];
-
-                // Rotate the full-resolution (trimmed) image by the found angle.
-                const rotatedFull = rotateCanvasByDegrees(trimmedFull, angleDeg);
-
-                // Map the bbox corners through the same rotation to find the crop rect.
-                let rMinX = Infinity,
-                    rMaxX = -Infinity,
-                    rMinY = Infinity,
-                    rMaxY = -Infinity;
-                for (const c of corners) {
-                    const m = mapPointThroughRotation(c.x, c.y, trimmedFull.width, trimmedFull.height, rotatedFull.width, rotatedFull.height, angleDeg);
-                    if (m.x < rMinX) rMinX = m.x;
-                    if (m.x > rMaxX) rMaxX = m.x;
-                    if (m.y < rMinY) rMinY = m.y;
-                    if (m.y > rMaxY) rMaxY = m.y;
-                }
-                rMinX = Math.max(0, Math.floor(rMinX));
-                rMinY = Math.max(0, Math.floor(rMinY));
-                rMaxX = Math.min(rotatedFull.width, Math.ceil(rMaxX));
-                rMaxY = Math.min(rotatedFull.height, Math.ceil(rMaxY));
-
-                const cropW = Math.max(1, rMaxX - rMinX);
-                const cropH = Math.max(1, rMaxY - rMinY);
-
-                const finalCanvas = document.createElement("canvas");
-                finalCanvas.width = cropW;
-                finalCanvas.height = cropH;
-                finalCanvas.getContext("2d").drawImage(rotatedFull, rMinX, rMinY, cropW, cropH, 0, 0, cropW, cropH);
-
-                return {
-                    canvas: finalCanvas,
-                    widthPx: cropW,
-                    heightPx: cropH,
-                    aspect: cropW / cropH,
-                    deskewDeg: angleDeg,
-                    raw: fullResCanvas, // untouched original scan, kept for the manual rotate/zoom/crop editor
-                };
-            }
-
-            /* ================================================================
-   3. SCAN BUTTON HANDLERS
-   ================================================================ */
-
             async function handleScan(side) {
                 setButtonsBusy(true);
                 setStatus(side, "Scanning… this can take a minute", "busy");
@@ -1287,18 +806,28 @@
 
                 try {
                     const blob = await scanDocument();
-                    setStatus(side, "Processing image…", "busy");
+                    setStatus(side, "Loading image…", "busy");
 
                     const img = await loadImageFromBlob(blob);
-                    const result = await processScannedImage(img);
+                    const canvas = toCanvas(img);
 
-                    state[side] = result;
+                    const paper = currentPaper();
+                    const defaultY = side === "front" ? 8 : paper.h * 0.5 + 4;
+
+                    state[side] = {
+                        originalCanvas: canvas,
+                        canvas: canvas,
+                        widthPx: canvas.width,
+                        heightPx: canvas.height,
+                        offsetXmm: 0,
+                        offsetYmm: defaultY,
+                    };
+
                     updateThumbnail(side);
-                    document.getElementById(side === "front" ? "btnAdjustFront" : "btnAdjustBack").disabled = false;
+                    document.getElementById(side === "front" ? "btnCropFront" : "btnCropBack").disabled = false;
 
-                    setStatus(side, `Ready — ${result.widthPx}×${result.heightPx}px, deskew ${result.deskewDeg.toFixed(1)}°`, "ok");
-                    log(`${side} scan processed successfully.`, "ok");
-
+                    setStatus(side, `Ready — ${canvas.width}×${canvas.height}px`, "ok");
+                    log(`${side} scan loaded (${canvas.width}×${canvas.height}px).`, "ok");
                     renderLayout();
                 } catch (err) {
                     setStatus(side, err.message, "err");
@@ -1308,7 +837,6 @@
                 }
             }
 
-            /** Refreshes the small thumbnail preview for a side from current state. */
             function updateThumbnail(side) {
                 const thumbEl = document.getElementById(side === "front" ? "thumbFront" : "thumbBack");
                 thumbEl.innerHTML = "";
@@ -1320,67 +848,37 @@
             document.getElementById("btnScanFront").addEventListener("click", () => handleScan("front"));
             document.getElementById("btnScanBack").addEventListener("click", () => handleScan("back"));
 
-            /* ================================================================
-   4. PRINTABLE LAYOUT
-   ================================================================ */
-
             function currentPaper() {
-                const key = document.getElementById("paperSize").value;
-                return PAPER_SIZES_MM[key];
+                return PAPER_SIZES_MM[document.getElementById("paperSize").value];
             }
 
-            /** Converts a value from the given unit ("mm" | "in") into millimetres. */
-            function toMm(value, unit) {
-                return unit === "in" ? value * MM_PER_IN : value;
-            }
-            /** Converts a millimetre value into the given unit ("mm" | "in"). */
-            function fromMm(valueMm, unit) {
-                return unit === "in" ? valueMm / MM_PER_IN : valueMm;
+            /**
+             * Image physical size is always based on REFERENCE_WIDTH_MM (Short/Letter).
+             * On A4 (210 mm) the image is slightly wider than the page → overflows a little.
+             * Cropped regions keep the same scale (smaller physical size).
+             */
+            function imagePhysicalSizeMm(data) {
+                const origW = data.originalCanvas.width;
+                const scaleMmPerPx = REFERENCE_WIDTH_MM / origW;
+                const wMm = data.widthPx * scaleMmPerPx;
+                const hMm = data.heightPx * scaleMmPerPx;
+                return { wMm, hMm };
             }
 
-            let lastUnit = document.getElementById("cardUnit").value;
-
-            /** Rebuilds the #printPage element's sizing and slot contents. */
             function renderLayout() {
                 const paper = currentPaper();
-                const unit = document.getElementById("cardUnit").value;
-                const gapMm = parseFloat(document.getElementById("cardGap").value) || 12;
-                const autoHeight = document.getElementById("autoHeight").checked;
-
-                const widthInput = document.getElementById("cardWidth");
-                const heightInput = document.getElementById("cardHeight");
-                heightInput.disabled = autoHeight;
-
-                let cardWidthMm = toMm(parseFloat(widthInput.value) || 85.6, unit);
-                let cardHeightMm;
-
-                if (autoHeight) {
-                    // Front and back must render at exactly the same physical size.
-                    // Use the front image's aspect ratio as the canonical shape; if only
-                    // the back has been scanned so far, use its aspect ratio instead.
-                    const reference = state.front || state.back;
-                    const aspect = reference ? reference.aspect : 85.6 / 54; // CR-80 fallback
-                    cardHeightMm = cardWidthMm / aspect;
-                    heightInput.value = fromMm(cardHeightMm, unit).toFixed(unit === "in" ? 3 : 1);
-                } else {
-                    cardHeightMm = toMm(parseFloat(heightInput.value) || 54, unit);
-                }
-
                 const page = document.getElementById("printPage");
                 page.style.width = paper.w + "mm";
                 page.style.height = paper.h + "mm";
-                page.style.gap = gapMm + "mm";
+                page.style.background = state.paperBg;
+                page.innerHTML = "";
 
-                const unitLabel = unit === "in" ? "in" : "mm";
-                const wDisplay = fromMm(cardWidthMm, unit);
-                const hDisplay = fromMm(cardHeightMm, unit);
-                document.getElementById("pageDims").textContent =
-                    `${paper.w} × ${paper.h} mm · card ${wDisplay.toFixed(unit === "in" ? 3 : 1)} × ${hDisplay.toFixed(unit === "in" ? 3 : 1)} ${unitLabel}`;
+                const overflowNote = paper.w < REFERENCE_WIDTH_MM ? " · image overflows slightly" : "";
+                document.getElementById("pageDims").textContent = `${paper.label} ${paper.w} × ${paper.h} mm${overflowNote}`;
 
-                fillSlot("slotFront", state.front, cardWidthMm, cardHeightMm, "FRONT");
-                fillSlot("slotBack", state.back, cardWidthMm, cardHeightMm, "BACK");
+                if (state.front) placeImageOnPage(page, "front", state.front);
+                if (state.back) placeImageOnPage(page, "back", state.back);
 
-                // Update the @page CSS rule so the print dialog picks the right paper size.
                 let pageStyle = document.getElementById("pageSizeStyle");
                 if (!pageStyle) {
                     pageStyle = document.createElement("style");
@@ -1395,334 +893,401 @@
                 fitPreviewScale(paper);
             }
 
-            function fillSlot(slotId, data, wMm, hMm, labelText) {
-                const slot = document.getElementById(slotId);
-                slot.style.width = wMm + "mm";
-                slot.style.height = hMm + "mm";
-                slot.innerHTML = "";
+            function placeImageOnPage(page, side, data) {
+                const { wMm, hMm } = imagePhysicalSizeMm(data);
 
-                if (data) {
-                    const img = document.createElement("img");
-                    img.src = data.canvas.toDataURL("image/png");
-                    slot.appendChild(img);
-                    const guide = document.createElement("div");
-                    guide.className = "cut-guide";
-                    slot.appendChild(guide);
-                } else {
-                    const empty = document.createElement("div");
-                    empty.className = "empty-card";
-                    empty.textContent = labelText + "\nnot scanned";
-                    slot.appendChild(empty);
-                }
+                const img = document.createElement("img");
+                img.className = "page-img";
+                img.dataset.side = side;
+                img.src = data.canvas.toDataURL("image/png");
+                img.alt = side;
+                img.draggable = false;
+
+                img.style.width = wMm + "mm";
+                img.style.height = hMm + "mm";
+                img.style.left = data.offsetXmm + "mm";
+                img.style.top = data.offsetYmm + "mm";
+
+                if (state.pickingColor) img.classList.add("picking");
+
+                page.appendChild(img);
+                enableDrag(img, side);
+                enableColorPick(img, side);
             }
 
-            /** Scales the on-screen preview so the (physically-sized) page fits the panel. */
             function fitPreviewScale(paper) {
                 const frame = document.getElementById("pageFrame");
                 const wrap = document.getElementById("pageScaleWrap");
                 const pageWidthPx = paper.w * PX_PER_MM;
                 const pageHeightPx = paper.h * PX_PER_MM;
-
                 const availableWidth = Math.min(640, frame.parentElement.clientWidth - 4);
                 const scale = Math.min(1, availableWidth / pageWidthPx);
-
                 wrap.style.transform = `scale(${scale})`;
                 frame.style.width = pageWidthPx * scale + "px";
                 frame.style.height = pageHeightPx * scale + "px";
             }
 
-            document.getElementById("paperSize").addEventListener("change", renderLayout);
-            document.getElementById("cardWidth").addEventListener("input", () => {
-                clearPresetActive();
-                renderLayout();
-            });
-            document.getElementById("cardHeight").addEventListener("input", () => {
-                clearPresetActive();
-                renderLayout();
-            });
-            document.getElementById("cardGap").addEventListener("input", renderLayout);
-            document.getElementById("autoHeight").addEventListener("change", () => {
-                clearPresetActive();
-                renderLayout();
-            });
+            /* ---------- drag to reposition (size stays fixed) ---------- */
+            let drag = null;
 
-            // When the unit selector changes, convert the currently-entered numbers
-            // so the physical size they represent stays the same.
-            document.getElementById("cardUnit").addEventListener("change", (e) => {
-                const newUnit = e.target.value;
-                const widthInput = document.getElementById("cardWidth");
-                const heightInput = document.getElementById("cardHeight");
+            function enableDrag(imgEl, side) {
+                imgEl.addEventListener("pointerdown", (e) => {
+                    if (state.pickingColor) return;
+                    e.preventDefault();
+                    const data = state[side];
+                    if (!data) return;
 
-                const widthMm = toMm(parseFloat(widthInput.value) || 0, lastUnit);
-                const heightMm = toMm(parseFloat(heightInput.value) || 0, lastUnit);
+                    const paper = currentPaper();
+                    const page = document.getElementById("printPage");
+                    const pageRect = page.getBoundingClientRect();
+                    const scale = pageRect.width / (paper.w * PX_PER_MM);
 
-                widthInput.value = fromMm(widthMm, newUnit).toFixed(newUnit === "in" ? 3 : 1);
-                heightInput.value = fromMm(heightMm, newUnit).toFixed(newUnit === "in" ? 3 : 1);
+                    drag = {
+                        side,
+                        startClientX: e.clientX,
+                        startClientY: e.clientY,
+                        startOffsetXmm: data.offsetXmm,
+                        startOffsetYmm: data.offsetYmm,
+                        scale,
+                        paper,
+                    };
+                    imgEl.classList.add("dragging");
+                    imgEl.setPointerCapture(e.pointerId);
+                });
 
-                lastUnit = newUnit;
-                renderLayout();
-            });
+                imgEl.addEventListener("pointermove", (e) => {
+                    if (!drag || drag.side !== side) return;
+                    const data = state[side];
+                    const dxPx = e.clientX - drag.startClientX;
+                    const dyPx = e.clientY - drag.startClientY;
+                    const dxMm = dxPx / drag.scale / PX_PER_MM;
+                    const dyMm = dyPx / drag.scale / PX_PER_MM;
 
-            function clearPresetActive() {
-                document.querySelectorAll(".btn[data-preset]").forEach((b) => b.classList.remove("active"));
+                    let newX = drag.startOffsetXmm + dxMm;
+                    let newY = drag.startOffsetYmm + dyMm;
+
+                    const { wMm, hMm } = imagePhysicalSizeMm(data);
+                    newX = Math.max(-wMm * 0.8, Math.min(drag.paper.w - wMm * 0.2, newX));
+                    newY = Math.max(-hMm * 0.8, Math.min(drag.paper.h - hMm * 0.2, newY));
+
+                    data.offsetXmm = newX;
+                    data.offsetYmm = newY;
+                    imgEl.style.left = newX + "mm";
+                    imgEl.style.top = newY + "mm";
+                });
+
+                function endDrag() {
+                    if (drag && drag.side === side) {
+                        const img = document.querySelector(`.page-img[data-side="${side}"]`);
+                        if (img) img.classList.remove("dragging");
+                        drag = null;
+                    }
+                }
+                imgEl.addEventListener("pointerup", endDrag);
+                imgEl.addEventListener("pointercancel", endDrag);
             }
 
-            // Preset size buttons -- values are "width,height" in inches.
-            document.querySelectorAll(".btn[data-preset]").forEach((btn) => {
-                btn.addEventListener("click", () => {
-                    const [wIn, hIn] = btn.dataset.preset.split(",").map(Number);
+            /* ---------- color picker from image ---------- */
+            function enableColorPick(imgEl, side) {
+                imgEl.addEventListener("click", (e) => {
+                    if (!state.pickingColor) return;
+                    e.preventDefault();
+                    e.stopPropagation();
 
-                    document.getElementById("cardUnit").value = "in";
-                    lastUnit = "in";
-                    document.getElementById("cardWidth").value = wIn.toFixed(3);
-                    document.getElementById("cardHeight").value = hIn.toFixed(3);
-                    document.getElementById("autoHeight").checked = false;
+                    const data = state[side];
+                    if (!data) return;
 
-                    clearPresetActive();
-                    btn.classList.add("active");
+                    const rect = imgEl.getBoundingClientRect();
+                    const relX = (e.clientX - rect.left) / rect.width;
+                    const relY = (e.clientY - rect.top) / rect.height;
+                    const px = Math.floor(relX * data.canvas.width);
+                    const py = Math.floor(relY * data.canvas.height);
 
-                    renderLayout();
+                    const ctx = data.canvas.getContext("2d");
+                    const pixel = ctx.getImageData(Math.max(0, Math.min(data.canvas.width - 1, px)), Math.max(0, Math.min(data.canvas.height - 1, py)), 1, 1).data;
+
+                    const hex = rgbToHex(pixel[0], pixel[1], pixel[2]);
+                    setPaperBg(hex);
+                    stopColorPick();
+                    log(`Background set to ${hex} (sampled from ${side}).`, "ok");
+                });
+            }
+
+            function rgbToHex(r, g, b) {
+                return "#" + [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
+            }
+
+            function setPaperBg(hex) {
+                state.paperBg = hex;
+                document.getElementById("bgColor").value = hex;
+                const page = document.getElementById("printPage");
+                if (page) page.style.background = hex;
+            }
+
+            function startColorPick() {
+                state.pickingColor = true;
+                document.getElementById("btnPickColor").classList.add("active");
+                document.getElementById("btnPickColor").textContent = "Click on image…";
+                document.querySelectorAll(".page-img").forEach((el) => el.classList.add("picking"));
+                log("Click anywhere on a scanned image to sample its color.");
+            }
+
+            function stopColorPick() {
+                state.pickingColor = false;
+                document.getElementById("btnPickColor").classList.remove("active");
+                document.getElementById("btnPickColor").textContent = "Pick from image";
+                document.querySelectorAll(".page-img").forEach((el) => el.classList.remove("picking"));
+            }
+
+            document.getElementById("btnPickColor").addEventListener("click", () => {
+                if (state.pickingColor) {
+                    stopColorPick();
+                } else {
+                    if (!state.front && !state.back) {
+                        log("Scan an image first, then pick a color from it.", "err");
+                        return;
+                    }
+                    startColorPick();
+                }
+            });
+
+            document.getElementById("bgColor").addEventListener("input", (e) => {
+                setPaperBg(e.target.value);
+            });
+
+            document.getElementById("paperSize").addEventListener("change", renderLayout);
+            window.addEventListener("resize", () => renderLayout());
+
+            /* ============================================================
+           WORD-STYLE CROP
+           ============================================================ */
+            const crop = {
+                side: null,
+                imgNaturalW: 0,
+                imgNaturalH: 0,
+                displayScale: 1,
+                x: 0,
+                y: 0,
+                w: 0,
+                h: 0,
+                mode: null,
+                startX: 0,
+                startY: 0,
+                startRect: null,
+            };
+
+            function openCrop(side) {
+                const data = state[side];
+                if (!data || !data.originalCanvas) return;
+
+                crop.side = side;
+                crop.imgNaturalW = data.originalCanvas.width;
+                crop.imgNaturalH = data.originalCanvas.height;
+
+                crop.x = 0;
+                crop.y = 0;
+                crop.w = crop.imgNaturalW;
+                crop.h = crop.imgNaturalH;
+
+                const imgEl = document.getElementById("cropImg");
+                imgEl.src = data.originalCanvas.toDataURL("image/png");
+
+                document.getElementById("cropTitle").textContent = "Crop " + (side === "front" ? "Front" : "Back");
+                document.getElementById("cropBackdrop").classList.add("open");
+
+                imgEl.onload = () => {
+                    updateCropDisplayScale();
+                    positionCropBox();
+                    updateCropInfo();
+                };
+                if (imgEl.complete) {
+                    updateCropDisplayScale();
+                    positionCropBox();
+                    updateCropInfo();
+                }
+            }
+
+            function updateCropDisplayScale() {
+                const imgEl = document.getElementById("cropImg");
+                const displayW = imgEl.clientWidth || imgEl.offsetWidth;
+                crop.displayScale = displayW / crop.imgNaturalW;
+            }
+
+            function positionCropBox() {
+                const box = document.getElementById("cropBox");
+                const s = crop.displayScale;
+                box.style.left = crop.x * s + "px";
+                box.style.top = crop.y * s + "px";
+                box.style.width = crop.w * s + "px";
+                box.style.height = crop.h * s + "px";
+            }
+
+            function updateCropInfo() {
+                document.getElementById("cropInfo").textContent = `Crop: ${Math.round(crop.w)} × ${Math.round(crop.h)} px  ·  original ${crop.imgNaturalW} × ${crop.imgNaturalH} px`;
+            }
+
+            function closeCrop() {
+                document.getElementById("cropBackdrop").classList.remove("open");
+                crop.side = null;
+            }
+
+            function applyCrop() {
+                if (!crop.side) return;
+                const side = crop.side;
+                const src = state[side].originalCanvas;
+
+                const x = Math.max(0, Math.round(crop.x));
+                const y = Math.max(0, Math.round(crop.y));
+                const w = Math.max(1, Math.round(crop.w));
+                const h = Math.max(1, Math.round(crop.h));
+
+                const out = document.createElement("canvas");
+                out.width = w;
+                out.height = h;
+                out.getContext("2d").drawImage(src, x, y, w, h, 0, 0, w, h);
+
+                state[side].canvas = out;
+                state[side].widthPx = w;
+                state[side].heightPx = h;
+
+                updateThumbnail(side);
+                setStatus(side, `Cropped — ${w}×${h}px (same scale as original)`, "ok");
+                log(`${side} cropped to ${w}×${h}px.`, "ok");
+
+                closeCrop();
+                renderLayout();
+            }
+
+            function resetCropBox() {
+                crop.x = 0;
+                crop.y = 0;
+                crop.w = crop.imgNaturalW;
+                crop.h = crop.imgNaturalH;
+                positionCropBox();
+                updateCropInfo();
+            }
+
+            const cropBoxEl = document.getElementById("cropBox");
+            const cropStageEl = document.getElementById("cropStage");
+
+            function getPointerPos(e) {
+                const rect = cropStageEl.getBoundingClientRect();
+                return {
+                    x: (e.clientX - rect.left) / crop.displayScale,
+                    y: (e.clientY - rect.top) / crop.displayScale,
+                };
+            }
+
+            cropBoxEl.addEventListener("pointerdown", (e) => {
+                if (e.target.classList.contains("crop-handle")) return;
+                e.preventDefault();
+                crop.mode = "move";
+                const p = getPointerPos(e);
+                crop.startX = p.x;
+                crop.startY = p.y;
+                crop.startRect = { x: crop.x, y: crop.y, w: crop.w, h: crop.h };
+                cropBoxEl.setPointerCapture(e.pointerId);
+            });
+
+            document.querySelectorAll(".crop-handle").forEach((handle) => {
+                handle.addEventListener("pointerdown", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    crop.mode = handle.dataset.handle;
+                    const p = getPointerPos(e);
+                    crop.startX = p.x;
+                    crop.startY = p.y;
+                    crop.startRect = { x: crop.x, y: crop.y, w: crop.w, h: crop.h };
+                    handle.setPointerCapture(e.pointerId);
                 });
             });
 
-            window.addEventListener("resize", () => renderLayout());
+            function onCropPointerMove(e) {
+                if (!crop.mode) return;
+                const p = getPointerPos(e);
+                const dx = p.x - crop.startX;
+                const dy = p.y - crop.startY;
+                const r = crop.startRect;
+                let x = r.x,
+                    y = r.y,
+                    w = r.w,
+                    h = r.h;
 
-            /* ================================================================
-   5. MANUAL EDITOR (rotate / zoom / crop)
-   ------------------------------------------------------------------
-   A fixed-aspect "viewport" acts as the crop frame -- the same idea
-   used by most avatar croppers. The user drags the raw scan to pan
-   it, and uses sliders to rotate and zoom. Whatever is visible
-   inside the gold frame at "Apply" time is exactly what gets baked
-   into a new canvas and used for that side's printed card.
-   ================================================================ */
-
-            const editor = {
-                side: null,
-                img: null, // raw scan canvas being edited
-                vw: 0,
-                vh: 0, // viewport size in CSS px (this defines the crop's aspect ratio)
-                panX: 0,
-                panY: 0, // user pan offset, in viewport CSS px
-                rotDeg: 0,
-                zoom: 1,
-                baseScale: 1, // scale that makes the raw image just cover the viewport at zoom=1
-                dragging: false,
-                dragStartX: 0,
-                dragStartY: 0,
-                panStartX: 0,
-                panStartY: 0,
-            };
-
-            const PREVIEW_DPR = 2; // supersampling for a crisp on-screen preview
-
-            /** Works out the crop frame's aspect ratio from the current card-size settings. */
-            function getTargetAspect() {
-                const unit = document.getElementById("cardUnit").value;
-                const autoHeight = document.getElementById("autoHeight").checked;
-                const wMm = toMm(parseFloat(document.getElementById("cardWidth").value) || 85.6, unit);
-                if (autoHeight) {
-                    const reference = state.front || state.back;
-                    return reference ? reference.aspect : 85.6 / 54;
+                if (crop.mode === "move") {
+                    x = r.x + dx;
+                    y = r.y + dy;
+                } else {
+                    if (crop.mode.includes("w")) {
+                        x = r.x + dx;
+                        w = r.w - dx;
+                    }
+                    if (crop.mode.includes("e")) {
+                        w = r.w + dx;
+                    }
+                    if (crop.mode.includes("n")) {
+                        y = r.y + dy;
+                        h = r.h - dy;
+                    }
+                    if (crop.mode.includes("s")) {
+                        h = r.h + dy;
+                    }
                 }
-                const hMm = toMm(parseFloat(document.getElementById("cardHeight").value) || 54, unit);
-                return wMm / hMm;
-            }
 
-            /** Shared draw routine -- used for both the live preview and the final bake,
-             *  just with a different pixel density (k). */
-            function drawEditorFrame(ctx, img, vw, vh, panX, panY, rotDeg, scale, k) {
-                ctx.save();
-                ctx.clearRect(0, 0, vw * k, vh * k);
-                ctx.scale(k, k);
-                ctx.translate(vw / 2 + panX, vh / 2 + panY);
-                ctx.rotate((rotDeg * Math.PI) / 180);
-                ctx.scale(scale, scale);
-                ctx.drawImage(img, -img.width / 2, -img.height / 2);
-                ctx.restore();
-            }
-
-            function redrawEditor() {
-                const canvas = document.getElementById("editorCanvas");
-                const ctx = canvas.getContext("2d");
-                const totalScale = editor.baseScale * editor.zoom;
-                drawEditorFrame(ctx, editor.img, editor.vw, editor.vh, editor.panX, editor.panY, editor.rotDeg, totalScale, PREVIEW_DPR);
-            }
-
-            /** Opens the editor modal for "front" or "back", seeded from that side's raw scan. */
-            function openEditor(side) {
-                const data = state[side];
-                if (!data || !data.raw) return;
-
-                editor.side = side;
-                editor.img = data.raw;
-                editor.panX = 0;
-                editor.panY = 0;
-                editor.rotDeg = 0;
-                editor.zoom = 1;
-
-                // Size the viewport to the current target card aspect ratio, capped to
-                // something that comfortably fits the modal.
-                const aspect = getTargetAspect();
-                let vw = 460,
-                    vh = 460 / aspect;
-                if (vh > 420) {
-                    vh = 420;
-                    vw = 420 * aspect;
+                if (w < 20) {
+                    if (crop.mode.includes("w")) x = r.x + r.w - 20;
+                    w = 20;
                 }
-                editor.vw = vw;
-                editor.vh = vh;
+                if (h < 20) {
+                    if (crop.mode.includes("n")) y = r.y + r.h - 20;
+                    h = 20;
+                }
+                if (x < 0) {
+                    if (crop.mode === "move") w = Math.min(w, crop.imgNaturalW);
+                    x = 0;
+                }
+                if (y < 0) {
+                    if (crop.mode === "move") h = Math.min(h, crop.imgNaturalH);
+                    y = 0;
+                }
+                if (x + w > crop.imgNaturalW) {
+                    if (crop.mode === "move") x = crop.imgNaturalW - w;
+                    else w = crop.imgNaturalW - x;
+                }
+                if (y + h > crop.imgNaturalH) {
+                    if (crop.mode === "move") y = crop.imgNaturalH - h;
+                    else h = crop.imgNaturalH - y;
+                }
 
-                editor.baseScale = Math.max(vw / editor.img.width, vh / editor.img.height);
-
-                const canvas = document.getElementById("editorCanvas");
-                canvas.width = vw * PREVIEW_DPR;
-                canvas.height = vh * PREVIEW_DPR;
-                canvas.style.width = vw + "px";
-                canvas.style.height = vh + "px";
-                document.getElementById("editorViewport").style.width = vw + "px";
-                document.getElementById("editorViewport").style.height = vh + "px";
-
-                document.getElementById("rotateSlider").value = 0;
-                document.getElementById("rotateVal").textContent = "0°";
-                document.getElementById("zoomSlider").value = 1;
-                document.getElementById("zoomVal").textContent = "1.00×";
-
-                document.getElementById("editorTitle").textContent = "Adjust " + (side === "front" ? "Front" : "Back");
-
-                document.getElementById("editorBackdrop").classList.add("open");
-                redrawEditor();
+                crop.x = x;
+                crop.y = y;
+                crop.w = w;
+                crop.h = h;
+                positionCropBox();
+                updateCropInfo();
             }
 
-            function closeEditor() {
-                document.getElementById("editorBackdrop").classList.remove("open");
-                editor.side = null;
-                editor.img = null;
+            function onCropPointerUp() {
+                crop.mode = null;
             }
 
-            /** Bakes the current editor view into a new canvas and replaces that side's card. */
-            function applyEditor() {
-                if (!editor.side || !editor.img) return;
+            cropStageEl.addEventListener("pointermove", onCropPointerMove);
+            cropStageEl.addEventListener("pointerup", onCropPointerUp);
+            cropStageEl.addEventListener("pointercancel", onCropPointerUp);
 
-                // Render at a higher resolution than the on-screen preview for print quality.
-                const OUTPUT_LONG_SIDE = 1400;
-                const k = editor.vw >= editor.vh ? OUTPUT_LONG_SIDE / editor.vw : (OUTPUT_LONG_SIDE * (editor.vw / editor.vh)) / editor.vw;
-
-                const outCanvas = document.createElement("canvas");
-                outCanvas.width = Math.round(editor.vw * k);
-                outCanvas.height = Math.round(editor.vh * k);
-                const ctx = outCanvas.getContext("2d");
-
-                const totalScale = editor.baseScale * editor.zoom;
-                drawEditorFrame(ctx, editor.img, editor.vw, editor.vh, editor.panX, editor.panY, editor.rotDeg, totalScale, k);
-
-                const side = editor.side;
-                state[side].canvas = outCanvas;
-                state[side].widthPx = outCanvas.width;
-                state[side].heightPx = outCanvas.height;
-                state[side].aspect = outCanvas.width / outCanvas.height;
-
-                updateThumbnail(side);
-                setStatus(side, `Manually adjusted — ${outCanvas.width}×${outCanvas.height}px`, "ok");
-                log(`${side} crop manually adjusted.`, "ok");
-
-                closeEditor();
-                renderLayout();
-            }
-
-            /* ---- editor control wiring ---- */
-
-            document.getElementById("btnAdjustFront").addEventListener("click", () => openEditor("front"));
-            document.getElementById("btnAdjustBack").addEventListener("click", () => openEditor("back"));
-            document.getElementById("editorCancel").addEventListener("click", closeEditor);
-            document.getElementById("editorBackdrop").addEventListener("click", (e) => {
-                if (e.target.id === "editorBackdrop") closeEditor();
-            });
-            document.getElementById("editorApply").addEventListener("click", applyEditor);
-            document.getElementById("editorReset").addEventListener("click", () => {
-                editor.panX = 0;
-                editor.panY = 0;
-                editor.rotDeg = 0;
-                editor.zoom = 1;
-                document.getElementById("rotateSlider").value = 0;
-                document.getElementById("rotateVal").textContent = "0°";
-                document.getElementById("zoomSlider").value = 1;
-                document.getElementById("zoomVal").textContent = "1.00×";
-                redrawEditor();
+            document.querySelectorAll(".crop-handle").forEach((h) => {
+                h.addEventListener("pointermove", onCropPointerMove);
+                h.addEventListener("pointerup", onCropPointerUp);
+                h.addEventListener("pointercancel", onCropPointerUp);
             });
 
-            document.getElementById("rotateSlider").addEventListener("input", (e) => {
-                editor.rotDeg = parseFloat(e.target.value);
-                document.getElementById("rotateVal").textContent = editor.rotDeg.toFixed(0) + "°";
-                redrawEditor();
+            document.getElementById("btnCropFront").addEventListener("click", () => openCrop("front"));
+            document.getElementById("btnCropBack").addEventListener("click", () => openCrop("back"));
+            document.getElementById("cropCancel").addEventListener("click", closeCrop);
+            document.getElementById("cropReset").addEventListener("click", resetCropBox);
+            document.getElementById("cropApply").addEventListener("click", applyCrop);
+            document.getElementById("cropBackdrop").addEventListener("click", (e) => {
+                if (e.target.id === "cropBackdrop") closeCrop();
             });
-
-            function normalizeAngle(deg) {
-                let d = ((((deg + 180) % 360) + 360) % 360) - 180;
-                return d;
-            }
-            document.getElementById("rotateLeft90").addEventListener("click", () => {
-                editor.rotDeg = normalizeAngle(editor.rotDeg - 90);
-                document.getElementById("rotateSlider").value = editor.rotDeg;
-                document.getElementById("rotateVal").textContent = editor.rotDeg.toFixed(0) + "°";
-                redrawEditor();
-            });
-            document.getElementById("rotateRight90").addEventListener("click", () => {
-                editor.rotDeg = normalizeAngle(editor.rotDeg + 90);
-                document.getElementById("rotateSlider").value = editor.rotDeg;
-                document.getElementById("rotateVal").textContent = editor.rotDeg.toFixed(0) + "°";
-                redrawEditor();
-            });
-
-            document.getElementById("zoomSlider").addEventListener("input", (e) => {
-                editor.zoom = parseFloat(e.target.value);
-                document.getElementById("zoomVal").textContent = editor.zoom.toFixed(2) + "×";
-                redrawEditor();
-            });
-
-            /* ---- drag-to-pan (mouse + touch, via Pointer Events) ---- */
-            const editorViewportEl = document.getElementById("editorViewport");
-
-            editorViewportEl.addEventListener("pointerdown", (e) => {
-                editor.dragging = true;
-                editorViewportEl.classList.add("dragging");
-                editorViewportEl.setPointerCapture(e.pointerId);
-                editor.dragStartX = e.clientX;
-                editor.dragStartY = e.clientY;
-                editor.panStartX = editor.panX;
-                editor.panStartY = editor.panY;
-            });
-            editorViewportEl.addEventListener("pointermove", (e) => {
-                if (!editor.dragging) return;
-                editor.panX = editor.panStartX + (e.clientX - editor.dragStartX);
-                editor.panY = editor.panStartY + (e.clientY - editor.dragStartY);
-                redrawEditor();
-            });
-            function endDrag(e) {
-                editor.dragging = false;
-                editorViewportEl.classList.remove("dragging");
-            }
-            editorViewportEl.addEventListener("pointerup", endDrag);
-            editorViewportEl.addEventListener("pointercancel", endDrag);
-
-            /* ---- wheel-to-zoom ---- */
-            editorViewportEl.addEventListener(
-                "wheel",
-                (e) => {
-                    e.preventDefault();
-                    const zoomSlider = document.getElementById("zoomSlider");
-                    const step = e.deltaY < 0 ? 0.05 : -0.05;
-                    editor.zoom = Math.min(4, Math.max(1, editor.zoom + step));
-                    zoomSlider.value = editor.zoom;
-                    document.getElementById("zoomVal").textContent = editor.zoom.toFixed(2) + "×";
-                    redrawEditor();
-                },
-                { passive: false },
-            );
-
-            /* ================================================================
-   6. PRINTING
-   ================================================================ */
 
             function printLayout() {
                 if (!state.front || !state.back) return;
@@ -1730,9 +1295,6 @@
             }
             document.getElementById("btnPrint").addEventListener("click", printLayout);
 
-            /* ================================================================
-   INITIALISE
-   ================================================================ */
             renderLayout();
             log("Ready. Scanner endpoint: " + SCAN_ENDPOINT);
         </script>
