@@ -92,3 +92,5 @@ console.error("SW registration failed:", err);
                     console.error(err);
                 }
             }`
+
+`pm2 start scan.py --interpreter C:\Users\chefr\iconprint\.venv\Scripts\python.exe --name scanner-backend`
