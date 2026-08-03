@@ -852,6 +852,26 @@
                 </div>
 
                 <div class="divider"></div>
+
+                <div class="field">
+                    <div class="field-label"><span>Page brightness</span><span id="brightVal">100%</span></div>
+                    <input type="range" id="brightSlider" min="40" max="200" value="100" />
+                    <div class="layer-controls" style="margin-top: 8px">
+                        <button class="btn small" id="autoBrightBtn" style="flex: 1">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="width: 12px; height: 12px">
+                                <circle cx="8" cy="8" r="3.4" />
+                                <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.5 3.5l1.4 1.4M11.1 11.1l1.4 1.4M12.5 3.5l-1.4 1.4M4.9 11.1l-1.4 1.4" />
+                            </svg>
+                            Auto
+                        </button>
+                        <button class="btn small" id="resetBrightBtn">Reset</button>
+                    </div>
+                    <div class="hint">
+                        Adjusts exposure of the whole stitched page — background and both scans together, applied once to the final canvas. Auto normalizes it toward a clean white background.
+                    </div>
+                </div>
+
+                <div class="divider"></div>
                 <h2>Selected layer</h2>
                 <div id="selectedControls" class="hint">Click a scan to select it.</div>
 
@@ -954,6 +974,10 @@
                     overlapSlider: document.getElementById("overlapSlider"),
                     overlapVal: document.getElementById("overlapVal"),
                     ghostToggle: document.getElementById("ghostToggle"),
+                    brightSlider: document.getElementById("brightSlider"),
+                    brightVal: document.getElementById("brightVal"),
+                    autoBrightBtn: document.getElementById("autoBrightBtn"),
+                    resetBrightBtn: document.getElementById("resetBrightBtn"),
                     selectedControls: document.getElementById("selectedControls"),
                     saveLayoutBtn: document.getElementById("saveLayoutBtn"),
                     historyBtn: document.getElementById("historyBtn"),
@@ -973,6 +997,7 @@
                     layers: [], // {id, name, img, natW, natH, x, y, w, h, rot, opacity}
                     selectedId: null,
                     nextId: 1,
+                    brightness: 1, // 1 = 100%, applied to the whole stitched page (preview + export)
                 };
 
                 function computePageSize() {
@@ -986,6 +1011,7 @@
                     els.page.style.width = state.pageW + "px";
                     els.page.style.height = state.pageH + "px";
                     els.page.classList.toggle("no-image", state.layers.length === 0);
+                    els.page.style.filter = state.brightness !== 1 ? "brightness(" + state.brightness + ")" : "";
 
                     // fit to available workspace
                     const avail = els.workspace.getBoundingClientRect();
@@ -1299,6 +1325,24 @@
 
                 els.ghostToggle.addEventListener("change", renderAll);
 
+                // ---------- Brightness (whole page) ----------
+                els.brightSlider.addEventListener("input", () => {
+                    const pct = parseInt(els.brightSlider.value, 10);
+                    state.brightness = pct / 100;
+                    els.brightVal.textContent = pct + "%";
+                    renderAll();
+                });
+                els.autoBrightBtn.addEventListener("click", () => {
+                    if (state.layers.length === 0) {
+                        alert("Upload and stitch your scans first.");
+                        return;
+                    }
+                    setBrightness(computeAutoBrightness());
+                });
+                els.resetBrightBtn.addEventListener("click", () => {
+                    setBrightness(1);
+                });
+
                 // ---------- Keyboard nudge ----------
                 document.addEventListener("keydown", (e) => {
                     const active = document.activeElement;
@@ -1391,16 +1435,29 @@
                     els.file2.value = "";
                     els.overlapSlider.value = 0;
                     els.overlapVal.textContent = "0 px";
+                    state.brightness = 1;
+                    els.brightSlider.value = 100;
+                    els.brightVal.textContent = "100%";
                     renderAll();
                 });
 
                 // ---------- Canvas building (shared by export, print, thumbnails) ----------
-                function buildStitchedCanvas(scaleFactor) {
+                // skipBrightness=true is used when sampling the page for auto-brightness detection,
+                // so the measurement isn't skewed by a brightness adjustment already in effect.
+                function buildStitchedCanvas(scaleFactor, skipBrightness) {
                     scaleFactor = scaleFactor || 1;
                     const canvas = document.createElement("canvas");
                     canvas.width = Math.max(1, Math.round(state.pageW * scaleFactor));
                     canvas.height = Math.max(1, Math.round(state.pageH * scaleFactor));
                     const ctx = canvas.getContext("2d");
+
+                    // Brightness is applied once, to the whole page (background + every layer
+                    // composited together) — not per layer.
+                    const applyBrightness = !skipBrightness && state.brightness !== 1;
+                    if (applyBrightness) {
+                        ctx.filter = "brightness(" + state.brightness + ")";
+                    }
+
                     ctx.fillStyle = "#FFFFFF";
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -1418,7 +1475,38 @@
                         }
                         ctx.restore();
                     });
+
+                    if (applyBrightness) {
+                        ctx.filter = "none";
+                    }
                     return canvas;
+                }
+
+                // Samples the composited page (unadjusted) and picks a brightness multiplier
+                // that pushes the average luminance toward a clean white background.
+                function computeAutoBrightness() {
+                    const sampleCanvas = buildStitchedCanvas(0.12, true);
+                    const ctx = sampleCanvas.getContext("2d");
+                    const data = ctx.getImageData(0, 0, sampleCanvas.width, sampleCanvas.height).data;
+                    let sum = 0,
+                        count = 0;
+                    for (let i = 0; i < data.length; i += 4) {
+                        sum += 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                        count++;
+                    }
+                    const avg = count ? sum / count : 235;
+                    const target = 235;
+                    let mult = target / Math.max(avg, 1);
+                    mult = Math.min(2.2, Math.max(0.5, mult));
+                    return mult;
+                }
+
+                function setBrightness(mult) {
+                    state.brightness = mult;
+                    const pct = Math.round(mult * 100);
+                    els.brightSlider.value = pct;
+                    els.brightVal.textContent = pct + "%";
+                    renderAll();
                 }
 
                 // ---------- Export ----------
@@ -1540,6 +1628,7 @@
                         savedAt: Date.now(),
                         paperKey: state.paperKey,
                         dpi: state.dpi,
+                        brightness: state.brightness,
                         thumbnail: thumbnail,
                         layers: state.layers.map((l) => ({
                             slot: l.slot,
@@ -1575,8 +1664,11 @@
                     );
                     state.paperKey = record.paperKey;
                     state.dpi = record.dpi;
+                    state.brightness = typeof record.brightness === "number" ? record.brightness : 1;
                     els.paperSize.value = state.paperKey;
                     els.dpiSelect.value = String(state.dpi);
+                    els.brightSlider.value = Math.round(state.brightness * 100);
+                    els.brightVal.textContent = Math.round(state.brightness * 100) + "%";
                     state.layers = loadedLayers;
                     state.selectedId = null;
                     closeHistoryModal();
