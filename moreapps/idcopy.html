@@ -263,6 +263,40 @@
                 margin-top: 5px;
             }
 
+            .field input[type="range"] {
+                width: 100%;
+                accent-color: var(--amber);
+                height: 20px;
+                background: transparent;
+                cursor: pointer;
+            }
+
+            .brightness-row {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .brightness-row input[type="range"] {
+                flex: 1;
+            }
+            .brightness-value {
+                font-family: var(--mono);
+                font-size: 0.78rem;
+                color: var(--text-hi);
+                width: 44px;
+                text-align: right;
+                flex-shrink: 0;
+            }
+            .brightness-btn-row {
+                display: flex;
+                gap: 8px;
+                margin-top: 10px;
+            }
+            .brightness-btn-row .btn-scan {
+                width: auto;
+                flex: 1;
+            }
+
             .color-row {
                 display: flex;
                 gap: 8px;
@@ -601,6 +635,22 @@
                 </div>
 
                 <div class="ctrl-group">
+                    <h2>Brightness</h2>
+                    <div class="field">
+                        <label for="brightnessSlider">Page brightness</label>
+                        <div class="brightness-row">
+                            <input type="range" id="brightnessSlider" min="50" max="180" step="1" value="100" />
+                            <span class="brightness-value" id="brightnessValue">100%</span>
+                        </div>
+                        <div class="hint">Applies to the whole printable page (both images and background together) — not each scan individually.</div>
+                    </div>
+                    <div class="brightness-btn-row">
+                        <button type="button" class="btn-scan btn-adjust" id="btnAutoBrightness">Auto Brightness</button>
+                        <button type="button" class="btn-scan btn-adjust" id="btnResetBrightness">Reset</button>
+                    </div>
+                </div>
+
+                <div class="ctrl-group">
                     <h2>Print Setup</h2>
                     <div class="field">
                         <label for="paperSize">Paper size</label>
@@ -737,6 +787,7 @@
                 back: null,
                 paperBg: "#ffffff",
                 pickingColor: false,
+                brightness: 100, // percent, applied to the whole printable page as one unit
             };
 
             function log(message, kind) {
@@ -962,6 +1013,7 @@
                 document.getElementById("btnPrint").disabled = !(state.front && state.back);
                 document.getElementById("emptyNote").style.display = state.front || state.back ? "none" : "block";
 
+                applyBrightnessFilter();
                 fitPreviewScale(paper);
             }
 
@@ -1129,6 +1181,81 @@
 
             document.getElementById("paperSize").addEventListener("change", renderLayout);
             window.addEventListener("resize", () => renderLayout());
+
+            /* ============================================================
+           BRIGHTNESS — applied to the whole printable page as a single
+           unit (background + both images together), not per scan.
+           ============================================================ */
+
+            function relativeLuminance(r, g, b) {
+                return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            }
+
+            function computeAvgLuminance(canvas) {
+                const w = canvas.width;
+                const h = canvas.height;
+                if (!w || !h) return 128;
+                const ctx = canvas.getContext("2d");
+                const data = ctx.getImageData(0, 0, w, h).data;
+                const step = 6; // sample every 6th pixel for speed
+                let sum = 0,
+                    n = 0;
+                for (let y = 0; y < h; y += step) {
+                    for (let x = 0; x < w; x += step) {
+                        const i = (y * w + x) * 4;
+                        sum += relativeLuminance(data[i], data[i + 1], data[i + 2]);
+                        n++;
+                    }
+                }
+                return n ? sum / n : 128;
+            }
+
+            function applyBrightnessFilter() {
+                const page = document.getElementById("printPage");
+                if (page) page.style.filter = `brightness(${state.brightness / 100})`;
+            }
+
+            function setBrightness(pct) {
+                pct = Math.max(50, Math.min(180, Math.round(pct)));
+                state.brightness = pct;
+                document.getElementById("brightnessSlider").value = pct;
+                document.getElementById("brightnessValue").textContent = pct + "%";
+                applyBrightnessFilter();
+            }
+
+            function autoBrightness() {
+                const canvases = [];
+                if (state.front) canvases.push(state.front.canvas);
+                if (state.back) canvases.push(state.back.canvas);
+
+                if (!canvases.length) {
+                    log("Scan at least one side before using auto brightness.", "err");
+                    return;
+                }
+
+                let totalLum = 0;
+                canvases.forEach((c) => (totalLum += computeAvgLuminance(c)));
+                const avgLum = totalLum / canvases.length;
+
+                // ID card scans are mostly light background — aim near-white.
+                const TARGET_LUM = 225;
+                let factor = TARGET_LUM / Math.max(1, avgLum);
+                factor = Math.max(0.6, Math.min(1.7, factor));
+
+                setBrightness(Math.round(factor * 100));
+                log(`Auto brightness set to ${state.brightness}% (measured page avg. luminance ${Math.round(avgLum)}/255).`, "ok");
+            }
+
+            document.getElementById("brightnessSlider").addEventListener("input", (e) => {
+                setBrightness(parseInt(e.target.value, 10));
+            });
+
+            document.getElementById("btnAutoBrightness").addEventListener("click", autoBrightness);
+
+            document.getElementById("btnResetBrightness").addEventListener("click", () => {
+                setBrightness(100);
+                log("Brightness reset to 100%.");
+            });
 
             /* ============================================================
            WORD-STYLE CROP
