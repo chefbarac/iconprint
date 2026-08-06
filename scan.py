@@ -29,7 +29,7 @@ LETTER_HEIGHT_IN = 11.0
 
 SCAN_AREA_PRESETS = {
     "letter": (LETTER_WIDTH_IN, LETTER_HEIGHT_IN),
-    "id": (LETTER_WIDTH_IN * (3 / 4), LETTER_HEIGHT_IN * (1 / 3)),  # 6.375 x 8.25in, 9/16 letter
+    "id": (LETTER_WIDTH_IN, LETTER_HEIGHT_IN * (1 / 3)),  # 6.375 x 8.25in, 9/16 letter
 }
 
 DEFAULT_PRESET = "letter"
