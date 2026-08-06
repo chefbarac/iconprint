@@ -720,6 +720,13 @@
                                 <option value="300" selected>300 DPI (print)</option>
                             </select>
                         </label>
+                        <label
+                            >Image type
+                            <select id="imageType">
+                                <option value="color" selected>Color</option>
+                                <option value="grayscale">Grayscale</option>
+                            </select>
+                        </label>
                     </div>
 
                     <div class="toolbar-group">
@@ -955,6 +962,7 @@
                 const els = {
                     paperSize: document.getElementById("paperSize"),
                     dpiSelect: document.getElementById("dpiSelect"),
+                    imageType: document.getElementById("imageType"),
                     upload1: document.getElementById("upload1"),
                     upload2: document.getElementById("upload2"),
                     file1: document.getElementById("file1"),
@@ -1401,7 +1409,12 @@
                 });
 
                 async function callScanner(section) {
-                    const res = await fetch("http://localhost:5001/scan", { method: "POST" });
+                    const imageType = els.imageType.value;
+                    const res = await fetch("http://localhost:5001/scan", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ image_type: imageType }),
+                    });
                     const blob = await res.blob();
                     const file = new File([blob], `${section}.png`, { type: "image/png" });
                     loadFile(file, section);

@@ -607,6 +607,15 @@
                 <div class="ctrl-group">
                     <h2>Scanner</h2>
 
+                    <div class="field">
+                        <label for="imageType">Image type</label>
+                        <select id="imageType">
+                            <option value="color">Color</option>
+                            <option value="grayscale">Grayscale</option>
+                        </select>
+                        <div class="hint">Applies to the next scan on either side.</div>
+                    </div>
+
                     <div class="scan-row">
                         <div class="thumb" id="thumbFront"><span class="empty-dash">—</span></div>
                         <div class="scan-meta">
@@ -815,11 +824,12 @@
                 const controller = new AbortController();
                 const timeout = setTimeout(() => controller.abort(), 120000);
                 try {
+                    const imageType = document.getElementById("imageType").value;
                     const response = await fetch(SCAN_ENDPOINT, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         signal: controller.signal,
-                        body: JSON.stringify({ resolution: 150, size: "id" }),
+                        body: JSON.stringify({ resolution: 150, size: "id", image_type: imageType }),
                     });
                     if (!response.ok) throw new Error(`Scanner returned HTTP ${response.status}`);
                     return await response.blob();

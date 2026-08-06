@@ -37,6 +37,26 @@ MAX_WIDTH_IN = LETTER_WIDTH_IN
 MAX_HEIGHT_IN = LETTER_HEIGHT_IN
 MIN_DIM_IN = 0.5
 
+# WIA "Data Type" property (WIA_IPA_DATATYPE) encoding is driver-dependent —
+# the WIA spec defines 0=threshold,1=dither,2=grayscale,3=color,4=color
+# threshold,5=color dither, but some drivers deviate. Rather than hardcode one
+# guess (which throws E_INVALIDARG / "The parameter is incorrect" on drivers
+# that disagree), try a short list of plausible candidates per mode and keep
+# the first one the driver accepts.
+WIA_DATA_TYPE_CANDIDATES = {
+    "color": (3, 2),
+    "grayscale": (2, 1),
+}
+
+# "Current Intent" (WIA_IPS_CUR_INTENT) is a more portable hint most drivers
+# honor even when their raw Data Type numbering differs.
+WIA_INTENT_VALUES = {
+    "color": 1,       # WIA_INTENT_IMAGE_TYPE_COLOR
+    "grayscale": 2,   # WIA_INTENT_IMAGE_TYPE_GRAYSCALE
+}
+
+DEFAULT_IMAGE_TYPE = "color"
+
 scan_lock = threading.Lock()  # WIA devices generally can't handle concurrent transfers
 
 
@@ -64,6 +84,32 @@ def set_resolution(item, dpi):
     if actual_x != dpi or actual_y != dpi:
         logger.warning(f"Requested {dpi} DPI, driver reports {actual_x}x{actual_y}")
     return actual_x, actual_y
+
+
+def set_image_type(item, image_type):
+    """Set color mode. Tries 'Current Intent' (the more portable hint) and
+    a short list of candidate 'Data Type' values, since the latter's numeric
+    encoding varies by driver. Failures here are non-fatal — PIL does a final
+    grayscale conversion after transfer as a correctness safety net."""
+    intent_value = WIA_INTENT_VALUES[image_type]
+    try:
+        item.Properties("Current Intent").Value = intent_value
+    except Exception as e:
+        logger.warning(f"Failed to set Current Intent to {intent_value} ({image_type}): {e}")
+
+    for candidate in WIA_DATA_TYPE_CANDIDATES[image_type]:
+        try:
+            item.Properties("Data Type").Value = candidate
+            actual = item.Properties("Data Type").Value
+            if actual == candidate:
+                logger.info(f"Data Type set to {candidate} ({image_type})")
+            else:
+                logger.warning(f"Set Data Type {candidate}, driver reports {actual}")
+            return
+        except Exception as e:
+            logger.debug(f"Data Type candidate {candidate} rejected for {image_type}: {e}")
+
+    logger.warning(f"No accepted Data Type value for {image_type} — relying on Current Intent + PIL conversion")
 
 
 def set_scan_area(item, dpi_x, dpi_y, width_in, height_in):
@@ -121,6 +167,16 @@ def validate_dimension(raw_value, default, min_in=MIN_DIM_IN, max_in=MAX_WIDTH_I
     return val
 
 
+def validate_image_type(raw_value, default=DEFAULT_IMAGE_TYPE):
+    if raw_value is None:
+        return default
+    val = str(raw_value).strip().lower()
+    if val in WIA_INTENT_VALUES:
+        return val
+    logger.warning(f"Unknown image_type '{raw_value}', falling back to {default}")
+    return default
+
+
 def resolve_scan_area(payload):
     """Figure out (width_in, height_in) from the request body.
 
@@ -160,10 +216,12 @@ def scan():
         requested_dpi = payload.get("resolution", 300)
         resolution = validate_resolution(requested_dpi)
         width_in, height_in = resolve_scan_area(payload)
+        image_type = validate_image_type(payload.get("image_type"))
 
         item = get_scanner_item()
         actual_x, actual_y = set_resolution(item, resolution)
         set_scan_area(item, actual_x, actual_y, width_in, height_in)
+        set_image_type(item, image_type)
 
         image = item.Transfer(WIA_FORMAT_BMP)
 
@@ -173,8 +231,14 @@ def scan():
         img = Image.open(bmp_path)
         logger.info(
             f"Scanned image size: {img.size}, area: {width_in}x{height_in}in, "
-            f"requested DPI: {resolution}, actual DPI: {actual_x}x{actual_y}"
+            f"requested DPI: {resolution}, actual DPI: {actual_x}x{actual_y}, "
+            f"image_type: {image_type}"
         )
+
+        # Safety net: force grayscale in software in case the driver ignored
+        # the Data Type property (some WIA drivers only honor it partially).
+        if image_type == "grayscale" and img.mode != "L":
+            img = img.convert("L")
 
         png_path = bmp_path.replace(".bmp", ".png")
         img.save(png_path)
@@ -232,6 +296,14 @@ def scan_sizes():
     return jsonify({
         "default": DEFAULT_PRESET,
         "presets": {name: {"width_in": w, "height_in": h} for name, (w, h) in SCAN_AREA_PRESETS.items()},
+    })
+
+@app.route("/scan-image-types", methods=["GET"])
+def scan_image_types():
+    """Lets the frontend populate an image-type (color/grayscale) dropdown."""
+    return jsonify({
+        "default": DEFAULT_IMAGE_TYPE,
+        "types": list(WIA_INTENT_VALUES.keys()),
     })
 
 if __name__ == "__main__":
