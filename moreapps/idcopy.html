@@ -610,8 +610,8 @@
                     <div class="field">
                         <label for="imageType">Image type</label>
                         <select id="imageType">
-                            <option value="color">Color</option>
                             <option value="grayscale">Grayscale</option>
+                            <option value="color">Color</option>
                         </select>
                         <div class="hint">Applies to the next scan on either side.</div>
                     </div>
@@ -681,7 +681,7 @@
                     </div>
                 </div>
 
-                <button class="btn-primary" id="btnPrint" disabled>Print Layout</button>
+                <button class="btn-primary" id="btnPrint">Print Layout</button>
                 <div class="field hint" style="margin-top: 10px">In the print dialog, set <strong>Scale</strong> to <strong>100%</strong> (not “Fit to page”).</div>
             </section>
 
@@ -1020,7 +1020,7 @@
                 }
                 pageStyle.textContent = `@page { size: ${paper.pageKeyword}; margin: 0; }`;
 
-                document.getElementById("btnPrint").disabled = !(state.front && state.back);
+                // document.getElementById("btnPrint").disabled = !(state.front && state.back);
                 document.getElementById("emptyNote").style.display = state.front || state.back ? "none" : "block";
 
                 applyBrightnessFilter();
@@ -1499,7 +1499,7 @@
             });
 
             function printLayout() {
-                if (!state.front || !state.back) return;
+                // if (!state.front || !state.back) return;
                 window.print();
             }
             document.getElementById("btnPrint").addEventListener("click", printLayout);
