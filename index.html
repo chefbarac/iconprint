@@ -716,15 +716,15 @@
                         <label
                             >Quality
                             <select id="dpiSelect">
-                                <option value="150">150 DPI (draft)</option>
-                                <option value="300" selected>300 DPI (print)</option>
+                                <option value="150" selected>150 DPI (fast)</option>
+                                <option value="300">300 DPI (slower)</option>
                             </select>
                         </label>
                         <label
                             >Image type
                             <select id="imageType">
-                                <option value="color" selected>Color</option>
-                                <option value="grayscale">Grayscale</option>
+                                <option value="grayscale" selected>Grayscale</option>
+                                <option value="color">Color</option>
                             </select>
                         </label>
                     </div>
@@ -997,7 +997,7 @@
                 };
 
                 let state = {
-                    dpi: 300,
+                    dpi: 150,
                     paperKey: "long",
                     pageW: 0,
                     pageH: 0,
@@ -1410,10 +1410,13 @@
 
                 async function callScanner(section) {
                     const imageType = els.imageType.value;
+                    // const size = section === "top" ? "letter" : "id";
+                    const size = "letter";
+                    const resolution = els.dpiSelect.value;
                     const res = await fetch("http://localhost:5001/scan", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ image_type: imageType }),
+                        body: JSON.stringify({ resolution, size, image_type: imageType }),
                     });
                     const blob = await res.blob();
                     const file = new File([blob], `${section}.png`, { type: "image/png" });
