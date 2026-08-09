@@ -1410,8 +1410,12 @@
 
                 async function callScanner(section) {
                     const imageType = els.imageType.value;
-                    // const size = section === "top" ? "letter" : "id";
-                    const size = "letter";
+                    // Match the scan area to the selected paper size: use "a4" when the
+                    // page is set to A4, otherwise default to "letter" for everything else
+                    // (the scanner backend only knows "letter"/"a4"/"id" presets, not the
+                    // long/short/legal bond-paper sizes, which are stitched from a
+                    // letter-size scan anyway).
+                    const size = state.paperKey === "a4" ? "a4" : "letter";
                     const resolution = els.dpiSelect.value;
                     const res = await fetch("http://localhost:5001/scan", {
                         method: "POST",

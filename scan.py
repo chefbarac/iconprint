@@ -8,7 +8,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 
 # Restrict CORS to your actual frontends
-CORS(app, origins=["http://localhost:5500", "https://chefbarac.github.io"])
+CORS(app, origins=["http://127.0.0.1:5500", "http://localhost:5500", "https://chefbarac.github.io"])
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("scanner")
@@ -27,14 +27,22 @@ WIA_PROP_YRES = 6148
 LETTER_WIDTH_IN = 8.5
 LETTER_HEIGHT_IN = 11.0
 
+# A4 is slightly narrower but taller than US Letter (210mm x 297mm).
+A4_WIDTH_IN = 8.27
+A4_HEIGHT_IN = 11.69
+
 SCAN_AREA_PRESETS = {
     "letter": (LETTER_WIDTH_IN, LETTER_HEIGHT_IN),
+    "a4": (A4_WIDTH_IN, A4_HEIGHT_IN),
     "id": (LETTER_WIDTH_IN, LETTER_HEIGHT_IN * (1 / 3)),  # 6.375 x 8.25in, 9/16 letter
 }
 
 DEFAULT_PRESET = "letter"
-MAX_WIDTH_IN = LETTER_WIDTH_IN
-MAX_HEIGHT_IN = LETTER_HEIGHT_IN
+# Bounds must cover the largest preset in each dimension (A4 is taller than
+# Letter, Letter is wider than A4), so custom width_in/height_in values and
+# the extent clamping in set_scan_area() don't reject valid A4 scans.
+MAX_WIDTH_IN = max(LETTER_WIDTH_IN, A4_WIDTH_IN)
+MAX_HEIGHT_IN = max(LETTER_HEIGHT_IN, A4_HEIGHT_IN)
 MIN_DIM_IN = 0.5
 
 # WIA "Data Type" property (WIA_IPA_DATATYPE) encoding is driver-dependent —
