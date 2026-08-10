@@ -829,7 +829,7 @@
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         signal: controller.signal,
-                        body: JSON.stringify({ resolution: 150, size: "id", image_type: imageType }),
+                        body: JSON.stringify({ resolution: 200, size: "id", image_type: imageType }),
                     });
                     if (!response.ok) throw new Error(`Scanner returned HTTP ${response.status}`);
                     return await response.blob();
