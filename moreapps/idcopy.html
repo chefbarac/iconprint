@@ -1448,38 +1448,53 @@
                 crop.imgNaturalH = rotated.height;
 
                 const imgEl = document.getElementById("cropImg");
-                imgEl.src = rotated.toDataURL("image/png");
+                const newSrc = rotated.toDataURL("image/png");
 
-                imgEl.onload = () => {
-                    updateCropDisplayScale();
+                function applyBoxAndPosition() {
+                    // Defer to the next frame: right after the crop modal becomes
+                    // visible (or the <img> src is set), the browser may not have
+                    // laid it out yet, so clientWidth (used by
+                    // updateCropDisplayScale) can read 0. Waiting a frame makes
+                    // sure the box is positioned against real, laid-out dimensions.
+                    requestAnimationFrame(() => {
+                        updateCropDisplayScale();
 
-                    if (mode === "stored" && data.lastCrop) {
-                        // Restore the previously-applied crop box, in the frame it
-                        // was originally recorded against.
-                        crop.x = Math.round(data.lastCrop.xFrac * crop.imgNaturalW);
-                        crop.y = Math.round(data.lastCrop.yFrac * crop.imgNaturalH);
-                        crop.w = Math.round(data.lastCrop.wFrac * crop.imgNaturalW);
-                        crop.h = Math.round(data.lastCrop.hFrac * crop.imgNaturalH);
-                    } else if (mode === "reset" || !prevW || !prevH) {
-                        crop.x = 0;
-                        crop.y = 0;
-                        crop.w = crop.imgNaturalW;
-                        crop.h = crop.imgNaturalH;
-                    } else {
-                        // Map the previous crop box (in the old orientation) onto the
-                        // newly rotated frame, so rotating mid-crop is intuitive:
-                        // a 90° clockwise turn maps (x,y,w,h) -> (prevH - y - h, x, h, w)
-                        crop.x = prevH - prevBox.y - prevBox.h;
-                        crop.y = prevBox.x;
-                        crop.w = prevBox.h;
-                        crop.h = prevBox.w;
-                    }
+                        if (mode === "stored" && data.lastCrop) {
+                            // Restore the previously-applied crop box, in the frame it
+                            // was originally recorded against.
+                            crop.x = Math.round(data.lastCrop.xFrac * crop.imgNaturalW);
+                            crop.y = Math.round(data.lastCrop.yFrac * crop.imgNaturalH);
+                            crop.w = Math.round(data.lastCrop.wFrac * crop.imgNaturalW);
+                            crop.h = Math.round(data.lastCrop.hFrac * crop.imgNaturalH);
+                        } else if (mode === "reset" || !prevW || !prevH) {
+                            crop.x = 0;
+                            crop.y = 0;
+                            crop.w = crop.imgNaturalW;
+                            crop.h = crop.imgNaturalH;
+                        } else {
+                            // Map the previous crop box (in the old orientation) onto the
+                            // newly rotated frame, so rotating mid-crop is intuitive:
+                            // a 90° clockwise turn maps (x,y,w,h) -> (prevH - y - h, x, h, w)
+                            crop.x = prevH - prevBox.y - prevBox.h;
+                            crop.y = prevBox.x;
+                            crop.w = prevBox.h;
+                            crop.h = prevBox.w;
+                        }
 
-                    positionCropBox();
-                    updateCropInfo();
-                };
-                if (imgEl.complete && imgEl.src) {
-                    imgEl.onload();
+                        positionCropBox();
+                        updateCropInfo();
+                    });
+                }
+
+                if (imgEl.src === newSrc && imgEl.complete) {
+                    // Identical data URL to what's already loaded (e.g. reopening
+                    // the editor at the same rotation as last time) — the browser
+                    // won't fire a new 'load' event for an unchanged src, so
+                    // position immediately (still deferred a frame, see above).
+                    applyBoxAndPosition();
+                } else {
+                    imgEl.onload = applyBoxAndPosition;
+                    imgEl.src = newSrc;
                 }
             }
 
