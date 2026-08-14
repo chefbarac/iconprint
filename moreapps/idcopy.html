@@ -1417,21 +1417,26 @@
                 if (!data || !data.originalCanvas) return;
 
                 crop.side = side;
-                crop.rotation = 0;
+                // Reopen at whatever rotation was last applied on this side (if any),
+                // so the crop box lines up correctly with the stored crop below.
+                crop.rotation = data.lastCrop ? data.lastCrop.rotation || 0 : 0;
 
                 document.getElementById("cropTitle").textContent = "Crop " + (side === "front" ? "Front" : "Back");
                 document.getElementById("cropBackdrop").classList.add("open");
 
-                loadCropStageForRotation(true);
+                loadCropStageForRotation(data.lastCrop ? "stored" : "reset");
             }
 
             /**
-             * Rebuilds the displayed (rotated) image for the crop stage and,
-             * when resetBox is true, resets the crop box to cover the full
-             * rotated image. Otherwise it re-maps the crop box proportionally
-             * so an in-progress crop survives a rotation.
+             * Rebuilds the displayed (rotated) image for the crop stage. `mode`
+             * controls how the crop box is positioned:
+             *  - "reset": cover the full rotated image (fresh scan, no prior crop)
+             *  - "stored": restore the box from state[side].lastCrop (reopening
+             *    the editor on a side that was already cropped before)
+             *  - anything else (e.g. omitted): re-map the current box
+             *    proportionally, so an in-progress crop survives a rotation
              */
-            function loadCropStageForRotation(resetBox) {
+            function loadCropStageForRotation(mode) {
                 const data = state[crop.side];
                 const rotated = rotateCanvas90(data.originalCanvas, crop.rotation);
 
@@ -1448,7 +1453,14 @@
                 imgEl.onload = () => {
                     updateCropDisplayScale();
 
-                    if (resetBox || !prevW || !prevH) {
+                    if (mode === "stored" && data.lastCrop) {
+                        // Restore the previously-applied crop box, in the frame it
+                        // was originally recorded against.
+                        crop.x = Math.round(data.lastCrop.xFrac * crop.imgNaturalW);
+                        crop.y = Math.round(data.lastCrop.yFrac * crop.imgNaturalH);
+                        crop.w = Math.round(data.lastCrop.wFrac * crop.imgNaturalW);
+                        crop.h = Math.round(data.lastCrop.hFrac * crop.imgNaturalH);
+                    } else if (mode === "reset" || !prevW || !prevH) {
                         crop.x = 0;
                         crop.y = 0;
                         crop.w = crop.imgNaturalW;
@@ -1475,7 +1487,7 @@
                 // direction: -1 = left (counter-clockwise), +1 = right (clockwise)
                 if (!crop.side) return;
                 crop.rotation = (((crop.rotation + direction * 90) % 360) + 360) % 360;
-                loadCropStageForRotation(false);
+                loadCropStageForRotation("remap");
             }
 
             function updateCropDisplayScale() {
@@ -1546,8 +1558,13 @@
             }
 
             function resetCropBox() {
+                // "Reset" clears back to the full, uncropped, unrotated frame —
+                // and also forgets any remembered crop for this side, so a
+                // future re-scan won't reapply the crop we just cleared.
                 crop.rotation = 0;
-                loadCropStageForRotation(true);
+                const data = state[crop.side];
+                if (data) data.lastCrop = null;
+                loadCropStageForRotation("reset");
             }
 
             const cropBoxEl = document.getElementById("cropBox");
