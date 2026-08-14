@@ -451,6 +451,39 @@
                 margin: 0 0 16px;
             }
 
+            .crop-toolbar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                margin-bottom: 10px;
+            }
+            .crop-rotate-row {
+                display: flex;
+                gap: 8px;
+            }
+            .btn-rotate {
+                background: #0f1620;
+                border: 1px solid var(--line);
+                color: var(--text-hi);
+                padding: 7px 12px;
+                font-size: 0.78rem;
+                border-radius: 6px;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                width: auto;
+            }
+            .btn-rotate:hover:not(:disabled) {
+                border-color: var(--amber);
+                color: var(--amber);
+            }
+            .btn-rotate svg {
+                width: 14px;
+                height: 14px;
+                display: block;
+            }
+
             .crop-viewport-wrap {
                 display: flex;
                 justify-content: center;
@@ -705,8 +738,27 @@
         <div class="modal-backdrop" id="cropBackdrop">
             <div class="crop-panel">
                 <h3 id="cropTitle">Crop Front</h3>
-                <p class="editor-sub">Drag the box or its handles to crop. Original pixel size is preserved (no resize).</p>
-                <div class="crop-info" id="cropInfo">—</div>
+                <p class="editor-sub">Drag the box or its handles to crop. Rotate in 90° steps if needed. Original pixel resolution is preserved (no resize).</p>
+
+                <div class="crop-toolbar">
+                    <div class="crop-info" id="cropInfo" style="margin-bottom: 0">—</div>
+                    <div class="crop-rotate-row">
+                        <button type="button" class="btn-rotate" id="cropRotateLeft" title="Rotate left 90°">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 14 4 9l5-5" />
+                                <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11" />
+                            </svg>
+                            Rotate Left
+                        </button>
+                        <button type="button" class="btn-rotate" id="cropRotateRight" title="Rotate right 90°">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M15 14 20 9l-5-5" />
+                                <path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13" />
+                            </svg>
+                            Rotate Right
+                        </button>
+                    </div>
+                </div>
 
                 <div class="crop-viewport-wrap">
                     <div class="crop-stage" id="cropStage">
@@ -859,6 +911,37 @@
                 c.height = img.naturalHeight || img.height;
                 c.getContext("2d").drawImage(img, 0, 0);
                 return c;
+            }
+
+            /**
+             * Rotate a canvas by a multiple of 90 degrees (clockwise), returning
+             * a new canvas. Width/height are swapped for 90°/270°.
+             */
+            function rotateCanvas90(srcCanvas, degrees) {
+                const normalized = ((degrees % 360) + 360) % 360;
+                if (normalized === 0) {
+                    const same = document.createElement("canvas");
+                    same.width = srcCanvas.width;
+                    same.height = srcCanvas.height;
+                    same.getContext("2d").drawImage(srcCanvas, 0, 0);
+                    return same;
+                }
+
+                const rad = (normalized * Math.PI) / 180;
+                const swap = normalized === 90 || normalized === 270;
+                const w = srcCanvas.width;
+                const h = srcCanvas.height;
+                const outW = swap ? h : w;
+                const outH = swap ? w : h;
+
+                const out = document.createElement("canvas");
+                out.width = outW;
+                out.height = outH;
+                const ctx = out.getContext("2d");
+                ctx.translate(outW / 2, outH / 2);
+                ctx.rotate(rad);
+                ctx.drawImage(srcCanvas, -w / 2, -h / 2);
+                return out;
             }
 
             /**
@@ -1268,10 +1351,11 @@
             });
 
             /* ============================================================
-           WORD-STYLE CROP
+           WORD-STYLE CROP (with 90° rotation)
            ============================================================ */
             const crop = {
                 side: null,
+                rotation: 0, // 0, 90, 180, 270 — clockwise, relative to originalCanvas
                 imgNaturalW: 0,
                 imgNaturalH: 0,
                 displayScale: 1,
@@ -1290,30 +1374,65 @@
                 if (!data || !data.originalCanvas) return;
 
                 crop.side = side;
-                crop.imgNaturalW = data.originalCanvas.width;
-                crop.imgNaturalH = data.originalCanvas.height;
-
-                crop.x = 0;
-                crop.y = 0;
-                crop.w = crop.imgNaturalW;
-                crop.h = crop.imgNaturalH;
-
-                const imgEl = document.getElementById("cropImg");
-                imgEl.src = data.originalCanvas.toDataURL("image/png");
+                crop.rotation = 0;
 
                 document.getElementById("cropTitle").textContent = "Crop " + (side === "front" ? "Front" : "Back");
                 document.getElementById("cropBackdrop").classList.add("open");
 
+                loadCropStageForRotation(true);
+            }
+
+            /**
+             * Rebuilds the displayed (rotated) image for the crop stage and,
+             * when resetBox is true, resets the crop box to cover the full
+             * rotated image. Otherwise it re-maps the crop box proportionally
+             * so an in-progress crop survives a rotation.
+             */
+            function loadCropStageForRotation(resetBox) {
+                const data = state[crop.side];
+                const rotated = rotateCanvas90(data.originalCanvas, crop.rotation);
+
+                const prevW = crop.imgNaturalW;
+                const prevH = crop.imgNaturalH;
+                const prevBox = { x: crop.x, y: crop.y, w: crop.w, h: crop.h };
+
+                crop.imgNaturalW = rotated.width;
+                crop.imgNaturalH = rotated.height;
+
+                const imgEl = document.getElementById("cropImg");
+                imgEl.src = rotated.toDataURL("image/png");
+
                 imgEl.onload = () => {
                     updateCropDisplayScale();
+
+                    if (resetBox || !prevW || !prevH) {
+                        crop.x = 0;
+                        crop.y = 0;
+                        crop.w = crop.imgNaturalW;
+                        crop.h = crop.imgNaturalH;
+                    } else {
+                        // Map the previous crop box (in the old orientation) onto the
+                        // newly rotated frame, so rotating mid-crop is intuitive:
+                        // a 90° clockwise turn maps (x,y,w,h) -> (prevH - y - h, x, h, w)
+                        crop.x = prevH - prevBox.y - prevBox.h;
+                        crop.y = prevBox.x;
+                        crop.w = prevBox.h;
+                        crop.h = prevBox.w;
+                    }
+
                     positionCropBox();
                     updateCropInfo();
                 };
-                if (imgEl.complete) {
-                    updateCropDisplayScale();
-                    positionCropBox();
-                    updateCropInfo();
+                if (imgEl.complete && imgEl.src) {
+                    imgEl.onload();
                 }
+            }
+
+            function rotateCropView(direction) {
+                // direction: -1 = left (counter-clockwise), +1 = right (clockwise)
+                if (!crop.side) return;
+                crop.rotation = (((crop.rotation + direction * 90) % 360) + 360) % 360;
+                loadCropStageForRotation(false);
             }
 
             function updateCropDisplayScale() {
@@ -1332,18 +1451,23 @@
             }
 
             function updateCropInfo() {
-                document.getElementById("cropInfo").textContent = `Crop: ${Math.round(crop.w)} × ${Math.round(crop.h)} px  ·  original ${crop.imgNaturalW} × ${crop.imgNaturalH} px`;
+                const rotLabel = crop.rotation ? ` · rotated ${crop.rotation}°` : "";
+                document.getElementById("cropInfo").textContent = `Crop: ${Math.round(crop.w)} × ${Math.round(crop.h)} px  ·  frame ${crop.imgNaturalW} × ${crop.imgNaturalH} px${rotLabel}`;
             }
 
             function closeCrop() {
                 document.getElementById("cropBackdrop").classList.remove("open");
                 crop.side = null;
+                crop.rotation = 0;
             }
 
             function applyCrop() {
                 if (!crop.side) return;
                 const side = crop.side;
-                const src = state[side].originalCanvas;
+                const data = state[side];
+
+                // Bake the rotation into a full-size rotated canvas, then crop from it.
+                const rotatedFull = rotateCanvas90(data.originalCanvas, crop.rotation);
 
                 const x = Math.max(0, Math.round(crop.x));
                 const y = Math.max(0, Math.round(crop.y));
@@ -1353,27 +1477,24 @@
                 const out = document.createElement("canvas");
                 out.width = w;
                 out.height = h;
-                out.getContext("2d").drawImage(src, x, y, w, h, 0, 0, w, h);
+                out.getContext("2d").drawImage(rotatedFull, x, y, w, h, 0, 0, w, h);
 
-                state[side].canvas = out;
-                state[side].widthPx = w;
-                state[side].heightPx = h;
+                data.canvas = out;
+                data.widthPx = w;
+                data.heightPx = h;
 
                 updateThumbnail(side);
-                setStatus(side, `Cropped — ${w}×${h}px (same scale as original)`, "ok");
-                log(`${side} cropped to ${w}×${h}px.`, "ok");
+                const rotLabel = crop.rotation ? ` (rotated ${crop.rotation}°)` : "";
+                setStatus(side, `Cropped — ${w}×${h}px${rotLabel}`, "ok");
+                log(`${side} cropped to ${w}×${h}px${rotLabel}.`, "ok");
 
                 closeCrop();
                 renderLayout();
             }
 
             function resetCropBox() {
-                crop.x = 0;
-                crop.y = 0;
-                crop.w = crop.imgNaturalW;
-                crop.h = crop.imgNaturalH;
-                positionCropBox();
-                updateCropInfo();
+                crop.rotation = 0;
+                loadCropStageForRotation(true);
             }
 
             const cropBoxEl = document.getElementById("cropBox");
@@ -1494,6 +1615,8 @@
             document.getElementById("cropCancel").addEventListener("click", closeCrop);
             document.getElementById("cropReset").addEventListener("click", resetCropBox);
             document.getElementById("cropApply").addEventListener("click", applyCrop);
+            document.getElementById("cropRotateLeft").addEventListener("click", () => rotateCropView(-1));
+            document.getElementById("cropRotateRight").addEventListener("click", () => rotateCropView(1));
             document.getElementById("cropBackdrop").addEventListener("click", (e) => {
                 if (e.target.id === "cropBackdrop") closeCrop();
             });
