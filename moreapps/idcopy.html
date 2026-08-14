@@ -945,6 +945,39 @@
             }
 
             /**
+             * Given a previously-applied crop (stored as fractions of the rotated
+             * frame, plus the rotation itself), re-apply the same crop to a fresh
+             * scan on the same side. This lets front/back crops "stick" across
+             * re-scans instead of always starting from the full, uncropped image.
+             */
+            function applyStoredCrop(side, storedCrop) {
+                const data = state[side];
+                if (!data || !data.originalCanvas || !storedCrop) return;
+
+                const rotatedFull = rotateCanvas90(data.originalCanvas, storedCrop.rotation || 0);
+
+                let x = Math.round(storedCrop.xFrac * rotatedFull.width);
+                let y = Math.round(storedCrop.yFrac * rotatedFull.height);
+                let w = Math.round(storedCrop.wFrac * rotatedFull.width);
+                let h = Math.round(storedCrop.hFrac * rotatedFull.height);
+
+                // Clamp in case the new scan came back a slightly different size.
+                x = Math.max(0, Math.min(x, rotatedFull.width - 1));
+                y = Math.max(0, Math.min(y, rotatedFull.height - 1));
+                w = Math.max(1, Math.min(w, rotatedFull.width - x));
+                h = Math.max(1, Math.min(h, rotatedFull.height - y));
+
+                const out = document.createElement("canvas");
+                out.width = w;
+                out.height = h;
+                out.getContext("2d").drawImage(rotatedFull, x, y, w, h, 0, 0, w, h);
+
+                data.canvas = out;
+                data.widthPx = w;
+                data.heightPx = h;
+            }
+
+            /**
              * Epson-style "auto white background" / Remove Background.
              * Estimates the light background from the border, then gently
              * pushes near-background pixels toward pure white while leaving
@@ -1029,6 +1062,10 @@
                     const paper = currentPaper();
                     const defaultY = side === "front" ? 8 : paper.h * 0.5 + 4;
 
+                    // Remember any crop that was applied to the previous scan on
+                    // this side, so we can automatically re-apply it below.
+                    const prevCrop = state[side] && state[side].lastCrop ? state[side].lastCrop : null;
+
                     state[side] = {
                         originalCanvas: canvas,
                         canvas: canvas,
@@ -1036,13 +1073,19 @@
                         heightPx: canvas.height,
                         offsetXmm: 0,
                         offsetYmm: defaultY,
+                        lastCrop: prevCrop,
                     };
+
+                    if (prevCrop) {
+                        applyStoredCrop(side, prevCrop);
+                    }
 
                     updateThumbnail(side);
                     document.getElementById(side === "front" ? "btnCropFront" : "btnCropBack").disabled = false;
 
-                    setStatus(side, `Ready — ${canvas.width}×${canvas.height}px`, "ok");
-                    log(`${side} scan loaded (${canvas.width}×${canvas.height}px), white background applied.`, "ok");
+                    const cropNote = prevCrop ? " (previous crop re-applied)" : "";
+                    setStatus(side, `Ready — ${state[side].widthPx}×${state[side].heightPx}px`, "ok");
+                    log(`${side} scan loaded (${canvas.width}×${canvas.height}px), white background applied${cropNote}.`, "ok");
                     playPing();
                     renderLayout();
                 } catch (err) {
@@ -1482,6 +1525,16 @@
                 data.canvas = out;
                 data.widthPx = w;
                 data.heightPx = h;
+
+                // Remember this crop (as fractions of the rotated frame) so it can
+                // be automatically re-applied if this side is scanned again.
+                data.lastCrop = {
+                    rotation: crop.rotation,
+                    xFrac: x / rotatedFull.width,
+                    yFrac: y / rotatedFull.height,
+                    wFrac: w / rotatedFull.width,
+                    hFrac: h / rotatedFull.height,
+                };
 
                 updateThumbnail(side);
                 const rotLabel = crop.rotation ? ` (rotated ${crop.rotation}°)` : "";
