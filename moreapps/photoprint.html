@@ -544,16 +544,17 @@
                         </select>
                     </div>
                     <div class="preset-grid" id="presetGrid">
+                        <button type="button" class="preset-btn active" data-short="25.4" data-long="25.4" data-name="1x1">1x1<small class="dims">1x1 in</small></button>
                         <button type="button" class="preset-btn" data-short="25.4" data-long="38.1" data-name="1R">1R<small class="dims">1x1.5 in</small></button>
+                        <button type="button" class="preset-btn" data-short="35" data-long="45" data-name="Passport">Passport<small class="dims">35x45 mm</small></button>
+                        <button type="button" class="preset-btn" data-short="50.8" data-long="50.8" data-name="2x2">2x2<small class="dims">US passport</small></button>
+                        <button type="button" class="preset-btn" data-short="53.98" data-long="85.6" data-name="ID-PVC">ID / PVC<small class="dims">CR80 card</small></button>
                         <button type="button" class="preset-btn" data-short="63.5" data-long="88.9" data-name="Wallet">Wallet<small class="dims">2.5x3.5 in</small></button>
                         <button type="button" class="preset-btn" data-short="88.9" data-long="127" data-name="3R">3R<small class="dims">3.5x5 in</small></button>
                         <button type="button" class="preset-btn" data-short="101.6" data-long="152.4" data-name="4R">4R<small class="dims">4x6 in</small></button>
-                        <button type="button" class="preset-btn active" data-short="127" data-long="177.8" data-name="5R">5R<small class="dims">5x7 in</small></button>
+                        <button type="button" class="preset-btn" data-short="127" data-long="177.8" data-name="5R">5R<small class="dims">5x7 in</small></button>
                         <button type="button" class="preset-btn" data-short="152.4" data-long="203.2" data-name="6R">6R<small class="dims">6x8 in</small></button>
                         <button type="button" class="preset-btn" data-short="203.2" data-long="254" data-name="8R">8R<small class="dims">8x10 in</small></button>
-                        <button type="button" class="preset-btn" data-short="53.98" data-long="85.6" data-name="ID-PVC">ID / PVC<small class="dims">CR80 card</small></button>
-                        <button type="button" class="preset-btn" data-short="35" data-long="45" data-name="Passport">Passport<small class="dims">35x45 mm</small></button>
-                        <button type="button" class="preset-btn" data-short="50.8" data-long="50.8" data-name="2x2">2x2<small class="dims">US passport</small></button>
                         <button type="button" class="preset-btn" data-short="0" data-long="0" data-name="Free">Free<small class="dims">custom</small></button>
                     </div>
                     <div class="free-size-box" id="freeSizeBox">
@@ -697,7 +698,7 @@
                 var placed = [];
                 var selectedId = null;
                 var selectedIds = [];
-                var activePreset = { w: 127, h: 178, name: "5R" };
+                var activePreset = { w: 25.4, h: 25.4, name: "1x1" };
                 var presetOrient = "portrait";
                 var nextId = 1;
                 var dragState = null;
@@ -1074,11 +1075,11 @@
                         cropY: 0,
                         naturalW: item.naturalW,
                         naturalH: item.naturalH,
-                        black: 0,
-                        white: 255,
-                        gamma: 1,
-                        bright: 0,
-                        contrast: 0,
+                        black: item.black != null ? item.black : 0,
+                        white: item.white != null ? item.white : 255,
+                        gamma: item.gamma != null ? item.gamma : 1,
+                        bright: item.bright != null ? item.bright : 0,
+                        contrast: item.contrast != null ? item.contrast : 0,
                         src: item.src,
                         originalDataURL: item.originalDataURL,
                         name: item.name,
@@ -1803,8 +1804,35 @@
                     levelsBusy = true;
                     processImage(inst.originalDataURL, black, white, gamma, bright, contrast)
                         .then(function (url) {
-                            inst.src = url;
-                            renderPlaced(inst);
+                            // Apply same levels + processed image to every canvas instance
+                            // that shares this source (same imageId)
+                            var sid = inst.imageId;
+                            for (var i = 0; i < placed.length; i++) {
+                                var p = placed[i];
+                                if (p.imageId === sid) {
+                                    p.black = black;
+                                    p.white = white;
+                                    p.gamma = gamma;
+                                    p.bright = bright;
+                                    p.contrast = contrast;
+                                    p.src = url;
+                                    renderPlaced(p);
+                                }
+                            }
+                            // Keep library source in sync so thumbs and new placements match
+                            for (var j = 0; j < images.length; j++) {
+                                if (images[j].id === sid) {
+                                    images[j].src = url;
+                                    images[j].black = black;
+                                    images[j].white = white;
+                                    images[j].gamma = gamma;
+                                    images[j].bright = bright;
+                                    images[j].contrast = contrast;
+                                    var thumb = thumbList.querySelector('.thumb-item[data-id="' + sid + '"] img');
+                                    if (thumb) thumb.src = url;
+                                    break;
+                                }
+                            }
                             levelsBusy = false;
                         })
                         .catch(function () {
@@ -2201,7 +2229,7 @@
 
                 updatePresetDimsLabels();
                 updatePaper();
-                setStatus("Ready - Select preset (default 5R), upload images, place on paper");
+                setStatus("Ready - Select preset (default 1x1), upload images, place on paper");
             })();
         </script>
         <script>
