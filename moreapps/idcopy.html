@@ -787,6 +787,26 @@
         <script>
             const SCAN_ENDPOINT = "http://localhost:5001/scan";
 
+            // Cached scan payload so we don't rebuild / re-send options on every scan.
+            // Invalidated only when the user changes Image type.
+            let cachedScanOptions = null;
+            let cachedScanOptionsKey = null;
+
+            function getScanOptions() {
+                const imageType = document.getElementById("imageType").value;
+                const key = imageType;
+                if (cachedScanOptions && cachedScanOptionsKey === key) {
+                    return cachedScanOptions;
+                }
+                cachedScanOptions = {
+                    resolution: 300,
+                    size: "id",
+                    image_type: imageType,
+                };
+                cachedScanOptionsKey = key;
+                return cachedScanOptions;
+            }
+
             let audioCtx;
 
             async function playPing() {
@@ -876,12 +896,12 @@
                 const controller = new AbortController();
                 const timeout = setTimeout(() => controller.abort(), 120000);
                 try {
-                    const imageType = document.getElementById("imageType").value;
+                    const options = getScanOptions();
                     const response = await fetch(SCAN_ENDPOINT, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         signal: controller.signal,
-                        body: JSON.stringify({ resolution: 300, size: "id", image_type: imageType }),
+                        body: JSON.stringify(options),
                     });
                     if (!response.ok) throw new Error(`Scanner returned HTTP ${response.status}`);
                     return await response.blob();
@@ -1106,6 +1126,12 @@
 
             document.getElementById("btnScanFront").addEventListener("click", () => handleScan("front"));
             document.getElementById("btnScanBack").addEventListener("click", () => handleScan("back"));
+
+            // Invalidate cached options when the user changes image type
+            document.getElementById("imageType").addEventListener("change", () => {
+                cachedScanOptions = null;
+                cachedScanOptionsKey = null;
+            });
 
             function currentPaper() {
                 return PAPER_SIZES_MM[document.getElementById("paperSize").value];

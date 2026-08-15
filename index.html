@@ -1008,6 +1008,33 @@
                     brightness: 1, // 1 = 100%, applied to the whole stitched page (preview + export)
                 };
 
+                // Cached scan payload so we don't rebuild options on every scan.
+                // Invalidated when image type, DPI, or paper size changes.
+                let cachedScanOptions = null;
+                let cachedScanOptionsKey = null;
+
+                function getScanOptions() {
+                    const imageType = els.imageType.value;
+                    const resolution = els.dpiSelect.value;
+                    const size = state.paperKey === "a4" ? "a4" : "letter";
+                    const key = imageType + "|" + resolution + "|" + size;
+                    if (cachedScanOptions && cachedScanOptionsKey === key) {
+                        return cachedScanOptions;
+                    }
+                    cachedScanOptions = {
+                        resolution: resolution,
+                        size: size,
+                        image_type: imageType,
+                    };
+                    cachedScanOptionsKey = key;
+                    return cachedScanOptions;
+                }
+
+                function invalidateScanOptionsCache() {
+                    cachedScanOptions = null;
+                    cachedScanOptionsKey = null;
+                }
+
                 function computePageSize() {
                     const p = PAPER_SIZES[state.paperKey];
                     state.pageW = Math.round(p.w * state.dpi);
@@ -1409,18 +1436,16 @@
                 });
 
                 async function callScanner(section) {
-                    const imageType = els.imageType.value;
                     // Match the scan area to the selected paper size: use "a4" when the
                     // page is set to A4, otherwise default to "letter" for everything else
                     // (the scanner backend only knows "letter"/"a4"/"id" presets, not the
                     // long/short/legal bond-paper sizes, which are stitched from a
                     // letter-size scan anyway).
-                    const size = state.paperKey === "a4" ? "a4" : "letter";
-                    const resolution = els.dpiSelect.value;
+                    const options = getScanOptions();
                     const res = await fetch("http://localhost:5001/scan", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ resolution, size, image_type: imageType }),
+                        body: JSON.stringify(options),
                     });
                     const blob = await res.blob();
                     const file = new File([blob], `${section}.png`, { type: "image/png" });
@@ -1432,6 +1457,7 @@
                 els.paperSize.addEventListener("change", () => {
                     state.paperKey = els.paperSize.value;
                     state.layers.forEach((l) => (l.placed = false));
+                    invalidateScanOptionsCache();
                     renderAll();
                 });
                 els.dpiSelect.addEventListener("change", () => {
@@ -1444,7 +1470,11 @@
                         l.w *= factor;
                         l.h *= factor;
                     });
+                    invalidateScanOptionsCache();
                     renderAll();
+                });
+                els.imageType.addEventListener("change", () => {
+                    invalidateScanOptionsCache();
                 });
 
                 els.resetBtn.addEventListener("click", () => {
