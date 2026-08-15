@@ -1,0 +1,2246 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <!-- Google tag (gtag.js) -->
+
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-SWGDSZH41W"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag("js", new Date());
+
+            gtag("config", "G-SWGDSZH41W");
+        </script>
+        <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🖼️</text></svg>' />
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Photo Printing Studio</title>
+        <style>
+            :root {
+                --bg: #1a1b1e;
+                --panel: #25262b;
+                --border: #373a40;
+                --text: #e9ecef;
+                --muted: #868e96;
+                --accent: #4dabf7;
+                --accent-hover: #339af0;
+                --danger: #ff6b6b;
+                --paper: #ffffff;
+                --shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+            }
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+            html,
+            body {
+                height: 100%;
+            }
+            body {
+                font-family:
+                    "Segoe UI",
+                    system-ui,
+                    -apple-system,
+                    sans-serif;
+                background: var(--bg);
+                color: var(--text);
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+            }
+            header {
+                background: var(--panel);
+                border-bottom: 1px solid var(--border);
+                padding: 10px 16px;
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                flex-shrink: 0;
+                z-index: 5;
+            }
+            header h1 {
+                font-size: 1.15rem;
+                font-weight: 600;
+            }
+            header h1 span {
+                color: var(--accent);
+            }
+            .header-actions {
+                margin-left: auto;
+                display: flex;
+                gap: 8px;
+            }
+
+            button {
+                background: var(--accent);
+                color: #000;
+                border: none;
+                padding: 7px 14px;
+                border-radius: 6px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: background 0.15s;
+            }
+            button:hover {
+                background: var(--accent-hover);
+            }
+            button.secondary {
+                background: transparent;
+                color: var(--text);
+                border: 1px solid var(--border);
+            }
+            button.secondary:hover {
+                background: var(--border);
+            }
+            button.danger {
+                background: var(--danger);
+                color: #fff;
+            }
+            button.active-mode {
+                background: var(--accent);
+                color: #000;
+                border-color: var(--accent);
+            }
+
+            .main {
+                flex: 1;
+                display: flex;
+                min-height: 0;
+                overflow: hidden;
+            }
+
+            .sidebar {
+                width: 320px;
+                background: var(--panel);
+                border-right: 1px solid var(--border);
+                display: flex;
+                flex-direction: column;
+                overflow-y: auto;
+                flex-shrink: 0;
+            }
+            .section {
+                padding: 12px 14px;
+                border-bottom: 1px solid var(--border);
+                flex-shrink: 0;
+            }
+            .section h3 {
+                font-size: 0.68rem;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                color: var(--muted);
+                margin-bottom: 8px;
+            }
+            label {
+                display: block;
+                font-size: 0.78rem;
+                color: var(--muted);
+                margin-bottom: 3px;
+            }
+            select,
+            input[type="number"],
+            input[type="text"] {
+                width: 100%;
+                background: var(--bg);
+                border: 1px solid var(--border);
+                color: var(--text);
+                padding: 6px 8px;
+                border-radius: 5px;
+                font-size: 0.85rem;
+            }
+            select:focus,
+            input:focus {
+                outline: 1px solid var(--accent);
+            }
+            .row {
+                display: flex;
+                gap: 8px;
+                align-items: center;
+            }
+            .row > * {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .preset-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 5px;
+            }
+            .preset-btn {
+                background: var(--bg);
+                border: 1px solid var(--border);
+                color: var(--text);
+                padding: 6px 3px;
+                border-radius: 6px;
+                font-size: 0.72rem;
+                cursor: pointer;
+                text-align: center;
+                transition: all 0.15s;
+            }
+            .preset-btn:hover {
+                border-color: var(--accent);
+                color: var(--accent);
+            }
+            .preset-btn.active {
+                background: rgba(77, 171, 247, 0.18);
+                border-color: var(--accent);
+                color: var(--accent);
+            }
+            .preset-btn small {
+                display: block;
+                font-size: 0.6rem;
+                color: var(--muted);
+                margin-top: 2px;
+            }
+
+            .free-size-box {
+                display: none;
+                margin-top: 8px;
+                padding: 8px;
+                background: var(--bg);
+                border-radius: 6px;
+                border: 1px solid var(--border);
+            }
+            .free-size-box.show {
+                display: block;
+            }
+            .free-size-box .row {
+                margin-bottom: 6px;
+            }
+
+            .upload-zone {
+                border: 2px dashed var(--border);
+                border-radius: 8px;
+                padding: 14px 10px;
+                text-align: center;
+                cursor: pointer;
+                transition:
+                    border-color 0.15s,
+                    background 0.15s;
+            }
+            .upload-zone:hover,
+            .upload-zone.dragover {
+                border-color: var(--accent);
+                background: rgba(77, 171, 247, 0.06);
+            }
+            .upload-zone p {
+                font-size: 0.8rem;
+                color: var(--muted);
+            }
+            .upload-zone strong {
+                color: var(--accent);
+            }
+
+            .thumb-list {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                max-height: 150px;
+                overflow-y: auto;
+                margin-top: 8px;
+            }
+            .thumb-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 5px;
+                background: var(--bg);
+                border-radius: 6px;
+                border: 1px solid transparent;
+                cursor: grab;
+            }
+            .thumb-item:active {
+                cursor: grabbing;
+            }
+            .thumb-item.selected {
+                border-color: var(--accent);
+            }
+            .thumb-item img {
+                width: 44px;
+                height: 44px;
+                object-fit: cover;
+                border-radius: 4px;
+                background: #333;
+                flex-shrink: 0;
+            }
+            .thumb-item .info {
+                flex: 1;
+                min-width: 0;
+            }
+            .thumb-item .info span {
+                display: block;
+                font-size: 0.75rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .thumb-item .info small {
+                color: var(--muted);
+                font-size: 0.68rem;
+            }
+            .thumb-item .actions {
+                display: flex;
+                gap: 4px;
+                flex-shrink: 0;
+            }
+            .thumb-item .actions button {
+                padding: 4px 8px;
+                font-size: 0.75rem;
+                background: var(--accent);
+                color: #000;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+            .thumb-item .actions button.rm {
+                background: transparent;
+                color: var(--danger);
+                border: 1px solid var(--border);
+            }
+            .thumb-item .actions button.rm:hover {
+                background: var(--danger);
+                color: #fff;
+                border-color: var(--danger);
+            }
+
+            .levels-row {
+                display: grid;
+                grid-template-columns: 52px 1fr 52px;
+                gap: 6px;
+                align-items: center;
+                margin-bottom: 6px;
+            }
+            .levels-row span {
+                font-size: 0.72rem;
+                color: var(--muted);
+            }
+            .levels-row input[type="number"] {
+                width: 100%;
+                text-align: center;
+                padding: 4px 2px;
+                font-size: 0.78rem;
+            }
+            .levels-row input[type="range"] {
+                width: 100%;
+            }
+
+            .hint {
+                font-size: 0.7rem;
+                color: var(--muted);
+                margin-top: 6px;
+                line-height: 1.35;
+            }
+
+            .workspace {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                min-width: 0;
+                min-height: 0;
+                background: #121214;
+            }
+            .toolbar {
+                padding: 7px 12px;
+                background: var(--panel);
+                border-bottom: 1px solid var(--border);
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
+                flex-shrink: 0;
+                font-size: 0.8rem;
+            }
+            .toolbar .sep {
+                width: 1px;
+                height: 18px;
+                background: var(--border);
+            }
+            .toolbar label {
+                margin: 0;
+                white-space: nowrap;
+                color: var(--muted);
+            }
+
+            .canvas-wrap {
+                flex: 1;
+                overflow: auto;
+                display: flex;
+                align-items: flex-start;
+                justify-content: center;
+                padding: 28px 24px 40px;
+                position: relative;
+                min-height: 0;
+            }
+            .paper-stage {
+                position: relative;
+                background: var(--paper);
+                box-shadow: var(--shadow);
+                flex-shrink: 0;
+                overflow: visible;
+            }
+            .paper-label {
+                position: absolute;
+                top: -20px;
+                left: 0;
+                font-size: 0.68rem;
+                color: var(--muted);
+                white-space: nowrap;
+                pointer-events: none;
+            }
+
+            .placed {
+                position: absolute;
+                border: 1px solid transparent;
+                cursor: move;
+                user-select: none;
+                -webkit-user-select: none;
+                overflow: visible;
+            }
+            .placed.selected {
+                border-color: var(--accent);
+                z-index: 20;
+            }
+            .placed .img-clip {
+                position: absolute;
+                inset: 0;
+                overflow: hidden;
+                background: #fff;
+            }
+            .placed .img-clip img {
+                position: absolute;
+                left: 0;
+                top: 0;
+                max-width: none;
+                pointer-events: none;
+                transform-origin: center center;
+            }
+            /* Yellow handle = image rotate, only in crop mode */
+            .placed .handle-rotate {
+                position: absolute;
+                width: 14px;
+                height: 14px;
+                background: #fcc419;
+                border: 1.5px solid #fff;
+                border-radius: 50%;
+                z-index: 25;
+                display: none;
+                cursor: grab;
+                top: -28px;
+                left: 50%;
+                margin-left: -7px;
+            }
+            .placed.selected.crop-active .handle-rotate {
+                display: block;
+            }
+            .placed .size-badge {
+                position: absolute;
+                bottom: 3px;
+                left: 3px;
+                background: rgba(0, 0, 0, 0.72);
+                color: #fff;
+                font-size: 0.58rem;
+                padding: 1px 5px;
+                border-radius: 3px;
+                pointer-events: none;
+                white-space: nowrap;
+                z-index: 15;
+            }
+
+            /* Dashed cut border around frame */
+            .placed .cut-guides {
+                position: absolute;
+                inset: 0;
+                pointer-events: none;
+                z-index: 12;
+                border: 1px dashed #9a9a9a;
+                box-sizing: border-box;
+            }
+
+            .statusbar {
+                background: var(--panel);
+                border-top: 1px solid var(--border);
+                padding: 5px 14px;
+                font-size: 0.72rem;
+                color: var(--muted);
+                display: flex;
+                gap: 20px;
+                flex-shrink: 0;
+            }
+
+            #exportCanvas {
+                display: none;
+            }
+
+            ::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
+            }
+            ::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: var(--border);
+                border-radius: 4px;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <h1>Photo <span>Printing</span> Studio</h1>
+            <div class="header-actions">
+                <button class="secondary" id="btnClear" type="button">Clear</button>
+                <button class="secondary" id="btnPrint" type="button">Print</button>
+                <button id="btnExport" type="button">Export PNG</button>
+            </div>
+        </header>
+
+        <div class="main">
+            <aside class="sidebar">
+                <div class="section">
+                    <h3>Paper / Canvas</h3>
+                    <label>Size</label>
+                    <select id="paperSelect">
+                        <option value="A4" selected>A4 (210 x 297 mm)</option>
+                        <option value="Short">Short / Letter (216 x 279 mm)</option>
+                        <option value="Long">Long / Legal (216 x 356 mm)</option>
+                        <option value="A3">A3 (297 x 420 mm)</option>
+                        <option value="A5">A5 (148 x 210 mm)</option>
+                        <option value="S8R">S8R (203 x 305 mm)</option>
+                    </select>
+                    <div class="row" style="margin-top: 8px">
+                        <div>
+                            <label>Orientation</label>
+                            <select id="orientSelect">
+                                <option value="portrait" selected>Portrait</option>
+                                <option value="landscape">Landscape</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Zoom</label>
+                            <select id="zoomSelect">
+                                <option value="0.4">40%</option>
+                                <option value="0.5">50%</option>
+                                <option value="0.6" selected>60%</option>
+                                <option value="0.75">75%</option>
+                                <option value="1">100%</option>
+                                <option value="1.25">125%</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Photo size (exact, fixed on canvas)</h3>
+                    <div class="row" style="margin-bottom: 8px">
+                        <label style="flex: 0; margin: 0; white-space: nowrap">Orient:</label>
+                        <select id="presetOrient" style="flex: 1">
+                            <option value="portrait" selected>Portrait</option>
+                            <option value="landscape">Landscape</option>
+                        </select>
+                    </div>
+                    <div class="preset-grid" id="presetGrid">
+                        <button type="button" class="preset-btn" data-short="25.4" data-long="38.1" data-name="1R">1R<small class="dims">1x1.5 in</small></button>
+                        <button type="button" class="preset-btn" data-short="63.5" data-long="88.9" data-name="Wallet">Wallet<small class="dims">2.5x3.5 in</small></button>
+                        <button type="button" class="preset-btn" data-short="88.9" data-long="127" data-name="3R">3R<small class="dims">3.5x5 in</small></button>
+                        <button type="button" class="preset-btn" data-short="101.6" data-long="152.4" data-name="4R">4R<small class="dims">4x6 in</small></button>
+                        <button type="button" class="preset-btn active" data-short="127" data-long="177.8" data-name="5R">5R<small class="dims">5x7 in</small></button>
+                        <button type="button" class="preset-btn" data-short="152.4" data-long="203.2" data-name="6R">6R<small class="dims">6x8 in</small></button>
+                        <button type="button" class="preset-btn" data-short="203.2" data-long="254" data-name="8R">8R<small class="dims">8x10 in</small></button>
+                        <button type="button" class="preset-btn" data-short="53.98" data-long="85.6" data-name="ID-PVC">ID / PVC<small class="dims">CR80 card</small></button>
+                        <button type="button" class="preset-btn" data-short="35" data-long="45" data-name="Passport">Passport<small class="dims">35x45 mm</small></button>
+                        <button type="button" class="preset-btn" data-short="50.8" data-long="50.8" data-name="2x2">2x2<small class="dims">US passport</small></button>
+                        <button type="button" class="preset-btn" data-short="0" data-long="0" data-name="Free">Free<small class="dims">custom</small></button>
+                    </div>
+                    <div class="free-size-box" id="freeSizeBox">
+                        <div class="row">
+                            <div>
+                                <label>Width</label>
+                                <input type="number" id="freeW" min="0.1" step="0.1" value="5" />
+                            </div>
+                            <div>
+                                <label>Height</label>
+                                <input type="number" id="freeH" min="0.1" step="0.1" value="7" />
+                            </div>
+                            <div>
+                                <label>Unit</label>
+                                <select id="freeUnit">
+                                    <option value="in" selected>in</option>
+                                    <option value="cm">cm</option>
+                                    <option value="mm">mm</option>
+                                </select>
+                            </div>
+                        </div>
+                        <p class="hint" id="freeMmHint">= 127 x 178 mm</p>
+                    </div>
+                    <p class="hint">Frame size is fixed (accurate print size). Use Crop/Zoom to pan the photo inside. 90° rotates frame dimensions.</p>
+                </div>
+
+                <div class="section">
+                    <h3>Images</h3>
+                    <div class="upload-zone" id="uploadZone">
+                        <p><strong>Click or drop</strong> images here</p>
+                        <p style="margin-top: 3px; font-size: 0.68rem">JPG, PNG, WEBP · PNG transparency → white</p>
+                    </div>
+                    <input type="file" id="fileInput" accept="image/*" multiple hidden />
+                    <div class="thumb-list" id="thumbList"></div>
+                </div>
+
+                <div class="section">
+                    <h3>Adjustments (selected)</h3>
+                    <div class="row" style="margin-bottom: 8px">
+                        <button type="button" id="btnAuto" style="flex: 1">Auto Levels</button>
+                        <button type="button" class="secondary" id="btnResetAdj" style="flex: 1">Reset</button>
+                    </div>
+                    <div class="row" style="margin-bottom: 8px">
+                        <button type="button" class="secondary" id="btnCompare" style="width: 100%" title="Hold to show original (before levels)">Compare (hold)</button>
+                    </div>
+                    <p class="hint" style="margin-bottom: 6px">Subject-aware · ignores near-white · hold Compare or \ key for before/after</p>
+                    <div class="levels-row">
+                        <span>Black</span>
+                        <input type="range" id="lvlBlack" min="0" max="255" value="0" />
+                        <input type="number" id="lvlBlackN" min="0" max="255" value="0" />
+                    </div>
+                    <div class="levels-row">
+                        <span>Gamma</span>
+                        <input type="range" id="lvlGamma" min="40" max="200" value="100" />
+                        <input type="number" id="lvlGammaN" min="0.4" max="2" step="0.01" value="1.00" />
+                    </div>
+                    <div class="levels-row">
+                        <span>White</span>
+                        <input type="range" id="lvlWhite" min="0" max="255" value="255" />
+                        <input type="number" id="lvlWhiteN" min="0" max="255" value="255" />
+                    </div>
+                    <div class="levels-row">
+                        <span>Bright</span>
+                        <input type="range" id="lvlBright" min="-50" max="50" value="0" />
+                        <input type="number" id="lvlBrightN" min="-50" max="50" value="0" />
+                    </div>
+                    <div class="levels-row">
+                        <span>Contrast</span>
+                        <input type="range" id="lvlContrast" min="-50" max="50" value="0" />
+                        <input type="number" id="lvlContrastN" min="-50" max="50" value="0" />
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Selected Image</h3>
+                    <div class="row" style="margin-bottom: 6px">
+                        <button type="button" class="secondary" id="btnCropMode">Crop / Zoom</button>
+                        <button type="button" class="secondary" id="btnFitCover">Fit Cover</button>
+                    </div>
+                    <div class="row">
+                        <button type="button" class="secondary" id="btnRotateL" title="Rotate whole frame 90° CCW">↺ 90° frame</button>
+                        <button type="button" class="secondary" id="btnRotateR" title="Rotate whole frame 90° CW">↻ 90° frame</button>
+                    </div>
+                    <div class="row" style="margin-top: 6px">
+                        <button type="button" class="secondary" id="btnFlipH">Flip H</button>
+                        <button type="button" class="secondary" id="btnFlipV">Flip V</button>
+                    </div>
+                    <div class="row" style="margin-top: 6px">
+                        <button type="button" class="danger" id="btnDelete" style="width: 100%">Delete</button>
+                    </div>
+                    <p class="hint">Shift/Ctrl+click multi-select · drag group together. Arrows nudge all. Del = delete. Esc = deselect. C = crop. R = rotate frame.</p>
+                </div>
+            </aside>
+
+            <div class="workspace">
+                <div class="toolbar">
+                    <span id="paperInfo">A4 · 210 x 297 mm</span>
+                    <div class="sep"></div>
+                    <label><input type="checkbox" id="snapGrid" checked /> Snap (grid + edges)</label>
+                    <label><input type="checkbox" id="showGuides" checked /> Cut guides</label>
+                    <div class="sep"></div>
+                    <span id="selInfo">No selection</span>
+                    <span id="modeInfo" style="color: var(--accent)"></span>
+                </div>
+                <div class="canvas-wrap" id="canvasWrap">
+                    <div class="paper-stage" id="paperStage">
+                        <div class="paper-label" id="paperLabel">A4 · 210 x 297 mm</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="statusbar">
+            <span id="status">Ready - Select preset, upload, place on paper</span>
+            <span>Export @ 300 DPI</span>
+        </div>
+
+        <canvas id="exportCanvas"></canvas>
+
+        <script>
+            (function () {
+                "use strict";
+
+                var PAPERS = {
+                    A4: { w: 210, h: 297, name: "A4" },
+                    Short: { w: 216, h: 279, name: "Short / Letter" },
+                    Long: { w: 216, h: 356, name: "Long / Legal" },
+                    A3: { w: 297, h: 420, name: "A3" },
+                    A5: { w: 148, h: 210, name: "A5" },
+                    S8R: { w: 203, h: 305, name: "S8R" },
+                };
+
+                var MM_TO_PX = 3.779527559;
+                var IN_TO_MM = 25.4;
+                var CM_TO_MM = 10;
+
+                var paperKey = "A4";
+                var orientation = "portrait";
+                var zoom = 0.6;
+                var images = [];
+                var placed = [];
+                var selectedId = null;
+                var selectedIds = [];
+                var activePreset = { w: 127, h: 178, name: "5R" };
+                var presetOrient = "portrait";
+                var nextId = 1;
+                var dragState = null;
+                var cropMode = false;
+                var levelsTimer = null;
+                var levelsBusy = false;
+
+                var paperStage = document.getElementById("paperStage");
+                var paperSelect = document.getElementById("paperSelect");
+                var orientSelect = document.getElementById("orientSelect");
+                var zoomSelect = document.getElementById("zoomSelect");
+                var presetOrientEl = document.getElementById("presetOrient");
+                var freeSizeBox = document.getElementById("freeSizeBox");
+                var thumbList = document.getElementById("thumbList");
+                var uploadZone = document.getElementById("uploadZone");
+                var fileInput = document.getElementById("fileInput");
+                var statusEl = document.getElementById("status");
+                var paperInfo = document.getElementById("paperInfo");
+                var paperLabel = document.getElementById("paperLabel");
+                var selInfo = document.getElementById("selInfo");
+                var modeInfo = document.getElementById("modeInfo");
+
+                function getPaperDims() {
+                    var p = PAPERS[paperKey];
+                    if (orientation === "landscape") return { w: p.h, h: p.w, name: p.name };
+                    return { w: p.w, h: p.h, name: p.name };
+                }
+
+                function updatePaper() {
+                    var d = getPaperDims();
+                    paperStage.style.width = d.w * MM_TO_PX * zoom + "px";
+                    paperStage.style.height = d.h * MM_TO_PX * zoom + "px";
+                    paperInfo.textContent = d.name + " · " + d.w + " x " + d.h + " mm";
+                    paperLabel.textContent = d.name + " · " + d.w + " x " + d.h + " mm";
+                    placed.forEach(function (p) {
+                        renderPlaced(p);
+                    });
+                }
+
+                function freeToMm() {
+                    var w = parseFloat(document.getElementById("freeW").value) || 0;
+                    var h = parseFloat(document.getElementById("freeH").value) || 0;
+                    var unit = document.getElementById("freeUnit").value;
+                    var f = unit === "in" ? IN_TO_MM : unit === "cm" ? CM_TO_MM : 1;
+                    return { w: w * f, h: h * f };
+                }
+
+                function updateFreeHint() {
+                    var m = freeToMm();
+                    document.getElementById("freeMmHint").textContent = "= " + Math.round(m.w * 10) / 10 + " x " + Math.round(m.h * 10) / 10 + " mm";
+                    if (activePreset.name === "Free" || activePreset.name.indexOf("Free") === 0) {
+                        activePreset = { w: m.w, h: m.h, name: "Free" };
+                    }
+                }
+
+                function formatDimMm(mm) {
+                    if (Math.abs(mm - Math.round(mm)) < 0.05) return String(Math.round(mm));
+                    return (Math.round(mm * 10) / 10).toString();
+                }
+                function formatDimIn(mm) {
+                    var inches = mm / 25.4;
+                    var t = Math.round(inches * 100) / 100;
+                    if (Math.abs(t - Math.round(t)) < 0.01) return String(Math.round(t));
+                    return t.toFixed(2).replace(/0$/, "").replace(/\.$/, "");
+                }
+                function updatePresetDimsLabels() {
+                    document.querySelectorAll(".preset-btn").forEach(function (btn) {
+                        var s = parseFloat(btn.getAttribute("data-short"));
+                        var l = parseFloat(btn.getAttribute("data-long"));
+                        var dims = btn.querySelector(".dims");
+                        if (!dims) return;
+                        if (!s) {
+                            dims.textContent = "custom";
+                            return;
+                        }
+                        var a = presetOrient === "landscape" ? l : s;
+                        var b = presetOrient === "landscape" ? s : l;
+                        // keep special labels for non-R sizes if present via data-hint
+                        var hint = btn.getAttribute("data-hint");
+                        if (hint) {
+                            dims.textContent = hint;
+                            return;
+                        }
+                        if (Math.abs(a - b) < 0.2) {
+                            dims.textContent = formatDimIn(a) + " in sq";
+                        } else {
+                            dims.textContent = formatDimIn(a) + "x" + formatDimIn(b) + " in";
+                        }
+                    });
+                    var active = document.querySelector(".preset-btn.active");
+                    if (active) setActiveFromBtn(active);
+                }
+
+                function setActiveFromBtn(btn) {
+                    var s = parseFloat(btn.getAttribute("data-short"));
+                    var l = parseFloat(btn.getAttribute("data-long"));
+                    var name = btn.getAttribute("data-name");
+                    if (!s) {
+                        freeSizeBox.classList.add("show");
+                        updateFreeHint();
+                        var m = freeToMm();
+                        activePreset = { w: m.w, h: m.h, name: "Free" };
+                    } else {
+                        freeSizeBox.classList.remove("show");
+                        if (presetOrient === "landscape") {
+                            activePreset = { w: l, h: s, name: name + " L" };
+                        } else {
+                            activePreset = { w: s, h: l, name: name };
+                        }
+                    }
+                }
+
+                paperSelect.addEventListener("change", function () {
+                    paperKey = paperSelect.value;
+                    updatePaper();
+                });
+                orientSelect.addEventListener("change", function () {
+                    orientation = orientSelect.value;
+                    updatePaper();
+                });
+                zoomSelect.addEventListener("change", function () {
+                    zoom = parseFloat(zoomSelect.value);
+                    updatePaper();
+                });
+                presetOrientEl.addEventListener("change", function () {
+                    presetOrient = presetOrientEl.value;
+                    updatePresetDimsLabels();
+                    setStatus("Preset: " + activePreset.name + (activePreset.w ? " (" + Math.round(activePreset.w) + "x" + Math.round(activePreset.h) + " mm)" : ""));
+                });
+                ["freeW", "freeH", "freeUnit"].forEach(function (id) {
+                    document.getElementById(id).addEventListener("input", updateFreeHint);
+                    document.getElementById(id).addEventListener("change", updateFreeHint);
+                });
+
+                document.querySelectorAll(".preset-btn").forEach(function (btn) {
+                    btn.addEventListener("click", function () {
+                        document.querySelectorAll(".preset-btn").forEach(function (b) {
+                            b.classList.remove("active");
+                        });
+                        btn.classList.add("active");
+                        setActiveFromBtn(btn);
+                        setStatus("Preset: " + activePreset.name + (activePreset.w ? " (" + Math.round(activePreset.w) + "x" + Math.round(activePreset.h) + " mm)" : ""));
+                    });
+                });
+
+                // ----- Upload -----
+                uploadZone.addEventListener("click", function () {
+                    fileInput.click();
+                });
+                uploadZone.addEventListener("dragover", function (e) {
+                    e.preventDefault();
+                    uploadZone.classList.add("dragover");
+                });
+                uploadZone.addEventListener("dragleave", function () {
+                    uploadZone.classList.remove("dragover");
+                });
+                uploadZone.addEventListener("drop", function (e) {
+                    e.preventDefault();
+                    uploadZone.classList.remove("dragover");
+                    handleFiles(e.dataTransfer.files);
+                });
+                fileInput.addEventListener("change", function () {
+                    handleFiles(fileInput.files);
+                    fileInput.value = "";
+                });
+
+                function handleFiles(fileList) {
+                    Array.prototype.forEach.call(fileList, function (file) {
+                        if (!file.type || file.type.indexOf("image/") !== 0) return;
+                        var reader = new FileReader();
+                        reader.onload = function (ev) {
+                            prepareImage(ev.target.result, file.name, file.type)
+                                .then(function (prepared) {
+                                    var id = nextId++;
+                                    var item = {
+                                        id: id,
+                                        name: file.name,
+                                        src: prepared.dataURL,
+                                        originalDataURL: prepared.dataURL,
+                                        naturalW: prepared.w,
+                                        naturalH: prepared.h,
+                                        black: 0,
+                                        white: 255,
+                                        gamma: 1,
+                                        bright: 0,
+                                        contrast: 0,
+                                    };
+                                    images.push(item);
+                                    addThumb(item);
+                                    setStatus("Loaded: " + file.name + (prepared.hadAlpha ? " (transparency → white)" : ""));
+                                })
+                                .catch(function () {
+                                    setStatus("Failed to load image");
+                                });
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                }
+
+                function prepareImage(dataURL, name, mime) {
+                    return new Promise(function (resolve, reject) {
+                        var img = new Image();
+                        img.onload = function () {
+                            var c = document.createElement("canvas");
+                            c.width = img.naturalWidth;
+                            c.height = img.naturalHeight;
+                            var ctx = c.getContext("2d");
+                            ctx.fillStyle = "#ffffff";
+                            ctx.fillRect(0, 0, c.width, c.height);
+                            ctx.drawImage(img, 0, 0);
+
+                            var hadAlpha = false;
+                            if (mime === "image/png" || mime === "image/webp" || /\.png$/i.test(name) || /\.webp$/i.test(name)) {
+                                var c2 = document.createElement("canvas");
+                                c2.width = img.naturalWidth;
+                                c2.height = img.naturalHeight;
+                                var ctx2 = c2.getContext("2d");
+                                ctx2.drawImage(img, 0, 0);
+                                try {
+                                    var data = ctx2.getImageData(0, 0, Math.min(c2.width, 200), Math.min(c2.height, 200)).data;
+                                    for (var i = 3; i < data.length; i += 4) {
+                                        if (data[i] < 250) {
+                                            hadAlpha = true;
+                                            break;
+                                        }
+                                    }
+                                } catch (e) {}
+                            }
+
+                            resolve({
+                                dataURL: c.toDataURL("image/jpeg", 0.95),
+                                w: img.naturalWidth,
+                                h: img.naturalHeight,
+                                hadAlpha: hadAlpha,
+                            });
+                        };
+                        img.onerror = reject;
+                        img.src = dataURL;
+                    });
+                }
+
+                function isSourceOnCanvas(imageId) {
+                    for (var i = 0; i < placed.length; i++) {
+                        if (placed[i].imageId === imageId) return true;
+                    }
+                    return false;
+                }
+
+                function removeSourceImage(imageId) {
+                    if (isSourceOnCanvas(imageId)) {
+                        setStatus("This image is on the canvas — delete it from the canvas first");
+                        alert("This image is placed on the canvas.\nDelete it from the canvas first to avoid accidental removal.");
+                        return;
+                    }
+                    images = images.filter(function (img) {
+                        return img.id !== imageId;
+                    });
+                    var thumb = thumbList.querySelector('.thumb-item[data-id="' + imageId + '"]');
+                    if (thumb) thumb.remove();
+                    setStatus("Removed from library");
+                }
+
+                function addThumb(item) {
+                    var div = document.createElement("div");
+                    div.className = "thumb-item";
+                    div.setAttribute("data-id", String(item.id));
+                    div.draggable = true;
+
+                    var im = document.createElement("img");
+                    im.src = item.src;
+                    im.alt = "";
+
+                    var info = document.createElement("div");
+                    info.className = "info";
+                    var sp = document.createElement("span");
+                    sp.title = item.name;
+                    sp.textContent = item.name;
+                    var sm = document.createElement("small");
+                    sm.textContent = item.naturalW + "x" + item.naturalH + "px";
+                    info.appendChild(sp);
+                    info.appendChild(sm);
+
+                    var actions = document.createElement("div");
+                    actions.className = "actions";
+                    var addBtn = document.createElement("button");
+                    addBtn.type = "button";
+                    addBtn.textContent = "+";
+                    addBtn.title = "Add with current preset size";
+                    addBtn.addEventListener("click", function (e) {
+                        e.stopPropagation();
+                        placeImage(item);
+                    });
+                    var rmBtn = document.createElement("button");
+                    rmBtn.type = "button";
+                    rmBtn.className = "rm";
+                    rmBtn.textContent = "×";
+                    rmBtn.title = "Remove from library";
+                    rmBtn.addEventListener("click", function (e) {
+                        e.stopPropagation();
+                        removeSourceImage(item.id);
+                    });
+                    actions.appendChild(addBtn);
+                    actions.appendChild(rmBtn);
+
+                    div.appendChild(im);
+                    div.appendChild(info);
+                    div.appendChild(actions);
+                    div.addEventListener("click", function () {
+                        var thumbs = thumbList.querySelectorAll(".thumb-item");
+                        for (var i = 0; i < thumbs.length; i++) {
+                            thumbs[i].classList.toggle("selected", parseInt(thumbs[i].getAttribute("data-id"), 10) === item.id);
+                        }
+                    });
+                    div.addEventListener("dragstart", function (e) {
+                        e.dataTransfer.setData("text/plain", String(item.id));
+                        e.dataTransfer.effectAllowed = "copy";
+                    });
+                    thumbList.appendChild(div);
+                }
+
+                paperStage.addEventListener("dragover", function (e) {
+                    e.preventDefault();
+                });
+                paperStage.addEventListener("drop", function (e) {
+                    e.preventDefault();
+                    var id = parseInt(e.dataTransfer.getData("text/plain"), 10);
+                    var item = null;
+                    for (var i = 0; i < images.length; i++) {
+                        if (images[i].id === id) {
+                            item = images[i];
+                            break;
+                        }
+                    }
+                    if (!item) return;
+                    var rect = paperStage.getBoundingClientRect();
+                    var x = (e.clientX - rect.left) / (MM_TO_PX * zoom);
+                    var y = (e.clientY - rect.top) / (MM_TO_PX * zoom);
+                    placeImage(item, x, y);
+                });
+
+                function placeImage(item, xMm, yMm) {
+                    // refresh free size if needed
+                    if (document.querySelector(".preset-btn.active") && document.querySelector(".preset-btn.active").getAttribute("data-name") === "Free") {
+                        updateFreeHint();
+                    }
+                    var d = getPaperDims();
+                    var wMm = activePreset.w;
+                    var hMm = activePreset.h;
+                    if (!wMm || !hMm) {
+                        setStatus("Set Free size width and height first");
+                        return;
+                    }
+                    if (typeof xMm !== "number") xMm = (d.w - wMm) / 2;
+                    if (typeof yMm !== "number") yMm = (d.h - hMm) / 2;
+                    xMm = xMm - wMm / 2;
+                    yMm = yMm - hMm / 2;
+                    xMm = Math.max(0, Math.min(xMm, d.w - wMm));
+                    yMm = Math.max(0, Math.min(yMm, d.h - hMm));
+
+                    var pid = "p" + nextId++;
+                    var inst = {
+                        pid: pid,
+                        imageId: item.id,
+                        x: xMm,
+                        y: yMm,
+                        w: wMm,
+                        h: hMm,
+                        rotation: 0,
+                        imgRotation: 0,
+                        flipH: false,
+                        flipV: false,
+                        cropScale: 1,
+                        cropX: 0,
+                        cropY: 0,
+                        naturalW: item.naturalW,
+                        naturalH: item.naturalH,
+                        black: item.black != null ? item.black : 0,
+                        white: item.white != null ? item.white : 255,
+                        gamma: item.gamma != null ? item.gamma : 1,
+                        bright: item.bright != null ? item.bright : 0,
+                        contrast: item.contrast != null ? item.contrast : 0,
+                        src: item.src,
+                        originalDataURL: item.originalDataURL,
+                        name: item.name,
+                        presetName: activePreset.name,
+                    };
+                    placed.push(inst);
+                    createPlacedEl(inst);
+                    selectPlaced(pid);
+                    setStatus("Placed " + item.name + " as " + activePreset.name + " (" + Math.round(wMm) + "x" + Math.round(hMm) + " mm)");
+                }
+
+                function createPlacedEl(inst) {
+                    var el = document.createElement("div");
+                    el.className = "placed";
+                    el.setAttribute("data-pid", inst.pid);
+
+                    var clip = document.createElement("div");
+                    clip.className = "img-clip";
+                    var img = document.createElement("img");
+                    img.src = inst.src;
+                    img.draggable = false;
+                    img.alt = "";
+                    clip.appendChild(img);
+                    el.appendChild(clip);
+
+                    var guides = document.createElement("div");
+                    guides.className = "cut-guides";
+                    guides.innerHTML = "";
+                    el.appendChild(guides);
+
+                    var rot = document.createElement("div");
+                    rot.className = "handle-rotate";
+                    rot.title = "Rotate photo inside frame (crop mode)";
+                    el.appendChild(rot);
+
+                    var badge = document.createElement("div");
+                    badge.className = "size-badge";
+                    el.appendChild(badge);
+
+                    paperStage.appendChild(el);
+                    renderPlaced(inst);
+
+                    el.addEventListener("mousedown", onPlacedMouseDown);
+                    el.addEventListener("dblclick", function (e) {
+                        e.preventDefault();
+                        selectPlaced(inst.pid);
+                        setCropMode(true);
+                    });
+                    rot.addEventListener("mousedown", onRotateHandleMouseDown);
+                }
+
+                function renderPlaced(inst) {
+                    var el = paperStage.querySelector('[data-pid="' + inst.pid + '"]');
+                    if (!el) return;
+                    var scale = MM_TO_PX * zoom;
+                    var fw = inst.w * scale;
+                    var fh = inst.h * scale;
+                    el.style.left = inst.x * scale + "px";
+                    el.style.top = inst.y * scale + "px";
+                    el.style.width = fw + "px";
+                    el.style.height = fh + "px";
+                    // rotate whole frame around center; flips applied on image content
+                    el.style.transformOrigin = "center center";
+                    el.style.transform = "rotate(" + (inst.rotation || 0) + "deg)";
+
+                    el.classList.toggle("crop-active", cropMode && selectedId === inst.pid);
+
+                    var img = el.querySelector(".img-clip img");
+                    if (img) {
+                        if (img.getAttribute("src") !== inst.src) img.src = inst.src;
+                        layoutImageInFrame(img, inst, fw, fh);
+                    }
+
+                    var badge = el.querySelector(".size-badge");
+                    if (badge) {
+                        var fr = Math.round(inst.rotation || 0);
+                        var ir = Math.round(inst.imgRotation || 0);
+                        badge.textContent = (inst.presetName || "Free") + " · " + Math.round(inst.w) + "x" + Math.round(inst.h) + " mm" + (fr ? " · F" + fr + "°" : "") + (ir ? " · P" + ir + "°" : "");
+                    }
+
+                    var guides = el.querySelector(".cut-guides");
+                    if (guides) {
+                        guides.style.display = document.getElementById("showGuides").checked ? "block" : "none";
+                    }
+                }
+
+                function layoutImageInFrame(img, inst, fwPx, fhPx) {
+                    var natW = inst.naturalW;
+                    var natH = inst.naturalH;
+                    var rot = ((inst.imgRotation % 360) + 360) % 360;
+                    // when image is rotated 90/270, swap effective aspect for cover calc
+                    var swap = rot === 90 || rot === 270;
+                    var effW = swap ? natH : natW;
+                    var effH = swap ? natW : natH;
+                    var imgAspect = effW / effH;
+                    var frameAspect = fwPx / fhPx;
+
+                    var baseW, baseH;
+                    if (imgAspect > frameAspect) {
+                        baseH = fhPx;
+                        baseW = baseH * imgAspect;
+                    } else {
+                        baseW = fwPx;
+                        baseH = baseW / imgAspect;
+                    }
+
+                    var s = inst.cropScale || 1;
+                    var dispW = baseW * s;
+                    var dispH = baseH * s;
+
+                    var cx = (fwPx - dispW) / 2 + (inst.cropX || 0);
+                    var cy = (fhPx - dispH) / 2 + (inst.cropY || 0);
+
+                    // place unrotated then rotate around center of the drawn image box
+                    img.style.width = dispW + "px";
+                    img.style.height = dispH + "px";
+                    img.style.left = cx + "px";
+                    img.style.top = cy + "px";
+
+                    var sx = inst.flipH ? -1 : 1;
+                    var sy = inst.flipV ? -1 : 1;
+                    img.style.transform = "rotate(" + inst.imgRotation + "deg) scale(" + sx + "," + sy + ")";
+                }
+
+                function isSelected(pid) {
+                    return selectedIds.indexOf(pid) >= 0;
+                }
+
+                function syncSelectionUI() {
+                    var els = paperStage.querySelectorAll(".placed");
+                    for (var i = 0; i < els.length; i++) {
+                        var p = els[i].getAttribute("data-pid");
+                        els[i].classList.toggle("selected", isSelected(p));
+                    }
+                    // primary = last selected
+                    selectedId = selectedIds.length ? selectedIds[selectedIds.length - 1] : null;
+                    var inst = getSelected();
+                    if (selectedIds.length > 1) {
+                        selInfo.textContent = selectedIds.length + " frames selected · drag to move together";
+                        setCropMode(false);
+                    } else if (inst) {
+                        selInfo.textContent =
+                            inst.name +
+                            " · " +
+                            Math.round(inst.w) +
+                            "x" +
+                            Math.round(inst.h) +
+                            " mm · frame " +
+                            Math.round(inst.rotation || 0) +
+                            "° · photo " +
+                            Math.round(inst.imgRotation || 0) +
+                            "°";
+                        document.getElementById("lvlBlack").value = inst.black;
+                        document.getElementById("lvlBlackN").value = inst.black;
+                        document.getElementById("lvlWhite").value = inst.white;
+                        document.getElementById("lvlWhiteN").value = inst.white;
+                        document.getElementById("lvlGamma").value = Math.round(inst.gamma * 100);
+                        document.getElementById("lvlGammaN").value = inst.gamma.toFixed(2);
+                        document.getElementById("lvlBright").value = inst.bright;
+                        document.getElementById("lvlBrightN").value = inst.bright;
+                        document.getElementById("lvlContrast").value = inst.contrast;
+                        document.getElementById("lvlContrastN").value = inst.contrast;
+                        renderPlaced(inst);
+                    } else {
+                        selInfo.textContent = "No selection";
+                        setCropMode(false);
+                    }
+                }
+
+                function selectPlaced(pid, additive) {
+                    if (pid == null) {
+                        selectedIds = [];
+                    } else if (additive) {
+                        var idx = selectedIds.indexOf(pid);
+                        if (idx >= 0) {
+                            // toggle off if already selected (and more than one)
+                            if (selectedIds.length > 1) selectedIds.splice(idx, 1);
+                            // if only one, keep it selected
+                        } else {
+                            selectedIds.push(pid);
+                        }
+                    } else {
+                        selectedIds = [pid];
+                    }
+                    syncSelectionUI();
+                }
+
+                function getSelected() {
+                    if (!selectedId) return null;
+                    for (var i = 0; i < placed.length; i++) {
+                        if (placed[i].pid === selectedId) return placed[i];
+                    }
+                    return null;
+                }
+
+                function getSelectedAll() {
+                    var list = [];
+                    for (var i = 0; i < placed.length; i++) {
+                        if (isSelected(placed[i].pid)) list.push(placed[i]);
+                    }
+                    return list;
+                }
+
+                function setCropMode(on) {
+                    cropMode = !!on;
+                    modeInfo.textContent = cropMode ? "CROP · drag pan · wheel zoom · yellow = rotate photo" : "";
+                    var btn = document.getElementById("btnCropMode");
+                    if (cropMode) btn.classList.add("active-mode");
+                    else btn.classList.remove("active-mode");
+                    var inst = getSelected();
+                    if (inst) renderPlaced(inst);
+                    // update all crop-active classes
+                    placed.forEach(function (p) {
+                        renderPlaced(p);
+                    });
+                }
+
+                // ----- Move (frame always axis-aligned → screen delta is correct) -----
+                function onPlacedMouseDown(e) {
+                    if (e.target.classList.contains("handle-rotate")) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var pid = e.currentTarget.getAttribute("data-pid");
+                    var additive = e.shiftKey || e.ctrlKey || e.metaKey;
+
+                    // If clicking an already-selected frame without additive, keep multi-selection for group drag
+                    if (!additive && isSelected(pid) && selectedIds.length > 1) {
+                        // keep selection, use clicked as primary
+                        selectedId = pid;
+                        var tmp = selectedIds.filter(function (id) {
+                            return id !== pid;
+                        });
+                        tmp.push(pid);
+                        selectedIds = tmp;
+                        syncSelectionUI();
+                    } else if (!additive) {
+                        selectPlaced(pid, false);
+                    } else {
+                        selectPlaced(pid, true);
+                    }
+
+                    var inst = null;
+                    for (var i = 0; i < placed.length; i++) {
+                        if (placed[i].pid === pid) {
+                            inst = placed[i];
+                            break;
+                        }
+                    }
+                    if (!inst) return;
+
+                    if (cropMode && selectedIds.length === 1) {
+                        dragState = {
+                            type: "crop-pan",
+                            pid: pid,
+                            startX: e.clientX,
+                            startY: e.clientY,
+                            origCropX: inst.cropX || 0,
+                            origCropY: inst.cropY || 0,
+                            frameRot: inst.rotation || 0,
+                        };
+                    } else {
+                        // group move: store original positions of all selected
+                        var origins = {};
+                        getSelectedAll().forEach(function (p) {
+                            origins[p.pid] = { x: p.x, y: p.y };
+                        });
+                        // if clicked frame wasn't selected somehow, include it
+                        if (!origins[pid]) origins[pid] = { x: inst.x, y: inst.y };
+                        dragState = {
+                            type: "move",
+                            pid: pid,
+                            startX: e.clientX,
+                            startY: e.clientY,
+                            origins: origins,
+                        };
+                    }
+                    window.addEventListener("mousemove", onDragMove);
+                    window.addEventListener("mouseup", onDragEnd);
+                }
+
+                function onRotateHandleMouseDown(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!cropMode) return;
+                    var el = e.target.closest(".placed");
+                    var pid = el.getAttribute("data-pid");
+                    selectPlaced(pid);
+                    var inst = getSelected();
+                    if (!inst) return;
+                    var scale = MM_TO_PX * zoom;
+                    var rect = paperStage.getBoundingClientRect();
+                    dragState = {
+                        type: "img-rotate",
+                        pid: pid,
+                        centerX: rect.left + (inst.x + inst.w / 2) * scale,
+                        centerY: rect.top + (inst.y + inst.h / 2) * scale,
+                        origRot: inst.imgRotation || 0,
+                    };
+                    window.addEventListener("mousemove", onDragMove);
+                    window.addEventListener("mouseup", onDragEnd);
+                }
+
+                function onDragMove(e) {
+                    if (!dragState) return;
+                    var inst = null;
+                    for (var i = 0; i < placed.length; i++) {
+                        if (placed[i].pid === dragState.pid) {
+                            inst = placed[i];
+                            break;
+                        }
+                    }
+                    if (!inst) return;
+                    var scale = MM_TO_PX * zoom;
+                    var d = getPaperDims();
+                    var snap = document.getElementById("snapGrid").checked;
+
+                    if (dragState.type === "move") {
+                        var dx = (e.clientX - dragState.startX) / scale;
+                        var dy = (e.clientY - dragState.startY) / scale;
+                        // primary frame (the one under cursor) drives snap
+                        var primaryOrig = dragState.origins[dragState.pid];
+                        if (!primaryOrig) return;
+                        var nx = primaryOrig.x + dx;
+                        var ny = primaryOrig.y + dy;
+                        if (snap) {
+                            nx = Math.round(nx * 4) / 4;
+                            ny = Math.round(ny * 4) / 4;
+                            var tol = 0.6;
+                            var paper = getPaperDims();
+                            var targetsX = [0, paper.w];
+                            var targetsY = [0, paper.h];
+                            var movingSet = dragState.origins;
+                            for (var fi = 0; fi < placed.length; fi++) {
+                                var o = placed[fi];
+                                if (movingSet[o.pid]) continue;
+                                var orot = Math.abs((o.rotation || 0) % 180);
+                                var mrot = Math.abs((inst.rotation || 0) % 180);
+                                if ((orot > 2 && orot < 178) || (mrot > 2 && mrot < 178)) continue;
+                                targetsX.push(o.x, o.x + o.w);
+                                targetsY.push(o.y, o.y + o.h);
+                            }
+                            function nearestSnap(val, size, targets) {
+                                var best = val;
+                                var bestDist = tol + 1;
+                                for (var ti = 0; ti < targets.length; ti++) {
+                                    var t = targets[ti];
+                                    var d1 = Math.abs(val - t);
+                                    if (d1 < bestDist) {
+                                        bestDist = d1;
+                                        best = t;
+                                    }
+                                    var d2 = Math.abs(val + size - t);
+                                    if (d2 < bestDist) {
+                                        bestDist = d2;
+                                        best = t - size;
+                                    }
+                                }
+                                return bestDist <= tol ? best : val;
+                            }
+                            nx = nearestSnap(nx, inst.w, targetsX);
+                            ny = nearestSnap(ny, inst.h, targetsY);
+                        }
+                        // delta after snap applied to whole group
+                        var adx = nx - primaryOrig.x;
+                        var ady = ny - primaryOrig.y;
+                        for (var i = 0; i < placed.length; i++) {
+                            var p = placed[i];
+                            var orig = dragState.origins[p.pid];
+                            if (!orig) continue;
+                            p.x = orig.x + adx;
+                            p.y = orig.y + ady;
+                            renderPlaced(p);
+                        }
+                    } else if (dragState.type === "crop-pan") {
+                        // Screen delta → frame-local delta (inverse of frame rotation)
+                        // so the photo follows the mouse even when the frame is rotated.
+                        var sdx = e.clientX - dragState.startX;
+                        var sdy = e.clientY - dragState.startY;
+                        var rad = -(((inst.rotation || 0) * Math.PI) / 180);
+                        var cosR = Math.cos(rad);
+                        var sinR = Math.sin(rad);
+                        var ldx = sdx * cosR - sdy * sinR;
+                        var ldy = sdx * sinR + sdy * cosR;
+                        // also undo content flips so pan direction stays intuitive
+                        if (inst.flipH) ldx = -ldx;
+                        if (inst.flipV) ldy = -ldy;
+                        inst.cropX = dragState.origCropX + ldx;
+                        inst.cropY = dragState.origCropY + ldy;
+                        renderPlaced(inst);
+                    } else if (dragState.type === "img-rotate") {
+                        var angle = Math.atan2(e.clientY - dragState.centerY, e.clientX - dragState.centerX);
+                        var deg = angle * (180 / Math.PI) + 90;
+                        if (e.shiftKey) deg = Math.round(deg / 15) * 15;
+                        inst.imgRotation = deg;
+                        renderPlaced(inst);
+                        if (selectedId === inst.pid) {
+                            selInfo.textContent =
+                                inst.name +
+                                " · " +
+                                Math.round(inst.w) +
+                                "x" +
+                                Math.round(inst.h) +
+                                " mm · frame " +
+                                Math.round(inst.rotation || 0) +
+                                "° · photo " +
+                                Math.round(inst.imgRotation || 0) +
+                                "°";
+                        }
+                    }
+                }
+
+                function onDragEnd() {
+                    dragState = null;
+                    window.removeEventListener("mousemove", onDragMove);
+                    window.removeEventListener("mouseup", onDragEnd);
+                }
+
+                paperStage.addEventListener("mousedown", function (e) {
+                    if (e.target === paperStage || e.target.classList.contains("paper-label")) {
+                        selectPlaced(null);
+                        setCropMode(false);
+                    }
+                });
+
+                // Wheel zoom ONLY in crop mode
+                paperStage.addEventListener(
+                    "wheel",
+                    function (e) {
+                        if (!cropMode || !selectedId) return;
+                        e.preventDefault();
+                        var inst = getSelected();
+                        if (!inst) return;
+                        var factor = e.deltaY < 0 ? 1.06 : 0.94;
+                        inst.cropScale = Math.max(1, Math.min(5, (inst.cropScale || 1) * factor));
+                        renderPlaced(inst);
+                    },
+                    { passive: false },
+                );
+
+                document.getElementById("showGuides").addEventListener("change", function () {
+                    placed.forEach(function (p) {
+                        renderPlaced(p);
+                    });
+                });
+
+                document.getElementById("btnCropMode").addEventListener("click", function () {
+                    if (!getSelected()) {
+                        setStatus("Select an image first");
+                        return;
+                    }
+                    setCropMode(!cropMode);
+                });
+                document.getElementById("btnFitCover").addEventListener("click", function () {
+                    var inst = getSelected();
+                    if (!inst) return;
+                    inst.cropScale = 1;
+                    inst.cropX = 0;
+                    inst.cropY = 0;
+                    inst.imgRotation = 0;
+                    // keep frame rotation
+                    renderPlaced(inst);
+                    setStatus("Reset crop to cover-fit");
+                });
+
+                // 90° frame rotation = swap width/height, keep center, rotate image content 90°
+                function rotateFrame90(dir) {
+                    var inst = getSelected();
+                    if (!inst) return;
+                    // rotate whole frame in 90° steps — keep exact print size (no w/h swap)
+                    inst.rotation = ((inst.rotation || 0) + dir * 90) % 360;
+                    if (inst.rotation < 0) inst.rotation += 360;
+                    renderPlaced(inst);
+                    selectPlaced(inst.pid);
+                    setStatus("Frame rotated to " + inst.rotation + "° · size " + Math.round(inst.w) + "x" + Math.round(inst.h) + " mm");
+                }
+                document.getElementById("btnRotateL").addEventListener("click", function () {
+                    rotateFrame90(-1);
+                });
+                document.getElementById("btnRotateR").addEventListener("click", function () {
+                    rotateFrame90(1);
+                });
+
+                document.getElementById("btnFlipH").addEventListener("click", function () {
+                    var inst = getSelected();
+                    if (!inst) return;
+                    inst.flipH = !inst.flipH;
+                    renderPlaced(inst);
+                });
+                document.getElementById("btnFlipV").addEventListener("click", function () {
+                    var inst = getSelected();
+                    if (!inst) return;
+                    inst.flipV = !inst.flipV;
+                    renderPlaced(inst);
+                });
+                function deleteSelected() {
+                    var list = getSelectedAll();
+                    if (!list.length) return;
+                    list.forEach(function (inst) {
+                        var el = paperStage.querySelector('[data-pid="' + inst.pid + '"]');
+                        if (el) el.remove();
+                    });
+                    var ids = {};
+                    list.forEach(function (inst) {
+                        ids[inst.pid] = true;
+                    });
+                    placed = placed.filter(function (p) {
+                        return !ids[p.pid];
+                    });
+                    selectedIds = [];
+                    selectedId = null;
+                    selInfo.textContent = "No selection";
+                    setCropMode(false);
+                    setStatus(list.length > 1 ? "Deleted " + list.length + " frames" : "Deleted");
+                }
+
+                document.getElementById("btnDelete").addEventListener("click", deleteSelected);
+                document.getElementById("btnClear").addEventListener("click", function () {
+                    if (!confirm("Clear all images from the canvas?")) return;
+                    placed.forEach(function (p) {
+                        var el = paperStage.querySelector('[data-pid="' + p.pid + '"]');
+                        if (el) el.remove();
+                    });
+                    placed = [];
+                    selectedIds = [];
+                    selectedId = null;
+                    selInfo.textContent = "No selection";
+                    setCropMode(false);
+                    setStatus("Canvas cleared");
+                });
+
+                // ----- Keyboard shortcuts -----
+                function isTypingTarget(el) {
+                    if (!el) return false;
+                    var tag = (el.tagName || "").toLowerCase();
+                    if (tag === "input" || tag === "textarea" || tag === "select") return true;
+                    if (el.isContentEditable) return true;
+                    return false;
+                }
+
+                function refreshSelInfo(inst) {
+                    if (!inst) {
+                        selInfo.textContent = "No selection";
+                        return;
+                    }
+                    selInfo.textContent =
+                        inst.name + " · " + Math.round(inst.w) + "x" + Math.round(inst.h) + " mm · frame " + Math.round(inst.rotation || 0) + "° · photo " + Math.round(inst.imgRotation || 0) + "°";
+                }
+
+                document.addEventListener("keydown", function (e) {
+                    if (isTypingTarget(e.target)) return;
+
+                    var inst = getSelected();
+                    var key = e.key;
+
+                    // Delete / Backspace
+                    if (key === "Delete" || key === "Backspace") {
+                        if (!inst) return;
+                        e.preventDefault();
+                        deleteSelected();
+                        return;
+                    }
+
+                    // \ or | : hold-style compare — on keydown show original, keyup restores
+                    if (key === "\\" || key === "|") {
+                        if (!inst) return;
+                        e.preventDefault();
+                        if (!comparing) showOriginalPreview();
+                        return;
+                    }
+
+                    // Escape: exit crop mode, then deselect
+                    if (key === "Escape") {
+                        e.preventDefault();
+                        if (cropMode) {
+                            setCropMode(false);
+                            setStatus("Crop mode off");
+                        } else {
+                            selectPlaced(null);
+                            setStatus("Deselected");
+                        }
+                        return;
+                    }
+
+                    // Ctrl/Cmd+A: select all frames
+                    if ((key === "a" || key === "A") && (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault();
+                        selectedIds = placed.map(function (p) {
+                            return p.pid;
+                        });
+                        syncSelectionUI();
+                        setStatus(selectedIds.length ? selectedIds.length + " frames selected" : "No frames");
+                        return;
+                    }
+
+                    // C: toggle crop mode
+                    if (key === "c" || key === "C") {
+                        if (!inst) return;
+                        e.preventDefault();
+                        setCropMode(!cropMode);
+                        return;
+                    }
+
+                    // R / Shift+R: rotate frame 90°
+                    if (key === "r" || key === "R") {
+                        if (!inst) return;
+                        e.preventDefault();
+                        rotateFrame90(e.shiftKey ? -1 : 1);
+                        return;
+                    }
+
+                    // [ ] : rotate photo inside frame (crop-style fine rotate)
+                    if (key === "[" || key === "]") {
+                        if (!inst) return;
+                        e.preventDefault();
+                        var step = e.shiftKey ? 15 : 5;
+                        if (key === "[") step = -step;
+                        inst.imgRotation = (inst.imgRotation || 0) + step;
+                        renderPlaced(inst);
+                        refreshSelInfo(inst);
+                        return;
+                    }
+
+                    // Arrow keys
+                    if (key === "ArrowLeft" || key === "ArrowRight" || key === "ArrowUp" || key === "ArrowDown") {
+                        if (!inst) return;
+                        e.preventDefault();
+                        // refined steps: 0.25 mm normal, 1 mm Shift, 5 mm Alt/Ctrl
+                        var stepMm = e.altKey || e.ctrlKey || e.metaKey ? 5 : e.shiftKey ? 1 : 0.25;
+                        var stepPx = e.altKey || e.ctrlKey || e.metaKey ? 16 : e.shiftKey ? 4 : 1;
+
+                        if (cropMode) {
+                            // Nudge photo inside frame (screen → local, same as crop-pan)
+                            var sdx = 0,
+                                sdy = 0;
+                            if (key === "ArrowLeft") sdx = -stepPx;
+                            if (key === "ArrowRight") sdx = stepPx;
+                            if (key === "ArrowUp") sdy = -stepPx;
+                            if (key === "ArrowDown") sdy = stepPx;
+                            var rad = -(((inst.rotation || 0) * Math.PI) / 180);
+                            var cosR = Math.cos(rad);
+                            var sinR = Math.sin(rad);
+                            var ldx = sdx * cosR - sdy * sinR;
+                            var ldy = sdx * sinR + sdy * cosR;
+                            if (inst.flipH) ldx = -ldx;
+                            if (inst.flipV) ldy = -ldy;
+                            inst.cropX = (inst.cropX || 0) + ldx;
+                            inst.cropY = (inst.cropY || 0) + ldy;
+                            renderPlaced(inst);
+                        } else {
+                            // Nudge all selected frames
+                            var group = getSelectedAll();
+                            if (!group.length) group = [inst];
+                            group.forEach(function (p) {
+                                if (key === "ArrowLeft") p.x -= stepMm;
+                                if (key === "ArrowRight") p.x += stepMm;
+                                if (key === "ArrowUp") p.y -= stepMm;
+                                if (key === "ArrowDown") p.y += stepMm;
+                                renderPlaced(p);
+                            });
+                            if (group.length > 1) {
+                                selInfo.textContent = group.length + " frames selected · drag to move together";
+                            } else {
+                                refreshSelInfo(inst);
+                            }
+                        }
+                        return;
+                    }
+
+                    // +/- or =/_ for crop zoom when in crop mode
+                    if (cropMode && inst && (key === "+" || key === "=" || key === "-" || key === "_")) {
+                        e.preventDefault();
+                        var factor = key === "+" || key === "=" ? 1.06 : 0.94;
+                        inst.cropScale = Math.max(1, Math.min(5, (inst.cropScale || 1) * factor));
+                        renderPlaced(inst);
+                        return;
+                    }
+                });
+
+                document.addEventListener("keyup", function (e) {
+                    if (isTypingTarget(e.target)) return;
+                    if (e.key === "\\" || e.key === "|") {
+                        if (comparing) showAdjustedPreview();
+                    }
+                });
+
+                // ----- Levels -----
+                function scheduleLevels() {
+                    if (levelsTimer) clearTimeout(levelsTimer);
+                    levelsTimer = setTimeout(function () {
+                        levelsTimer = null;
+                        applyLevelsFromUI();
+                    }, 120);
+                }
+
+                function syncNumbersFromSliders() {
+                    document.getElementById("lvlBlackN").value = document.getElementById("lvlBlack").value;
+                    document.getElementById("lvlWhiteN").value = document.getElementById("lvlWhite").value;
+                    document.getElementById("lvlGammaN").value = (+document.getElementById("lvlGamma").value / 100).toFixed(2);
+                    document.getElementById("lvlBrightN").value = document.getElementById("lvlBright").value;
+                    document.getElementById("lvlContrastN").value = document.getElementById("lvlContrast").value;
+                }
+
+                function applyLevelsFromUI() {
+                    var inst = getSelected();
+                    if (!inst) return;
+                    var black = +document.getElementById("lvlBlack").value;
+                    var white = +document.getElementById("lvlWhite").value;
+                    var gamma = +document.getElementById("lvlGamma").value / 100;
+                    var bright = +document.getElementById("lvlBright").value;
+                    var contrast = +document.getElementById("lvlContrast").value;
+                    if (white - black < 40) {
+                        white = Math.min(255, black + 40);
+                        document.getElementById("lvlWhite").value = white;
+                        document.getElementById("lvlWhiteN").value = white;
+                    }
+                    gamma = Math.max(0.45, Math.min(1.8, gamma));
+                    inst.black = black;
+                    inst.white = white;
+                    inst.gamma = gamma;
+                    inst.bright = bright;
+                    inst.contrast = contrast;
+                    if (levelsBusy) return;
+                    levelsBusy = true;
+                    processImage(inst.originalDataURL, black, white, gamma, bright, contrast)
+                        .then(function (url) {
+                            // Apply same levels + processed image to every canvas instance
+                            // that shares this source (same imageId)
+                            var sid = inst.imageId;
+                            for (var i = 0; i < placed.length; i++) {
+                                var p = placed[i];
+                                if (p.imageId === sid) {
+                                    p.black = black;
+                                    p.white = white;
+                                    p.gamma = gamma;
+                                    p.bright = bright;
+                                    p.contrast = contrast;
+                                    p.src = url;
+                                    renderPlaced(p);
+                                }
+                            }
+                            // Keep library source in sync so thumbs and new placements match
+                            for (var j = 0; j < images.length; j++) {
+                                if (images[j].id === sid) {
+                                    images[j].src = url;
+                                    images[j].black = black;
+                                    images[j].white = white;
+                                    images[j].gamma = gamma;
+                                    images[j].bright = bright;
+                                    images[j].contrast = contrast;
+                                    var thumb = thumbList.querySelector('.thumb-item[data-id="' + sid + '"] img');
+                                    if (thumb) thumb.src = url;
+                                    break;
+                                }
+                            }
+                            levelsBusy = false;
+                        })
+                        .catch(function () {
+                            levelsBusy = false;
+                        });
+                }
+
+                ["lvlBlack", "lvlWhite", "lvlGamma", "lvlBright", "lvlContrast"].forEach(function (id) {
+                    document.getElementById(id).addEventListener("input", function () {
+                        syncNumbersFromSliders();
+                        scheduleLevels();
+                    });
+                });
+                document.getElementById("lvlBlackN").addEventListener("change", function (e) {
+                    document.getElementById("lvlBlack").value = e.target.value;
+                    scheduleLevels();
+                });
+                document.getElementById("lvlWhiteN").addEventListener("change", function (e) {
+                    document.getElementById("lvlWhite").value = e.target.value;
+                    scheduleLevels();
+                });
+                document.getElementById("lvlGammaN").addEventListener("change", function (e) {
+                    document.getElementById("lvlGamma").value = Math.round((parseFloat(e.target.value) || 1) * 100);
+                    scheduleLevels();
+                });
+                document.getElementById("lvlBrightN").addEventListener("change", function (e) {
+                    document.getElementById("lvlBright").value = e.target.value;
+                    scheduleLevels();
+                });
+                document.getElementById("lvlContrastN").addEventListener("change", function (e) {
+                    document.getElementById("lvlContrast").value = e.target.value;
+                    scheduleLevels();
+                });
+
+                function processImage(dataURL, black, white, gamma, bright, contrast) {
+                    return new Promise(function (resolve, reject) {
+                        var img = new Image();
+                        img.onload = function () {
+                            var c = document.createElement("canvas");
+                            c.width = img.naturalWidth;
+                            c.height = img.naturalHeight;
+                            var ctx = c.getContext("2d");
+                            ctx.drawImage(img, 0, 0);
+                            var idata = ctx.getImageData(0, 0, c.width, c.height);
+                            var d = idata.data;
+                            var range = Math.max(1, white - black);
+                            var cAmt = contrast / 100;
+                            var contrastF = (1 + cAmt) / (1.0001 - cAmt);
+                            for (var i = 0; i < d.length; i += 4) {
+                                for (var ch = 0; ch < 3; ch++) {
+                                    var v = d[i + ch];
+                                    v = ((v - black) / range) * 255;
+                                    if (v < 0) v = 0;
+                                    if (v > 255) v = 255;
+                                    v = 255 * Math.pow(v / 255, 1 / gamma);
+                                    v = v + bright;
+                                    v = contrastF * (v - 128) + 128;
+                                    if (v < 0) v = 0;
+                                    if (v > 255) v = 255;
+                                    d[i + ch] = v;
+                                }
+                            }
+                            ctx.putImageData(idata, 0, 0);
+                            resolve(c.toDataURL("image/jpeg", 0.92));
+                        };
+                        img.onerror = reject;
+                        img.src = dataURL;
+                    });
+                }
+
+                /**
+                 * Subject-aware auto levels:
+                 * - ignore near-white pixels (background / paper / transparency fill)
+                 * - prefer mid-luma skin-ish / subject pixels
+                 * - mild stretch only; bias gamma up slightly so result is not darker
+                 */
+                // ----- Compare (before / after levels) -----
+                var comparing = false;
+
+                function showOriginalPreview() {
+                    var inst = getSelected();
+                    if (!inst) return;
+                    comparing = true;
+                    var el = paperStage.querySelector('[data-pid="' + inst.pid + '"]');
+                    if (!el) return;
+                    var img = el.querySelector(".img-clip img");
+                    if (img) img.src = inst.originalDataURL;
+                    var btn = document.getElementById("btnCompare");
+                    if (btn) {
+                        btn.classList.add("active-mode");
+                        btn.textContent = "Showing original…";
+                    }
+                    setStatus("Compare: original (before levels)");
+                }
+
+                function showAdjustedPreview() {
+                    var inst = getSelected();
+                    comparing = false;
+                    var btn = document.getElementById("btnCompare");
+                    if (btn) {
+                        btn.classList.remove("active-mode");
+                        btn.textContent = "Compare (hold)";
+                    }
+                    if (!inst) return;
+                    var el = paperStage.querySelector('[data-pid="' + inst.pid + '"]');
+                    if (!el) return;
+                    var img = el.querySelector(".img-clip img");
+                    if (img) img.src = inst.src;
+                    setStatus("Compare: adjusted");
+                }
+
+                (function setupCompare() {
+                    var btn = document.getElementById("btnCompare");
+                    if (!btn) return;
+                    btn.addEventListener("mousedown", function (e) {
+                        e.preventDefault();
+                        showOriginalPreview();
+                    });
+                    btn.addEventListener("mouseup", showAdjustedPreview);
+                    btn.addEventListener("mouseleave", function () {
+                        if (comparing) showAdjustedPreview();
+                    });
+                    btn.addEventListener(
+                        "touchstart",
+                        function (e) {
+                            e.preventDefault();
+                            showOriginalPreview();
+                        },
+                        { passive: false },
+                    );
+                    btn.addEventListener("touchend", showAdjustedPreview);
+                    btn.addEventListener("touchcancel", showAdjustedPreview);
+                })();
+
+                document.getElementById("btnAuto").addEventListener("click", function () {
+                    var inst = getSelected();
+                    if (!inst) {
+                        setStatus("Select an image first");
+                        return;
+                    }
+                    var img = new Image();
+                    img.onload = function () {
+                        var maxSide = 640;
+                        var sc = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+                        var c = document.createElement("canvas");
+                        c.width = Math.max(1, Math.round(img.naturalWidth * sc));
+                        c.height = Math.max(1, Math.round(img.naturalHeight * sc));
+                        var ctx = c.getContext("2d");
+                        ctx.drawImage(img, 0, 0, c.width, c.height);
+                        var idata = ctx.getImageData(0, 0, c.width, c.height);
+                        var d = idata.data;
+
+                        var hist = new Array(256);
+                        for (var i = 0; i < 256; i++) hist[i] = 0;
+                        var total = 0;
+                        var subjectSum = 0;
+                        var subjectCount = 0;
+
+                        for (var i = 0; i < d.length; i += 4) {
+                            var r = d[i],
+                                g = d[i + 1],
+                                b = d[i + 2];
+                            var lum = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+
+                            // skip near-white / pure background (and filled transparency)
+                            if (lum >= 245 && r >= 240 && g >= 240 && b >= 240) continue;
+                            // skip pure black outliers
+                            if (lum <= 3) continue;
+
+                            hist[lum]++;
+                            total++;
+
+                            // soft "subject" weight: mid tones + skin-ish hues get more influence
+                            var isSkin = r > 60 && g > 30 && b > 20 && r > g && r > b && Math.abs(r - g) > 10 && r - b > 15 && lum > 40 && lum < 220;
+                            var isMid = lum > 35 && lum < 210;
+                            if (isSkin || isMid) {
+                                var w = isSkin ? 3 : 1;
+                                subjectSum += lum * w;
+                                subjectCount += w;
+                            }
+                        }
+
+                        if (total < 50) {
+                            setStatus("Auto levels: not enough subject pixels");
+                            return;
+                        }
+
+                        // percentiles on subject-filtered histogram
+                        var loCount = total * 0.02;
+                        var hiCount = total * 0.98;
+                        var cum = 0,
+                            black = 0,
+                            white = 255;
+                        for (var i = 0; i < 256; i++) {
+                            cum += hist[i];
+                            if (cum >= loCount) {
+                                black = i;
+                                break;
+                            }
+                        }
+                        cum = 0;
+                        for (var i = 0; i < 256; i++) {
+                            cum += hist[i];
+                            if (cum >= hiCount) {
+                                white = i;
+                                break;
+                            }
+                        }
+
+                        // gentle limits — avoid crushing / washing
+                        black = Math.min(black, 35);
+                        white = Math.max(white, 220);
+                        if (white - black < 80) {
+                            var mid = (black + white) / 2;
+                            black = Math.max(0, Math.floor(mid - 40));
+                            white = Math.min(255, Math.ceil(mid + 40));
+                        }
+
+                        // gamma from subject mean — lift if subject is dark
+                        var subjectMean = subjectCount > 0 ? subjectSum / subjectCount : 128;
+                        var gamma = 1;
+                        if (subjectMean < 90) gamma = 1.12;
+                        else if (subjectMean < 110) gamma = 1.06;
+                        else if (subjectMean > 170) gamma = 0.96;
+                        else gamma = 1.02; // slight lift by default so auto doesn't darken
+
+                        document.getElementById("lvlBlack").value = black;
+                        document.getElementById("lvlWhite").value = white;
+                        document.getElementById("lvlGamma").value = Math.round(gamma * 100);
+                        document.getElementById("lvlBright").value = subjectMean < 100 ? 4 : 0;
+                        document.getElementById("lvlContrast").value = 0;
+                        syncNumbersFromSliders();
+                        applyLevelsFromUI();
+                        setStatus("Auto levels (subject): black=" + black + ", white=" + white + ", gamma=" + gamma.toFixed(2) + ", subj≈" + Math.round(subjectMean));
+                    };
+                    img.src = inst.originalDataURL;
+                });
+
+                document.getElementById("btnResetAdj").addEventListener("click", function () {
+                    document.getElementById("lvlBlack").value = 0;
+                    document.getElementById("lvlWhite").value = 255;
+                    document.getElementById("lvlGamma").value = 100;
+                    document.getElementById("lvlBright").value = 0;
+                    document.getElementById("lvlContrast").value = 0;
+                    syncNumbersFromSliders();
+                    applyLevelsFromUI();
+                    setStatus("Adjustments reset");
+                });
+
+                // ----- Export -----
+                function drawPlacedToCanvas(ctx, inst, scale, screenScale, withGuides) {
+                    return new Promise(function (resolve) {
+                        var img = new Image();
+                        img.onload = function () {
+                            ctx.save();
+                            var cx = (inst.x + inst.w / 2) * scale;
+                            var cy = (inst.y + inst.h / 2) * scale;
+                            ctx.translate(cx, cy);
+                            ctx.rotate(((inst.rotation || 0) * Math.PI) / 180);
+
+                            var fw = inst.w * scale;
+                            var fh = inst.h * scale;
+
+                            // clip to frame
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.rect(-fw / 2, -fh / 2, fw, fh);
+                            ctx.clip();
+
+                            var irot = (((inst.imgRotation || 0) % 360) + 360) % 360;
+                            var swap = Math.round(irot) % 180 === 90;
+                            var natW = inst.naturalW,
+                                natH = inst.naturalH;
+                            var effW = swap ? natH : natW;
+                            var effH = swap ? natW : natH;
+                            var imgAspect = effW / Math.max(1e-6, effH);
+                            var frameAspect = fw / Math.max(1e-6, fh);
+                            var baseW, baseH;
+                            if (imgAspect > frameAspect) {
+                                baseH = fh;
+                                baseW = baseH * imgAspect;
+                            } else {
+                                baseW = fw;
+                                baseH = baseW / imgAspect;
+                            }
+                            var s = inst.cropScale || 1;
+                            var dispW = baseW * s;
+                            var dispH = baseH * s;
+                            var ox = (inst.cropX || 0) * (scale / screenScale);
+                            var oy = (inst.cropY || 0) * (scale / screenScale);
+
+                            ctx.translate(ox, oy);
+                            ctx.rotate(((inst.imgRotation || 0) * Math.PI) / 180);
+                            ctx.scale(inst.flipH ? -1 : 1, inst.flipV ? -1 : 1);
+                            ctx.drawImage(img, -dispW / 2, -dispH / 2, dispW, dispH);
+                            ctx.restore(); // unclip
+
+                            if (withGuides) {
+                                // Dashed border around frame (cut guide)
+                                var t = Math.max(1, scale * 0.12);
+                                ctx.strokeStyle = "#9a9a9a";
+                                ctx.lineWidth = t;
+                                ctx.setLineDash([Math.max(3, scale * 0.8), Math.max(2, scale * 0.5)]);
+                                ctx.strokeRect(-fw / 2, -fh / 2, fw, fh);
+                                ctx.setLineDash([]);
+                            }
+
+                            ctx.restore();
+                            resolve();
+                        };
+                        img.onerror = function () {
+                            resolve();
+                        };
+                        img.src = inst.src;
+                    });
+                }
+
+                function renderSheet(dpi, withGuides) {
+                    var d = getPaperDims();
+                    var pxW = Math.round((d.w / 25.4) * dpi);
+                    var pxH = Math.round((d.h / 25.4) * dpi);
+                    var canvas = document.getElementById("exportCanvas");
+                    canvas.width = pxW;
+                    canvas.height = pxH;
+                    var ctx = canvas.getContext("2d");
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(0, 0, pxW, pxH);
+                    var scale = pxW / d.w;
+                    var screenScale = MM_TO_PX * zoom;
+                    var chain = Promise.resolve();
+                    placed.forEach(function (inst) {
+                        chain = chain.then(function () {
+                            return drawPlacedToCanvas(ctx, inst, scale, screenScale, withGuides);
+                        });
+                    });
+                    return chain.then(function () {
+                        return { canvas: canvas, pxW: pxW, pxH: pxH, d: d };
+                    });
+                }
+
+                document.getElementById("btnExport").addEventListener("click", function () {
+                    var guides = document.getElementById("showGuides").checked;
+                    renderSheet(300, guides).then(function (res) {
+                        var link = document.createElement("a");
+                        link.download = "print-" + paperKey + "-" + Date.now() + ".png";
+                        link.href = res.canvas.toDataURL("image/png");
+                        link.click();
+                        setStatus("Exported " + res.pxW + "x" + res.pxH + "px @ 300 DPI" + (guides ? " (with cut guides)" : ""));
+                    });
+                });
+
+                document.getElementById("btnPrint").addEventListener("click", function () {
+                    var win = window.open("", "_blank");
+                    if (!win) {
+                        setStatus("Allow pop-ups to print");
+                        return;
+                    }
+                    var guides = document.getElementById("showGuides").checked;
+                    renderSheet(200, guides).then(function (res) {
+                        var dataUrl = res.canvas.toDataURL("image/png");
+                        var d = res.d;
+                        var doc = win.document;
+                        doc.open();
+                        doc.write("<!DOCTYPE html><html><head><title>Print</title>");
+                        doc.write("<style>@page{size:" + d.w + "mm " + d.h + "mm;margin:0}");
+                        doc.write("html,body{margin:0;padding:0}");
+                        doc.write("img{width:" + d.w + "mm;height:" + d.h + "mm;display:block}</style></head><body>");
+                        doc.write('<img src="' + dataUrl + '" />');
+                        doc.write("</body></html>");
+                        doc.close();
+                        var closed = false;
+                        function closeWin() {
+                            if (closed) return;
+                            closed = true;
+                            try {
+                                win.close();
+                            } catch (e) {}
+                        }
+                        win.onafterprint = closeWin;
+                        // fallback if onafterprint not fired
+                        setTimeout(function () {
+                            try {
+                                win.focus();
+                                win.print();
+                            } catch (e) {}
+                            setTimeout(closeWin, 1500);
+                        }, 400);
+                    });
+                });
+
+                function setStatus(msg) {
+                    statusEl.textContent = msg;
+                }
+
+                updatePresetDimsLabels();
+                updatePaper();
+                setStatus("Ready - Select preset (default 5R), upload images, place on paper");
+            })();
+        </script>
+        <script>
+            if ("serviceWorker" in navigator) {
+                // Auto-refresh once when a new SW version takes control.
+                let refreshing = false;
+                navigator.serviceWorker.addEventListener("controllerchange", () => {
+                    if (refreshing) return;
+                    refreshing = true;
+                    window.location.reload();
+                });
+            }
+        </script>
+    </body>
+</html>

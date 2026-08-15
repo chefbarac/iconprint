@@ -1200,5 +1200,16 @@
                 generateLayout();
             })();
         </script>
+        <script>
+            if ("serviceWorker" in navigator) {
+                // Auto-refresh once when a new SW version takes control.
+                let refreshing = false;
+                navigator.serviceWorker.addEventListener("controllerchange", () => {
+                    if (refreshing) return;
+                    refreshing = true;
+                    window.location.reload();
+                });
+            }
+        </script>
     </body>
 </html>
