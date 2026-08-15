@@ -489,7 +489,6 @@
         </style>
     </head>
     <body>
-        <iframe src="https://chefbarac.github.io/promo-banner/" width="100%" height="72" style="border: none; border-radius: 12px; overflow: hidden" loading="lazy"> </iframe>
         <header>
             <h1>Photo <span>Printing</span> Studio</h1>
             <div class="header-actions">
@@ -652,7 +651,7 @@
                 <div class="toolbar">
                     <span id="paperInfo">A4 · 210 x 297 mm</span>
                     <div class="sep"></div>
-                    <label><input type="checkbox" id="snapGrid" checked /> Snap (grid + edges)</label>
+                    <label><input type="checkbox" id="snapGrid" checked /> Snap to edges</label>
                     <label><input type="checkbox" id="showGuides" checked /> Cut guides</label>
                     <div class="sep"></div>
                     <span id="selInfo">No selection</span>
@@ -1074,11 +1073,11 @@
                         cropY: 0,
                         naturalW: item.naturalW,
                         naturalH: item.naturalH,
-                        black: item.black != null ? item.black : 0,
-                        white: item.white != null ? item.white : 255,
-                        gamma: item.gamma != null ? item.gamma : 1,
-                        bright: item.bright != null ? item.bright : 0,
-                        contrast: item.contrast != null ? item.contrast : 0,
+                        black: 0,
+                        white: 255,
+                        gamma: 1,
+                        bright: 0,
+                        contrast: 0,
                         src: item.src,
                         originalDataURL: item.originalDataURL,
                         name: item.name,
@@ -1404,8 +1403,7 @@
                         var nx = primaryOrig.x + dx;
                         var ny = primaryOrig.y + dy;
                         if (snap) {
-                            nx = Math.round(nx * 4) / 4;
-                            ny = Math.round(ny * 4) / 4;
+                            // Snap only to paper edges and other frame edges (no grid)
                             var tol = 0.6;
                             var paper = getPaperDims();
                             var targetsX = [0, paper.w];
@@ -1804,35 +1802,8 @@
                     levelsBusy = true;
                     processImage(inst.originalDataURL, black, white, gamma, bright, contrast)
                         .then(function (url) {
-                            // Apply same levels + processed image to every canvas instance
-                            // that shares this source (same imageId)
-                            var sid = inst.imageId;
-                            for (var i = 0; i < placed.length; i++) {
-                                var p = placed[i];
-                                if (p.imageId === sid) {
-                                    p.black = black;
-                                    p.white = white;
-                                    p.gamma = gamma;
-                                    p.bright = bright;
-                                    p.contrast = contrast;
-                                    p.src = url;
-                                    renderPlaced(p);
-                                }
-                            }
-                            // Keep library source in sync so thumbs and new placements match
-                            for (var j = 0; j < images.length; j++) {
-                                if (images[j].id === sid) {
-                                    images[j].src = url;
-                                    images[j].black = black;
-                                    images[j].white = white;
-                                    images[j].gamma = gamma;
-                                    images[j].bright = bright;
-                                    images[j].contrast = contrast;
-                                    var thumb = thumbList.querySelector('.thumb-item[data-id="' + sid + '"] img');
-                                    if (thumb) thumb.src = url;
-                                    break;
-                                }
-                            }
+                            inst.src = url;
+                            renderPlaced(inst);
                             levelsBusy = false;
                         })
                         .catch(function () {
