@@ -669,7 +669,7 @@
 
         <div class="statusbar">
             <span id="status">Ready - Select preset, upload, place on paper</span>
-            <span>Export @ 300 DPI</span>
+            <span>Print / Print / Export @ 300 DPI</span>
         </div>
 
         <canvas id="exportCanvas"></canvas>
@@ -929,7 +929,7 @@
                             }
 
                             resolve({
-                                dataURL: c.toDataURL("image/jpeg", 0.95),
+                                dataURL: c.toDataURL("image/jpeg", 0.97),
                                 w: img.naturalWidth,
                                 h: img.naturalHeight,
                                 hadAlpha: hadAlpha,
@@ -1896,7 +1896,7 @@
                                 }
                             }
                             ctx.putImageData(idata, 0, 0);
-                            resolve(c.toDataURL("image/jpeg", 0.92));
+                            resolve(c.toDataURL("image/jpeg", 0.97));
                         };
                         img.onerror = reject;
                         img.src = dataURL;
@@ -2191,7 +2191,8 @@
                         return;
                     }
                     var guides = document.getElementById("showGuides").checked;
-                    renderSheet(200, guides).then(function (res) {
+                    // High-res print raster @ 300 DPI (same as export)
+                    renderSheet(300, guides).then(function (res) {
                         var dataUrl = res.canvas.toDataURL("image/png");
                         var d = res.d;
                         var doc = win.document;
