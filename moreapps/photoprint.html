@@ -768,29 +768,51 @@
                     return null;
                 }
 
+                // Reads the Free-size fields as-is and returns mm dimensions,
+                // substituting a zeroed side from the reference image's aspect
+                // ratio for the RETURNED value only. Never writes to the inputs —
+                // that's handled separately by autofillFreeField() so a field
+                // never overwrites itself while the user is actively typing in it.
                 function freeToMm() {
                     var wField = document.getElementById("freeW");
                     var hField = document.getElementById("freeH");
-                    var w = parseFloat(wField.value) || 0;
-                    var h = parseFloat(hField.value) || 0;
+                    var w = Math.max(0, parseFloat(wField.value) || 0);
+                    var h = Math.max(0, parseFloat(hField.value) || 0);
                     var unit = document.getElementById("freeUnit").value;
                     var f = unit === "in" ? IN_TO_MM : unit === "cm" ? CM_TO_MM : 1;
 
-                    if ((!w || w <= 0) && h > 0) {
+                    if (w <= 0 && h > 0) {
                         var aspectW = getReferenceImageAspect();
-                        if (aspectW) {
-                            w = h * aspectW;
-                            wField.value = Math.round((w / f) * 100) / 100;
-                        }
-                    } else if ((!h || h <= 0) && w > 0) {
+                        if (aspectW) w = h * aspectW;
+                    } else if (h <= 0 && w > 0) {
                         var aspectH = getReferenceImageAspect();
-                        if (aspectH) {
-                            h = w / aspectH;
-                            hField.value = Math.round((h / f) * 100) / 100;
-                        }
+                        if (aspectH) h = w / aspectH;
                     }
 
                     return { w: w * f, h: h * f };
+                }
+
+                // Called from the input/change handler of ONE field (sourceId).
+                // If the OTHER field is currently 0/blank, fills it in from the
+                // reference image's aspect ratio. Leaves the field the user is
+                // typing in completely untouched.
+                function autofillFreeField(sourceId) {
+                    var wField = document.getElementById("freeW");
+                    var hField = document.getElementById("freeH");
+                    var unit = document.getElementById("freeUnit").value;
+                    var f = unit === "in" ? IN_TO_MM : unit === "cm" ? CM_TO_MM : 1;
+                    var w = Math.max(0, parseFloat(wField.value) || 0);
+                    var h = Math.max(0, parseFloat(hField.value) || 0);
+                    var aspect = getReferenceImageAspect();
+                    if (!aspect) return;
+
+                    if (sourceId === "freeW" && w > 0 && h <= 0) {
+                        var newHmm = (w * f) / aspect;
+                        hField.value = Math.round((newHmm / f) * 100) / 100;
+                    } else if (sourceId === "freeH" && h > 0 && w <= 0) {
+                        var newWmm = h * f * aspect;
+                        wField.value = Math.round((newWmm / f) * 100) / 100;
+                    }
                 }
 
                 function updateFreeHint() {
@@ -875,10 +897,17 @@
                     updatePresetDimsLabels();
                     setStatus("Preset: " + activePreset.name + (activePreset.w ? " (" + Math.round(activePreset.w) + "x" + Math.round(activePreset.h) + " mm)" : ""));
                 });
-                ["freeW", "freeH", "freeUnit"].forEach(function (id) {
-                    document.getElementById(id).addEventListener("input", updateFreeHint);
-                    document.getElementById(id).addEventListener("change", updateFreeHint);
+                ["freeW", "freeH"].forEach(function (id) {
+                    document.getElementById(id).addEventListener("input", function () {
+                        autofillFreeField(id);
+                        updateFreeHint();
+                    });
+                    document.getElementById(id).addEventListener("change", function () {
+                        autofillFreeField(id);
+                        updateFreeHint();
+                    });
                 });
+                document.getElementById("freeUnit").addEventListener("change", updateFreeHint);
 
                 document.querySelectorAll(".preset-btn").forEach(function (btn) {
                     btn.addEventListener("click", function () {
