@@ -259,6 +259,11 @@
             .thumb-item.selected {
                 border-color: var(--accent);
             }
+            .thumb-item.compare-highlight {
+                border-color: var(--accent);
+                box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.5);
+                background: rgba(77, 171, 247, 0.14);
+            }
             .thumb-item img {
                 width: 44px;
                 height: 44px;
@@ -1067,12 +1072,12 @@
                         w: wMm,
                         h: hMm,
                         rotation: 0,
-                        imgRotation: 0,
-                        flipH: false,
-                        flipV: false,
-                        cropScale: 1,
-                        cropX: 0,
-                        cropY: 0,
+                        imgRotation: item.imgRotation != null ? item.imgRotation : 0,
+                        flipH: !!item.flipH,
+                        flipV: !!item.flipV,
+                        cropScale: item.cropScale != null ? item.cropScale : 1,
+                        cropX: item.cropX || 0,
+                        cropY: item.cropY || 0,
                         naturalW: item.naturalW,
                         naturalH: item.naturalH,
                         black: item.black != null ? item.black : 0,
@@ -1301,6 +1306,43 @@
                     return list;
                 }
 
+                // Sync photo rotation, zoom (crop scale), pan, and flips across every
+                // placement that shares the same source imageId (mirrors levels sync).
+                function syncSourceTransforms(fromInst) {
+                    if (!fromInst) return;
+                    var sid = fromInst.imageId;
+                    var props = {
+                        imgRotation: fromInst.imgRotation || 0,
+                        cropScale: fromInst.cropScale != null ? fromInst.cropScale : 1,
+                        cropX: fromInst.cropX || 0,
+                        cropY: fromInst.cropY || 0,
+                        flipH: !!fromInst.flipH,
+                        flipV: !!fromInst.flipV,
+                    };
+                    for (var i = 0; i < placed.length; i++) {
+                        var p = placed[i];
+                        if (p.imageId !== sid || p.pid === fromInst.pid) continue;
+                        p.imgRotation = props.imgRotation;
+                        p.cropScale = props.cropScale;
+                        p.cropX = props.cropX;
+                        p.cropY = props.cropY;
+                        p.flipH = props.flipH;
+                        p.flipV = props.flipV;
+                        renderPlaced(p);
+                    }
+                    for (var j = 0; j < images.length; j++) {
+                        if (images[j].id === sid) {
+                            images[j].imgRotation = props.imgRotation;
+                            images[j].cropScale = props.cropScale;
+                            images[j].cropX = props.cropX;
+                            images[j].cropY = props.cropY;
+                            images[j].flipH = props.flipH;
+                            images[j].flipV = props.flipV;
+                            break;
+                        }
+                    }
+                }
+
                 function setCropMode(on) {
                     cropMode = !!on;
                     modeInfo.textContent = cropMode ? "CROP · drag pan · wheel zoom · yellow = rotate photo" : "";
@@ -1492,12 +1534,14 @@
                         inst.cropX = dragState.origCropX + ldx;
                         inst.cropY = dragState.origCropY + ldy;
                         renderPlaced(inst);
+                        syncSourceTransforms(inst);
                     } else if (dragState.type === "img-rotate") {
                         var angle = Math.atan2(e.clientY - dragState.centerY, e.clientX - dragState.centerX);
                         var deg = angle * (180 / Math.PI) + 90;
                         if (e.shiftKey) deg = Math.round(deg / 15) * 15;
                         inst.imgRotation = deg;
                         renderPlaced(inst);
+                        syncSourceTransforms(inst);
                         if (selectedId === inst.pid) {
                             selInfo.textContent =
                                 inst.name +
@@ -1538,6 +1582,7 @@
                         var factor = e.deltaY < 0 ? 1.06 : 0.94;
                         inst.cropScale = Math.max(1, Math.min(5, (inst.cropScale || 1) * factor));
                         renderPlaced(inst);
+                        syncSourceTransforms(inst);
                     },
                     { passive: false },
                 );
@@ -1564,6 +1609,7 @@
                     inst.imgRotation = 0;
                     // keep frame rotation
                     renderPlaced(inst);
+                    syncSourceTransforms(inst);
                     setStatus("Reset crop to cover-fit");
                 });
 
@@ -1590,12 +1636,14 @@
                     if (!inst) return;
                     inst.flipH = !inst.flipH;
                     renderPlaced(inst);
+                    syncSourceTransforms(inst);
                 });
                 document.getElementById("btnFlipV").addEventListener("click", function () {
                     var inst = getSelected();
                     if (!inst) return;
                     inst.flipV = !inst.flipV;
                     renderPlaced(inst);
+                    syncSourceTransforms(inst);
                 });
                 function deleteSelected() {
                     var list = getSelectedAll();
@@ -1721,6 +1769,7 @@
                         if (key === "[") step = -step;
                         inst.imgRotation = (inst.imgRotation || 0) + step;
                         renderPlaced(inst);
+                        syncSourceTransforms(inst);
                         refreshSelInfo(inst);
                         return;
                     }
@@ -1751,6 +1800,7 @@
                             inst.cropX = (inst.cropX || 0) + ldx;
                             inst.cropY = (inst.cropY || 0) + ldy;
                             renderPlaced(inst);
+                            syncSourceTransforms(inst);
                         } else {
                             // Nudge all selected frames
                             var group = getSelectedAll();
@@ -1777,6 +1827,7 @@
                         var factor = key === "+" || key === "=" ? 1.06 : 0.94;
                         inst.cropScale = Math.max(1, Math.min(5, (inst.cropScale || 1) * factor));
                         renderPlaced(inst);
+                        syncSourceTransforms(inst);
                         return;
                     }
                 });
@@ -1935,36 +1986,62 @@
                  */
                 // ----- Compare (before / after levels) -----
                 var comparing = false;
+                var comparingSid = null;
+
+                function setThumbCompareHighlight(sid) {
+                    var thumbs = thumbList.querySelectorAll(".thumb-item");
+                    for (var t = 0; t < thumbs.length; t++) {
+                        var tid = parseInt(thumbs[t].getAttribute("data-id"), 10);
+                        thumbs[t].classList.toggle("compare-highlight", sid != null && tid === sid);
+                    }
+                }
 
                 function showOriginalPreview() {
                     var inst = getSelected();
                     if (!inst) return;
                     comparing = true;
-                    var el = paperStage.querySelector('[data-pid="' + inst.pid + '"]');
-                    if (!el) return;
-                    var img = el.querySelector(".img-clip img");
-                    if (img) img.src = inst.originalDataURL;
+                    comparingSid = inst.imageId;
+                    // Show original on every placement that shares this source
+                    for (var i = 0; i < placed.length; i++) {
+                        var p = placed[i];
+                        if (p.imageId !== comparingSid) continue;
+                        var el = paperStage.querySelector('[data-pid="' + p.pid + '"]');
+                        if (!el) continue;
+                        var img = el.querySelector(".img-clip img");
+                        if (img) img.src = p.originalDataURL;
+                    }
+                    setThumbCompareHighlight(comparingSid);
                     var btn = document.getElementById("btnCompare");
                     if (btn) {
                         btn.classList.add("active-mode");
                         btn.textContent = "Showing original…";
                     }
-                    setStatus("Compare: original (before levels)");
+                    setStatus("Compare: original (before levels) · all copies of this image");
                 }
 
                 function showAdjustedPreview() {
-                    var inst = getSelected();
                     comparing = false;
                     var btn = document.getElementById("btnCompare");
                     if (btn) {
                         btn.classList.remove("active-mode");
                         btn.textContent = "Compare (hold)";
                     }
-                    if (!inst) return;
-                    var el = paperStage.querySelector('[data-pid="' + inst.pid + '"]');
-                    if (!el) return;
-                    var img = el.querySelector(".img-clip img");
-                    if (img) img.src = inst.src;
+                    var sid = comparingSid;
+                    comparingSid = null;
+                    setThumbCompareHighlight(null);
+                    if (sid == null) {
+                        var inst = getSelected();
+                        if (inst) sid = inst.imageId;
+                    }
+                    if (sid == null) return;
+                    for (var i = 0; i < placed.length; i++) {
+                        var p = placed[i];
+                        if (p.imageId !== sid) continue;
+                        var el = paperStage.querySelector('[data-pid="' + p.pid + '"]');
+                        if (!el) continue;
+                        var img = el.querySelector(".img-clip img");
+                        if (img) img.src = p.src;
+                    }
                     setStatus("Compare: adjusted");
                 }
 
