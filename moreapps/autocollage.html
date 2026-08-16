@@ -51,8 +51,22 @@
                 padding: 28px 24px 60px;
             }
 
+            .main-row {
+                display: flex;
+                gap: 10px;
+                align-items: flex-start;
+            }
+            .main-row.stacked {
+                flex-direction: column;
+            }
             header.topbar {
                 margin-bottom: 22px;
+                flex: 0 0 320px;
+                max-width: 320px;
+            }
+            .main-row.stacked header.topbar {
+                flex: 1 1 auto;
+                max-width: 100%;
             }
             .title-row {
                 display: flex;
@@ -181,6 +195,8 @@
             }
 
             .stage-wrap {
+                flex: 1 1 auto;
+                min-width: 0;
                 margin-top: 24px;
                 overflow-x: auto;
                 padding-bottom: 6px;
@@ -302,22 +318,21 @@
             .tile .rot90-btn {
                 position: absolute;
                 top: -9px;
-                right: 14px;
-                width: 22px;
+                left: -9px;
+                width: 20px;
                 height: 20px;
-                border-radius: 10px;
-                background: var(--panel);
-                color: var(--text);
+                border-radius: 50%;
+                background: var(--accent);
+                color: #fff;
                 display: none;
                 align-items: center;
                 justify-content: center;
-                font-size: 11px;
+                font-size: 12px;
                 line-height: 1;
                 cursor: pointer;
                 border: 2px solid var(--bg);
                 z-index: 5;
-                letter-spacing: 0;
-                padding: 0 2px;
+                user-select: none;
             }
             .tile:hover .del-btn,
             .tile.selected .del-btn,
@@ -463,15 +478,15 @@
     <body>
         <iframe src="https://chefbarac.github.io/promo-banner/" width="100%" height="72" style="border: none; border-radius: 12px; overflow: hidden" loading="lazy"> </iframe>
         <div class="app">
-            <div style="display: flex; gap: 10px">
-                <header class="topbar" style="max-width: 25%">
+            <div class="main-row" id="mainRow">
+                <header class="topbar">
                     <div class="title-row">
                         <h1>Contact&nbsp;Sheet</h1>
                         <span class="frame-count-badge" id="frameCountBadge">0 frames</span>
                     </div>
                     <p class="subtitle">
-                        Drop in photos — auto-arranged to fill pages edge to edge. Choose “Fit to pages” and set a target page count (e.g. 6 images → 3 pages), or use Auto-paginate. Drag to move,
-                        corner to resize, top handle to rotate. Print outputs all pages in one go.
+                        Drop in photos — they're auto-arranged to fill each page edge to edge, shrunk to fit the number of pages you choose. Drag to move (even between pages), corner to resize, top
+                        handle to rotate freely, or use the quick 90° button.
                     </p>
 
                     <div class="controls">
@@ -495,16 +510,8 @@
                         </div>
 
                         <div class="ctrl-group">
-                            <label>Layout</label>
-                            <div class="seg" id="layoutSeg">
-                                <button data-v="fit" class="on">Fit to pages</button>
-                                <button data-v="paginate">Auto-paginate</button>
-                            </div>
-                        </div>
-
-                        <div class="ctrl-group" id="targetPagesGroup">
-                            <label>Target pages</label>
-                            <input type="number" id="targetPages" min="1" max="50" value="1" step="1" title="Number of pages to shrink/fit images onto" />
+                            <label>Shrink to <span id="pageCountVal">1</span> page(s)</label>
+                            <input type="number" id="pageCount" min="1" max="50" step="1" value="1" style="width: 56px" />
                         </div>
 
                         <div class="ctrl-group" id="maxDimGroup">
@@ -513,13 +520,8 @@
                         </div>
 
                         <div class="ctrl-group">
-                            <label>Max side <span id="rowHeightVal">200</span>px</label>
-                            <input type="range" id="rowHeight" min="40" max="800" value="200" />
-                        </div>
-
-                        <div class="ctrl-group">
                             <label>Gap / margin <span id="gapVal">8</span>px</label>
-                            <input type="range" id="gap" min="0" max="80" value="8" />
+                            <input type="range" id="gap" min="0" max="30" value="8" />
                         </div>
 
                         <div class="ctrl-group">
@@ -562,8 +564,9 @@
             <footer class="hint">
                 <span id="statusText">0 images · 0 pages · sheet fill 0%</span>
                 <span
-                    >Select a tile · drag across pages · drag <span class="accent">●</span> corner to resize · <span class="accent">90°</span> button or top handle to rotate · <kbd>Del</kbd> to remove
-                    · <kbd>Shift</kbd> while resizing = free aspect · <kbd>Shift</kbd> while rotating = snap 15°</span
+                    >Select a tile · drag <span class="accent">●</span> corner to resize · drag <span class="accent">◯</span> top handle to rotate · <kbd>R</kbd> or the 90° button for a quick turn ·
+                    drag a tile onto another page to move it there · <kbd>Del</kbd> to remove · <kbd>Shift</kbd> while resizing = free aspect · <kbd>Shift</kbd> while rotating = snap 15° ·
+                    <kbd>Ctrl/Cmd+P</kbd> or the Print button prints every page in one job</span
                 >
             </footer>
         </div>
@@ -572,6 +575,7 @@
 
         <script>
             (function () {
+                const mainRow = document.getElementById("mainRow");
                 const pagesEl = document.getElementById("pages");
                 const firstPage = document.getElementById("firstPage");
                 const emptyState = document.getElementById("emptyState");
@@ -583,13 +587,9 @@
                 const clearBtn = document.getElementById("clearBtn");
                 const paperSizeSel = document.getElementById("paperSize");
                 const orientSeg = document.getElementById("orientSeg");
-                const layoutSeg = document.getElementById("layoutSeg");
-                let layoutMode = "fit"; // 'fit' = shrink to N target pages, 'paginate' = auto-add pages
-                const targetPagesInput = document.getElementById("targetPages");
-                const targetPagesGroup = document.getElementById("targetPagesGroup");
-                const rowHeightInput = document.getElementById("rowHeight");
+                const pageCountInput = document.getElementById("pageCount");
+                const pageCountVal = document.getElementById("pageCountVal");
                 const gapInput = document.getElementById("gap");
-                const rowHeightVal = document.getElementById("rowHeightVal");
                 const gapVal = document.getElementById("gapVal");
                 const maxDimInput = document.getElementById("maxDim");
                 const maxDimVal = document.getElementById("maxDimVal");
@@ -682,156 +682,70 @@
                 }
 
                 // ---------- row-building primitives ----------
-                // Build rows greedily; stop consuming once adding a row would exceed availH.
-                // Returns { rows:[{items,rowH}], usedHeight, count }
-                function greedyWithHeightLimit(list, contentW, gapPx, T, availH) {
+                // Justified row layout for a fixed target row height T, respecting a per-image
+                // max-dimension cap (maxDimPx). Last row is left at its natural (capped) height.
+                function justifyWithCaps(list, contentW, gapPx, T, maxDimPx) {
                     const rows = [];
-                    let idx = 0;
-                    let used = 0;
-                    while (idx < list.length) {
-                        const row = [];
-                        let aspectSum = 0;
-                        let j = idx;
-                        let closed = false;
-                        while (j < list.length) {
-                            row.push(list[j]);
-                            aspectSum += list[j].aspect;
-                            const widthAtT = aspectSum * T + gapPx * (row.length - 1);
-                            if (widthAtT >= contentW) {
-                                closed = true;
-                                j++;
-                                break;
-                            }
-                            j++;
+                    let row = [];
+                    let aspectSum = 0;
+                    list.forEach((rec) => {
+                        const hCap = maxDimPx ? (rec.aspect >= 1 ? maxDimPx / rec.aspect : maxDimPx) : Infinity;
+                        row.push({ rec, hCap });
+                        aspectSum += rec.aspect;
+                        const widthAtT = aspectSum * T + gapPx * (row.length - 1);
+                        if (widthAtT >= contentW) {
+                            let rowH = (contentW - gapPx * (row.length - 1)) / aspectSum;
+                            row.forEach((item) => {
+                                if (rowH > item.hCap) rowH = item.hCap;
+                            });
+                            rows.push({ items: row.map((item) => item.rec), rowH: Math.max(4, rowH) });
+                            row = [];
+                            aspectSum = 0;
                         }
-                        if (!closed) break; // ran out of images before filling the row -> leave for next pass
-                        const rowH = (contentW - gapPx * (row.length - 1)) / aspectSum;
-                        const newUsed = used + rowH + (rows.length > 0 ? gapPx : 0);
-                        if (newUsed > availH + 0.5) break;
-                        rows.push({ items: row, rowH });
-                        used = newUsed;
-                        idx = j;
+                    });
+                    if (row.length) {
+                        let rowH = row.reduce((m, item) => Math.min(m, item.hCap), Infinity);
+                        if (!isFinite(rowH)) rowH = T;
+                        rows.push({ items: row.map((item) => item.rec), rowH: Math.max(4, rowH) });
                     }
-                    const count = rows.reduce((s, r) => s + r.items.length, 0);
-                    return { rows, usedHeight: used, count };
+                    return rows;
                 }
 
-                // Size an image so the slider value is applied to its larger side:
-                // landscape → width = maxSide; portrait → height = maxSide.
-                function sizeByMaxSide(rec, maxSide, contentW) {
-                    let w, h;
-                    if (rec.aspect >= 1) {
-                        w = Math.min(maxSide, contentW);
-                        h = w / rec.aspect;
-                    } else {
-                        h = maxSide;
-                        w = h * rec.aspect;
-                        if (w > contentW) {
-                            w = contentW;
-                            h = w / rec.aspect;
+                // Greedily accumulate justified rows onto pages of height availH.
+                function splitRowsIntoPages(rows, availH, gapPx) {
+                    const pages = [];
+                    let current = [];
+                    let curH = 0;
+                    rows.forEach((row) => {
+                        const addH = row.rowH + (current.length ? gapPx : 0);
+                        if (current.length && curH + addH > availH + 0.5) {
+                            pages.push(current);
+                            current = [row];
+                            curH = row.rowH;
+                        } else {
+                            current.push(row);
+                            curH += addH;
                         }
-                    }
-                    return { w: Math.max(4, w), h: Math.max(4, h) };
+                    });
+                    if (current.length) pages.push(current);
+                    return pages;
                 }
 
-                // Pack fixed-size tiles (max-side = userT) into rows until availH is filled.
-                function packPageMaxSide(remaining, contentW, gapPx, availH, maxSide) {
-                    const rows = [];
-                    let idx = 0;
-                    let used = 0;
-                    while (idx < remaining.length) {
-                        const rowItems = [];
-                        let rowW = 0;
-                        let rowH = 0;
-                        let j = idx;
-                        while (j < remaining.length) {
-                            const sz = sizeByMaxSide(remaining[j], maxSide, contentW);
-                            const need = sz.w + (rowItems.length ? gapPx : 0);
-                            if (rowItems.length && rowW + need > contentW + 0.5) break;
-                            rowItems.push({ rec: remaining[j], w: sz.w, h: sz.h });
-                            rowW += need;
-                            rowH = Math.max(rowH, sz.h);
-                            j++;
-                        }
-                        if (!rowItems.length) {
-                            // Force at least one (already clamped to contentW in sizeByMaxSide)
-                            const sz = sizeByMaxSide(remaining[idx], maxSide, contentW);
-                            rowItems.push({ rec: remaining[idx], w: sz.w, h: sz.h });
-                            rowH = sz.h;
-                            j = idx + 1;
-                        }
-                        const newUsed = used + rowH + (rows.length ? gapPx : 0);
-                        if (rows.length && newUsed > availH + 0.5) break;
-                        rows.push({ items: rowItems, rowH });
-                        used = newUsed;
-                        idx = j;
-                    }
-                    const count = rows.reduce((s, r) => s + r.items.length, 0);
-                    return { rows, usedHeight: used, count };
-                }
-
-                // Legacy justified pack (kept for any residual use)
-                function packPage(remaining, contentW, gapPx, availH, userT) {
-                    return packPageMaxSide(remaining, contentW, gapPx, availH, userT);
-                }
-
-                function simpleJustify(list, contentW, gapPx, T) {
-                    // Final page: same max-side sizing, pack all remaining without height limit
-                    const packed = packPageMaxSide(list, contentW, gapPx, 1e9, T);
-                    return packed.rows;
-                }
-
-                function contentHeightOf(rows, gapPx) {
-                    return rows.reduce((h, r) => h + r.rowH, 0) + gapPx * Math.max(0, rows.length - 1);
-                }
-
-                // Binary-search the row-height target so ALL images justify-pack onto one page.
+                // Binary-search the row-height target T so ALL images justify-pack onto exactly
+                // (at most) targetPages pages, maximizing tile size without exceeding that count.
                 // maxDimIn: if > 0, cap each image so its larger side ≤ maxDimIn inches (0 = expand to fill).
-                function fitAllToOnePage(list, contentW, gapPx, availH, maxDimIn) {
+                function fitAllToNPages(list, contentW, gapPx, availH, maxDimIn, targetPages) {
                     const maxDimPx = maxDimIn > 0 ? maxDimIn * PX_PER_IN : 0;
 
-                    // Helper: justify using a target height T, but never let any image exceed its own height cap.
-                    function justifyWithCaps(T) {
-                        const rows = [];
-                        let row = [];
-                        let aspectSum = 0;
-                        list.forEach((rec) => {
-                            const hCap = maxDimPx ? (rec.aspect >= 1 ? maxDimPx / rec.aspect : maxDimPx) : Infinity;
-                            const effectiveT = Math.min(T, hCap);
-                            row.push({ rec, effectiveT, hCap });
-                            aspectSum += rec.aspect;
-                            const widthAtT = aspectSum * T + gapPx * (row.length - 1);
-                            if (widthAtT >= contentW) {
-                                // Justify this row to contentW, then clamp each tile to its cap
-                                let rowH = (contentW - gapPx * (row.length - 1)) / aspectSum;
-                                row.forEach((item) => {
-                                    if (rowH > item.hCap) rowH = item.hCap;
-                                });
-                                rows.push({
-                                    items: row.map((item) => item.rec),
-                                    rowH: Math.max(4, rowH),
-                                });
-                                row = [];
-                                aspectSum = 0;
-                            }
-                        });
-                        if (row.length) {
-                            // Last row: use natural (capped) heights, take the min effectiveT
-                            let rowH = row.reduce((m, item) => Math.min(m, item.effectiveT), Infinity);
-                            if (!isFinite(rowH)) rowH = T;
-                            rows.push({
-                                items: row.map((item) => item.rec),
-                                rowH: Math.max(4, rowH),
-                            });
-                        }
-                        return rows;
+                    function pagesAtT(T) {
+                        const rows = justifyWithCaps(list, contentW, gapPx, T, maxDimPx);
+                        return splitRowsIntoPages(rows, availH, gapPx);
                     }
 
                     let lo = 4,
                         hi = Math.max(availH, 20);
 
                     if (maxDimPx) {
-                        // Cap the search upper bound to the tallest allowed image
                         let maxAllowedH = 0;
                         list.forEach((rec) => {
                             const hCap = rec.aspect >= 1 ? maxDimPx / rec.aspect : maxDimPx;
@@ -840,41 +754,36 @@
                         hi = Math.min(hi, Math.max(maxAllowedH, 4));
                     }
 
-                    let rows = justifyWithCaps(hi);
-                    if (contentHeightOf(rows, gapPx) <= availH) {
-                        // Fits at max allowed size. When maxDim is set we do NOT expand further.
-                        return rows;
-                    }
+                    // If images already fit within the target page count at max allowed size,
+                    // use that (when maxDim is set we do not expand further).
+                    let hiPages = pagesAtT(hi);
+                    if (hiPages.length <= targetPages) return hiPages;
 
-                    let bestRows = justifyWithCaps(lo);
+                    let best = pagesAtT(lo);
                     for (let i = 0; i < 28; i++) {
                         const mid = (lo + hi) / 2;
-                        const r = justifyWithCaps(mid);
-                        const h = contentHeightOf(r, gapPx);
-                        if (h <= availH) {
+                        const pages = pagesAtT(mid);
+                        if (pages.length <= targetPages) {
                             lo = mid;
-                            bestRows = r;
+                            best = pages;
                         } else {
                             hi = mid;
                         }
                     }
-                    return bestRows;
+                    return best;
                 }
 
                 function commitRows(rows, gapPx) {
                     let y = gapPx;
                     rows.forEach((row) => {
                         let x = gapPx;
-                        row.items.forEach((item) => {
-                            // Support both {rec, w, h} (max-side pack) and bare rec (fit/justify)
-                            const rec = item.rec || item;
-                            const w = item.w != null ? item.w : rec.aspect * row.rowH;
-                            const h = item.h != null ? item.h : row.rowH;
+                        row.items.forEach((rec) => {
+                            const w = rec.aspect * row.rowH;
                             rec.x = x;
                             rec.y = y;
                             rec.w = w;
-                            rec.h = h;
-                            rec.rot = rec.rot || 0;
+                            rec.h = row.rowH;
+                            rec.rot = 0;
                             x += w + gapPx;
                         });
                         y += row.rowH + gapPx;
@@ -910,61 +819,21 @@
 
                     const { w: pageW, h: pageH } = currentPagePx();
                     const gapPx = parseInt(gapInput.value, 10);
-                    const userT = parseInt(rowHeightInput.value, 10);
                     const contentW = pageW - gapPx * 2;
                     const availH = pageH - gapPx * 2;
+                    const maxDimIn = parseFloat(maxDimInput.value) || 0;
+                    const targetPages = Math.max(1, parseInt(pageCountInput.value, 10) || 1);
 
-                    let remaining = currentOrder();
-                    const pageDefs = []; // { rows }
-
-                    if (layoutMode === "fit") {
-                        // Fit / shrink images onto a user-specified number of pages.
-                        // Images are split into N roughly equal chunks (by count), then each chunk is
-                        // justified/fitted to fill its own page (same algorithm as the old 1-page fit).
-                        const maxDimIn = parseFloat(maxDimInput.value) || 0;
-                        let nPages = parseInt(targetPagesInput.value, 10) || 1;
-                        nPages = Math.max(1, Math.min(50, nPages));
-                        // Don't create more pages than images
-                        nPages = Math.min(nPages, remaining.length);
-
-                        const total = remaining.length;
-                        // Split into nPages contiguous chunks of as equal size as possible
-                        const base = Math.floor(total / nPages);
-                        const extra = total % nPages;
-                        let start = 0;
-                        for (let p = 0; p < nPages; p++) {
-                            const size = base + (p < extra ? 1 : 0);
-                            const chunk = remaining.slice(start, start + size);
-                            start += size;
-                            const rows = fitAllToOnePage(chunk, contentW, gapPx, availH, maxDimIn);
-                            pageDefs.push({ rows });
-                        }
-                        remaining = [];
-                    } else {
-                        let guard = 0;
-                        while (remaining.length && guard < 500) {
-                            guard++;
-                            const packed = packPage(remaining, contentW, gapPx, availH, userT);
-                            const isLastChunk = packed.count >= remaining.length;
-                            if (isLastChunk) {
-                                const rows = simpleJustify(remaining, contentW, gapPx, userT);
-                                pageDefs.push({ rows });
-                                remaining = [];
-                            } else {
-                                pageDefs.push({ rows: packed.rows });
-                                remaining = remaining.slice(packed.count);
-                            }
-                        }
-                    }
+                    const ordered = currentOrder();
+                    const pageDefs = fitAllToNPages(ordered, contentW, gapPx, availH, maxDimIn, targetPages);
 
                     let totalImgArea = 0;
-                    pageDefs.forEach((def, pIdx) => {
+                    pageDefs.forEach((rows, pIdx) => {
                         const shell = makePageShell(pIdx + 1);
                         pagesEl.appendChild(shell.shell);
-                        commitRows(def.rows, gapPx);
-                        def.rows.forEach((row) => {
-                            row.items.forEach((item) => {
-                                const rec = item.rec || item;
+                        commitRows(rows, gapPx);
+                        rows.forEach((row) => {
+                            row.items.forEach((rec) => {
                                 totalImgArea += rec.w * rec.h;
                                 buildTile(rec, shell.page);
                             });
@@ -1021,6 +890,14 @@
                     emptyState.style.display = "flex";
                 }
 
+                // Find the .page element (if any) under a viewport point — used so tiles can be
+                // dragged from one page onto another.
+                function pageElementAtPoint(x, y) {
+                    const el = document.elementFromPoint(x, y);
+                    if (!el) return null;
+                    return el.closest(".page");
+                }
+
                 function buildTile(rec, pageEl) {
                     const el = document.createElement("div");
                     el.className = "tile";
@@ -1048,12 +925,14 @@
 
                     const rot90 = document.createElement("div");
                     rot90.className = "rot90-btn";
-                    rot90.textContent = "90°";
-                    rot90.title = "Rotate 90° clockwise";
+                    rot90.textContent = "⟳";
+                    rot90.title = "Rotate 90°";
                     rot90.addEventListener("pointerdown", (e) => e.stopPropagation());
                     rot90.addEventListener("click", (e) => {
                         e.stopPropagation();
-                        rotate90(rec);
+                        selectTile(rec.id);
+                        rec.rot = (rec.rot + 90) % 360;
+                        renderTile(rec);
                     });
                     el.appendChild(rot90);
 
@@ -1079,19 +958,6 @@
 
                     rec.el = el;
                     pageEl.appendChild(el);
-                    renderTile(rec);
-                }
-
-                function rotate90(rec) {
-                    // Rotate 90° CW; swap box size so the frame matches the new orientation
-                    const cx = rec.x + rec.w / 2;
-                    const cy = rec.y + rec.h / 2;
-                    rec.rot = ((rec.rot || 0) + 90) % 360;
-                    const tw = rec.w;
-                    rec.w = rec.h;
-                    rec.h = tw;
-                    rec.x = cx - rec.w / 2;
-                    rec.y = cy - rec.h / 2;
                     renderTile(rec);
                 }
 
@@ -1122,53 +988,33 @@
                 }
 
                 // ---------- drag / resize / rotate ----------
-                let recDragEl = null;
-
-                function pageUnderPoint(clientX, clientY) {
-                    const prev = recDragEl ? recDragEl.style.pointerEvents : null;
-                    if (recDragEl) recDragEl.style.pointerEvents = "none";
-                    const hit = document.elementFromPoint(clientX, clientY);
-                    if (recDragEl) recDragEl.style.pointerEvents = prev || "";
-                    if (!hit) return null;
-                    return hit.closest(".page");
-                }
-
+                // Dragging tracks the tile's offset from the pointer in viewport space, and on every
+                // move looks up which .page element is under the pointer. If that page differs from
+                // the tile's current parent, the tile is reparented so it can move between pages.
                 function startDrag(e, rec) {
                     e.preventDefault();
-                    const pageRect0 = rec.el.parentElement.getBoundingClientRect();
-                    // Offset from pointer to tile top-left (in page-local space at grab time)
-                    let grabOffX = e.clientX - pageRect0.left - rec.x;
-                    let grabOffY = e.clientY - pageRect0.top - rec.y;
-                    recDragEl = rec.el;
+                    const tileRect = rec.el.getBoundingClientRect();
+                    const offsetX = e.clientX - tileRect.left;
+                    const offsetY = e.clientY - tileRect.top;
                     rec.el.classList.add("dragging");
                     rec.el.style.zIndex = zTop++;
                     rec.el.setPointerCapture(e.pointerId);
-
                     function move(ev) {
-                        const targetPage = pageUnderPoint(ev.clientX, ev.clientY);
-                        if (targetPage && targetPage !== rec.el.parentElement) {
-                            // Move tile to the other page; keep same visual position
-                            const oldRect = rec.el.parentElement.getBoundingClientRect();
-                            const newRect = targetPage.getBoundingClientRect();
-                            const visLeft = oldRect.left + rec.x;
-                            const visTop = oldRect.top + rec.y;
+                        const desiredLeft = ev.clientX - offsetX;
+                        const desiredTop = ev.clientY - offsetY;
+                        const targetPage = pageElementAtPoint(ev.clientX, ev.clientY) || rec.el.parentElement;
+                        if (targetPage !== rec.el.parentElement) {
                             targetPage.appendChild(rec.el);
-                            rec.x = visLeft - newRect.left;
-                            rec.y = visTop - newRect.top;
-                            // Refresh grab offset relative to the new page
-                            grabOffX = ev.clientX - newRect.left - rec.x;
-                            grabOffY = ev.clientY - newRect.top - rec.y;
                         }
-                        const pageRect = rec.el.parentElement.getBoundingClientRect();
-                        rec.x = ev.clientX - pageRect.left - grabOffX;
-                        rec.y = ev.clientY - pageRect.top - grabOffY;
+                        const pageRect = targetPage.getBoundingClientRect();
+                        rec.x = desiredLeft - pageRect.left;
+                        rec.y = desiredTop - pageRect.top;
                         renderTile(rec);
                     }
                     function up() {
                         rec.el.classList.remove("dragging");
                         rec.el.removeEventListener("pointermove", move);
                         rec.el.removeEventListener("pointerup", up);
-                        recDragEl = null;
                     }
                     rec.el.addEventListener("pointermove", move);
                     rec.el.addEventListener("pointerup", up);
@@ -1183,10 +1029,18 @@
                         ow = rec.w,
                         oh = rec.h,
                         aspect = ow / oh;
+                    // Rotate screen-space deltas into the tile's own (unrotated) axes so the corner
+                    // handle grows/shrinks the box along the direction it visually points, no matter
+                    // how the tile is currently rotated.
+                    const rad = (rec.rot * Math.PI) / 180;
+                    const cos = Math.cos(rad),
+                        sin = Math.sin(rad);
                     rec.el.setPointerCapture(e.pointerId);
                     function move(ev) {
-                        const dx = ev.clientX - startX,
-                            dy = ev.clientY - startY;
+                        const dxScreen = ev.clientX - startX;
+                        const dyScreen = ev.clientY - startY;
+                        const dx = dxScreen * cos + dyScreen * sin;
+                        const dy = -dxScreen * sin + dyScreen * cos;
                         let nw = Math.max(30, ow + dx),
                             nh = Math.max(30, oh + dy);
                         if (!ev.shiftKey) {
@@ -1267,36 +1121,30 @@
                     fileInput.value = "";
                 });
 
+                function updateMainRowLayout() {
+                    // Landscape pages are much wider than the portrait sidebar layout leaves room
+                    // for, which made them look clipped. Stack the sidebar above the pages instead
+                    // so landscape sheets get the full width of the app.
+                    mainRow.classList.toggle("stacked", orientation === "landscape");
+                }
+
                 orientSeg.querySelectorAll("button").forEach((b) => {
                     b.addEventListener("click", () => {
                         orientation = b.dataset.v;
                         orientSeg.querySelectorAll("button").forEach((x) => x.classList.remove("on"));
                         b.classList.add("on");
+                        updateMainRowLayout();
                         layoutAll();
                     });
                 });
-                function updateLayoutControlOpacity() {
-                    const isFit = layoutMode === "fit";
-                    rowHeightInput.closest(".ctrl-group").style.opacity = isFit ? "0.4" : "1";
-                    maxDimGroup.style.opacity = isFit ? "1" : "0.4";
-                    targetPagesGroup.style.opacity = isFit ? "1" : "0.4";
-                    targetPagesInput.disabled = !isFit;
-                }
 
-                layoutSeg.querySelectorAll("button").forEach((b) => {
-                    b.addEventListener("click", () => {
-                        layoutMode = b.dataset.v;
-                        layoutSeg.querySelectorAll("button").forEach((x) => x.classList.remove("on"));
-                        b.classList.add("on");
-                        updateLayoutControlOpacity();
-                        layoutAll();
-                    });
-                });
                 paperSizeSel.addEventListener("change", layoutAll);
-                rowHeightInput.addEventListener("input", () => {
-                    rowHeightVal.textContent = rowHeightInput.value;
+
+                pageCountInput.addEventListener("input", () => {
+                    pageCountVal.textContent = pageCountInput.value;
                 });
-                rowHeightInput.addEventListener("change", layoutAll);
+                pageCountInput.addEventListener("change", layoutAll);
+
                 gapInput.addEventListener("input", () => {
                     gapVal.textContent = gapInput.value;
                 });
@@ -1306,12 +1154,6 @@
                     maxDimVal.textContent = v === 0 ? "0" : String(v);
                 });
                 maxDimInput.addEventListener("change", layoutAll);
-                targetPagesInput.addEventListener("change", () => {
-                    let v = parseInt(targetPagesInput.value, 10) || 1;
-                    v = Math.max(1, Math.min(50, v));
-                    targetPagesInput.value = v;
-                    layoutAll();
-                });
                 orderMode.addEventListener("change", layoutAll);
 
                 arrangeBtn.addEventListener("click", layoutAll);
@@ -1330,16 +1172,26 @@
                 window.addEventListener("beforeprint", () => deselectAll());
 
                 document.addEventListener("keydown", (e) => {
+                    const active = document.activeElement;
+                    const typing = active && (active.tagName === "INPUT" || active.tagName === "SELECT");
                     if ((e.key === "Delete" || e.key === "Backspace") && selectedId !== null) {
-                        const active = document.activeElement;
-                        if (active && (active.tagName === "INPUT" || active.tagName === "SELECT")) return;
+                        if (typing) return;
                         e.preventDefault();
                         removeImage(selectedId);
+                    }
+                    if ((e.key === "r" || e.key === "R") && selectedId !== null) {
+                        if (typing) return;
+                        e.preventDefault();
+                        const rec = images.find((r) => r.id === selectedId);
+                        if (rec) {
+                            rec.rot = (rec.rot + 90) % 360;
+                            renderTile(rec);
+                        }
                     }
                     if (e.key === "Escape") deselectAll();
                 });
 
-                updateLayoutControlOpacity();
+                updateMainRowLayout();
                 layoutAll();
             })();
         </script>
