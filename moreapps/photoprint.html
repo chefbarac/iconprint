@@ -441,6 +441,65 @@
             .placed.selected.crop-active .handle-rotate {
                 display: block;
             }
+            /* Resize handles — free-size frames only, in resize mode */
+            .placed .handle-resize {
+                position: absolute;
+                width: 10px;
+                height: 10px;
+                background: var(--accent);
+                border: 1.5px solid #fff;
+                border-radius: 2px;
+                z-index: 26;
+                display: none;
+                box-sizing: border-box;
+            }
+            .placed.selected.resize-active .handle-resize {
+                display: block;
+            }
+            .placed .handle-resize.nw {
+                top: -5px;
+                left: -5px;
+                cursor: nwse-resize;
+            }
+            .placed .handle-resize.ne {
+                top: -5px;
+                right: -5px;
+                cursor: nesw-resize;
+            }
+            .placed .handle-resize.sw {
+                bottom: -5px;
+                left: -5px;
+                cursor: nesw-resize;
+            }
+            .placed .handle-resize.se {
+                bottom: -5px;
+                right: -5px;
+                cursor: nwse-resize;
+            }
+            .placed .handle-resize.n {
+                top: -5px;
+                left: 50%;
+                margin-left: -5px;
+                cursor: ns-resize;
+            }
+            .placed .handle-resize.s {
+                bottom: -5px;
+                left: 50%;
+                margin-left: -5px;
+                cursor: ns-resize;
+            }
+            .placed .handle-resize.e {
+                right: -5px;
+                top: 50%;
+                margin-top: -5px;
+                cursor: ew-resize;
+            }
+            .placed .handle-resize.w {
+                left: -5px;
+                top: 50%;
+                margin-top: -5px;
+                cursor: ew-resize;
+            }
             .placed .size-badge {
                 position: absolute;
                 bottom: 3px;
@@ -540,7 +599,7 @@
                 </div>
 
                 <div class="section">
-                    <h3>Photo size (exact, fixed on canvas)</h3>
+                    <h3>Photo size (presets fixed · Free resizable)</h3>
                     <div class="row" style="margin-bottom: 8px">
                         <label style="flex: 0; margin: 0; white-space: nowrap">Orient:</label>
                         <select id="presetOrient" style="flex: 1">
@@ -582,9 +641,9 @@
                             </div>
                         </div>
                         <p class="hint" id="freeMmHint">= 127 x 178 mm</p>
-                        <p class="hint">Leave width or height at 0 to auto-fill it from the selected image's aspect ratio.</p>
+                        <p class="hint">Leave one side at 0 to auto-fill from aspect ratio. Leave both at 0 to place at native size (pixels @ 300 DPI) — then use Resize mode to adjust.</p>
                     </div>
-                    <p class="hint">Frame size is fixed (accurate print size). Use Crop/Zoom to pan the photo inside. 90° rotates frame dimensions.</p>
+                    <p class="hint">Preset sizes are fixed (accurate print size). Free frames can be resized in Resize mode. Use Crop/Zoom to pan the photo inside. 90° rotates frame orientation.</p>
                 </div>
 
                 <div class="section">
@@ -638,6 +697,7 @@
                     <h3>Selected Image</h3>
                     <div class="row" style="margin-bottom: 6px">
                         <button type="button" class="secondary" id="btnCropMode">Crop / Zoom</button>
+                        <button type="button" class="secondary" id="btnResizeMode">Resize</button>
                         <button type="button" class="secondary" id="btnFitCover">Fit Cover</button>
                     </div>
                     <div class="row">
@@ -651,7 +711,7 @@
                     <div class="row" style="margin-top: 6px">
                         <button type="button" class="danger" id="btnDelete" style="width: 100%">Delete</button>
                     </div>
-                    <p class="hint">Shift/Ctrl+click multi-select · drag group together. Arrows nudge all. Del = delete. Esc = deselect. C = crop. R = rotate frame. F = fit cover.</p>
+                    <p class="hint">Shift/Ctrl+click multi-select · drag group together. Arrows nudge all. Del = delete. Esc = deselect. C = crop. S = resize (free size). R = rotate frame. F = fit cover.</p>
                 </div>
             </aside>
 
@@ -709,6 +769,7 @@
                 var nextId = 1;
                 var dragState = null;
                 var cropMode = false;
+                var resizeMode = false;
                 var levelsTimer = null;
                 var levelsBusy = false;
 
@@ -1124,16 +1185,32 @@
                     var d = getPaperDims();
                     var wMm = activePreset.w;
                     var hMm = activePreset.h;
-                    if (!wMm || !hMm) {
-                        setStatus("Set Free size width and height first");
+                    var isFree = activePreset.name === "Free" || (activePreset.name && activePreset.name.indexOf("Free") === 0);
+                    if (isFree && (wMm <= 0 || hMm <= 0)) {
+                        var aspect = item.naturalW / Math.max(1e-6, item.naturalH);
+                        if (wMm <= 0 && hMm <= 0) {
+                            // Both zero: no target size — place at native pixel size @ 300 DPI
+                            wMm = (item.naturalW / 300) * 25.4;
+                            hMm = (item.naturalH / 300) * 25.4;
+                        } else if (wMm <= 0) {
+                            wMm = hMm * aspect;
+                        } else if (hMm <= 0) {
+                            hMm = wMm / aspect;
+                        }
+                    }
+                    if (!wMm || !hMm || wMm <= 0 || hMm <= 0) {
+                        setStatus("Set Free size width and height first (or leave both 0 for native size @ 300 DPI)");
                         return;
                     }
                     if (typeof xMm !== "number") xMm = (d.w - wMm) / 2;
                     if (typeof yMm !== "number") yMm = (d.h - hMm) / 2;
                     xMm = xMm - wMm / 2;
                     yMm = yMm - hMm / 2;
-                    xMm = Math.max(0, Math.min(xMm, d.w - wMm));
-                    yMm = Math.max(0, Math.min(yMm, d.h - hMm));
+                    // Allow free frames larger than paper (user can resize); still clamp position when possible
+                    if (wMm <= d.w) xMm = Math.max(0, Math.min(xMm, d.w - wMm));
+                    else xMm = Math.max(0, Math.min(xMm, d.w * 0.1));
+                    if (hMm <= d.h) yMm = Math.max(0, Math.min(yMm, d.h - hMm));
+                    else yMm = Math.max(0, Math.min(yMm, d.h * 0.1));
 
                     var pid = "p" + nextId++;
                     var inst = {
@@ -1161,11 +1238,13 @@
                         originalDataURL: item.originalDataURL,
                         name: item.name,
                         presetName: activePreset.name,
+                        isFree: isFree,
                     };
                     placed.push(inst);
                     createPlacedEl(inst);
                     selectPlaced(pid);
-                    setStatus("Placed " + item.name + " as " + activePreset.name + " (" + Math.round(wMm) + "x" + Math.round(hMm) + " mm)");
+                    var sizeNote = isFree && activePreset.w <= 0 && activePreset.h <= 0 ? " native @ 300 DPI" : "";
+                    setStatus("Placed " + item.name + " as " + activePreset.name + " (" + Math.round(wMm * 10) / 10 + "x" + Math.round(hMm * 10) / 10 + " mm" + sizeNote + ")");
                 }
 
                 function createPlacedEl(inst) {
@@ -1191,6 +1270,15 @@
                     rot.className = "handle-rotate";
                     rot.title = "Rotate photo inside frame (crop mode)";
                     el.appendChild(rot);
+
+                    ["nw", "ne", "sw", "se", "n", "s", "e", "w"].forEach(function (dir) {
+                        var h = document.createElement("div");
+                        h.className = "handle-resize " + dir;
+                        h.setAttribute("data-dir", dir);
+                        h.title = "Resize frame";
+                        el.appendChild(h);
+                        h.addEventListener("mousedown", onResizeHandleMouseDown);
+                    });
 
                     var badge = document.createElement("div");
                     badge.className = "size-badge";
@@ -1236,6 +1324,7 @@
                     el.style.transform = "rotate(" + (inst.rotation || 0) + "deg)";
 
                     el.classList.toggle("crop-active", cropMode && selectedId === inst.pid);
+                    el.classList.toggle("resize-active", resizeMode && selectedId === inst.pid && !!inst.isFree);
 
                     var img = el.querySelector(".img-clip img");
                     if (img) {
@@ -1310,13 +1399,14 @@
                     if (selectedIds.length > 1) {
                         selInfo.textContent = selectedIds.length + " frames selected · drag to move together";
                         setCropMode(false);
+                        setResizeMode(false);
                     } else if (inst) {
                         selInfo.textContent =
                             inst.name +
                             " · " +
-                            Math.round(inst.w) +
+                            Math.round(inst.w * 10) / 10 +
                             "x" +
-                            Math.round(inst.h) +
+                            Math.round(inst.h * 10) / 10 +
                             " mm · frame " +
                             Math.round(inst.rotation || 0) +
                             "° · photo " +
@@ -1333,9 +1423,11 @@
                         document.getElementById("lvlContrast").value = inst.contrast;
                         document.getElementById("lvlContrastN").value = inst.contrast;
                         renderPlaced(inst);
+                        if (resizeMode && !isFreeFrame(inst)) setResizeMode(false);
                     } else {
                         selInfo.textContent = "No selection";
                         setCropMode(false);
+                        setResizeMode(false);
                     }
                 }
 
@@ -1412,21 +1504,48 @@
 
                 function setCropMode(on) {
                     cropMode = !!on;
+                    if (cropMode && resizeMode) {
+                        resizeMode = false;
+                        var rbtn = document.getElementById("btnResizeMode");
+                        if (rbtn) rbtn.classList.remove("active-mode");
+                    }
                     modeInfo.textContent = cropMode ? "CROP · drag pan · wheel zoom · yellow = rotate photo" : "";
                     var btn = document.getElementById("btnCropMode");
                     if (cropMode) btn.classList.add("active-mode");
                     else btn.classList.remove("active-mode");
-                    var inst = getSelected();
-                    if (inst) renderPlaced(inst);
-                    // update all crop-active classes
                     placed.forEach(function (p) {
                         renderPlaced(p);
                     });
                 }
 
+                function setResizeMode(on) {
+                    resizeMode = !!on;
+                    if (resizeMode && cropMode) {
+                        cropMode = false;
+                        var cbtn = document.getElementById("btnCropMode");
+                        if (cbtn) cbtn.classList.remove("active-mode");
+                    }
+                    modeInfo.textContent = resizeMode ? "RESIZE · drag handles · free-size frames only · Shift = lock aspect" : "";
+                    var btn = document.getElementById("btnResizeMode");
+                    if (btn) {
+                        if (resizeMode) btn.classList.add("active-mode");
+                        else btn.classList.remove("active-mode");
+                    }
+                    placed.forEach(function (p) {
+                        renderPlaced(p);
+                    });
+                }
+
+                function isFreeFrame(inst) {
+                    if (!inst) return false;
+                    if (inst.isFree) return true;
+                    var n = inst.presetName || "";
+                    return n === "Free" || n.indexOf("Free") === 0;
+                }
+
                 // ----- Move (frame always axis-aligned → screen delta is correct) -----
                 function onPlacedMouseDown(e) {
-                    if (e.target.classList.contains("handle-rotate")) return;
+                    if (e.target.classList.contains("handle-rotate") || e.target.classList.contains("handle-resize")) return;
                     e.preventDefault();
                     e.stopPropagation();
                     var pid = e.currentTarget.getAttribute("data-pid");
@@ -1504,6 +1623,38 @@
                         centerX: rect.left + (inst.x + inst.w / 2) * scale,
                         centerY: rect.top + (inst.y + inst.h / 2) * scale,
                         origRot: inst.imgRotation || 0,
+                    };
+                    window.addEventListener("mousemove", onDragMove);
+                    window.addEventListener("mouseup", onDragEnd);
+                }
+
+                function onResizeHandleMouseDown(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!resizeMode) return;
+                    var el = e.target.closest(".placed");
+                    if (!el) return;
+                    var pid = el.getAttribute("data-pid");
+                    selectPlaced(pid);
+                    var inst = getSelected();
+                    if (!inst || !isFreeFrame(inst)) {
+                        setStatus("Resize is only for Free size frames");
+                        return;
+                    }
+                    var dir = e.target.getAttribute("data-dir") || "se";
+                    dragState = {
+                        type: "resize",
+                        pid: pid,
+                        dir: dir,
+                        startX: e.clientX,
+                        startY: e.clientY,
+                        origX: inst.x,
+                        origY: inst.y,
+                        origW: inst.w,
+                        origH: inst.h,
+                        frameRot: inst.rotation || 0,
+                        lockAspect: false,
+                        aspect: inst.w / Math.max(1e-6, inst.h),
                     };
                     window.addEventListener("mousemove", onDragMove);
                     window.addEventListener("mouseup", onDragEnd);
@@ -1622,6 +1773,137 @@
                                 Math.round(inst.imgRotation || 0) +
                                 "°";
                         }
+                    } else if (dragState.type === "resize") {
+                        var scale = MM_TO_PX * zoom;
+                        // Screen delta → frame-local (inverse rotation) so resize follows mouse when frame is rotated
+                        var sdx = e.clientX - dragState.startX;
+                        var sdy = e.clientY - dragState.startY;
+                        var rad = -((dragState.frameRot * Math.PI) / 180);
+                        var cosR = Math.cos(rad);
+                        var sinR = Math.sin(rad);
+                        var ldx = (sdx * cosR - sdy * sinR) / scale;
+                        var ldy = (sdx * sinR + sdy * cosR) / scale;
+
+                        var dir = dragState.dir;
+                        var nx = dragState.origX;
+                        var ny = dragState.origY;
+                        var nw = dragState.origW;
+                        var nh = dragState.origH;
+                        var minMm = 5;
+
+                        if (dir.indexOf("e") >= 0) nw = dragState.origW + ldx;
+                        if (dir.indexOf("w") >= 0) {
+                            nw = dragState.origW - ldx;
+                            nx = dragState.origX + ldx;
+                        }
+                        if (dir.indexOf("s") >= 0) nh = dragState.origH + ldy;
+                        if (dir.indexOf("n") >= 0) {
+                            nh = dragState.origH - ldy;
+                            ny = dragState.origY + ldy;
+                        }
+
+                        // Shift = lock aspect ratio (from start of drag)
+                        if (e.shiftKey) {
+                            var aspect = dragState.aspect;
+                            var isCorner = dir.length === 2;
+                            if (isCorner) {
+                                if (Math.abs(nw - dragState.origW) * aspect > Math.abs(nh - dragState.origH)) {
+                                    nh = nw / aspect;
+                                    if (dir.indexOf("n") >= 0) ny = dragState.origY + (dragState.origH - nh);
+                                } else {
+                                    nw = nh * aspect;
+                                    if (dir.indexOf("w") >= 0) nx = dragState.origX + (dragState.origW - nw);
+                                }
+                            } else if (dir === "e" || dir === "w") {
+                                nh = nw / aspect;
+                                ny = dragState.origY + (dragState.origH - nh) / 2;
+                            } else if (dir === "n" || dir === "s") {
+                                nw = nh * aspect;
+                                nx = dragState.origX + (dragState.origW - nw) / 2;
+                            }
+                        }
+
+                        if (nw < minMm) {
+                            if (dir.indexOf("w") >= 0) nx = dragState.origX + dragState.origW - minMm;
+                            nw = minMm;
+                        }
+                        if (nh < minMm) {
+                            if (dir.indexOf("n") >= 0) ny = dragState.origY + dragState.origH - minMm;
+                            nh = minMm;
+                        }
+
+                        // Optional edge snap (axis-aligned frames only)
+                        var snap = document.getElementById("snapGrid").checked;
+                        var fr = Math.abs((inst.rotation || 0) % 180);
+                        if (snap && (fr < 2 || fr > 178)) {
+                            var tol = 0.6;
+                            var paper = getPaperDims();
+                            var targetsX = [0, paper.w];
+                            var targetsY = [0, paper.h];
+                            for (var fi = 0; fi < placed.length; fi++) {
+                                var o = placed[fi];
+                                if (o.pid === inst.pid) continue;
+                                var orot = Math.abs((o.rotation || 0) % 180);
+                                if (orot > 2 && orot < 178) continue;
+                                targetsX.push(o.x, o.x + o.w);
+                                targetsY.push(o.y, o.y + o.h);
+                            }
+                            function nearestEdge(val, targets) {
+                                var best = val;
+                                var bestDist = tol + 1;
+                                for (var ti = 0; ti < targets.length; ti++) {
+                                    var d1 = Math.abs(val - targets[ti]);
+                                    if (d1 < bestDist) {
+                                        bestDist = d1;
+                                        best = targets[ti];
+                                    }
+                                }
+                                return bestDist <= tol ? best : val;
+                            }
+                            if (dir.indexOf("w") >= 0) {
+                                var sx = nearestEdge(nx, targetsX);
+                                nw += nx - sx;
+                                nx = sx;
+                            }
+                            if (dir.indexOf("e") >= 0) {
+                                var right = nearestEdge(nx + nw, targetsX);
+                                nw = right - nx;
+                            }
+                            if (dir.indexOf("n") >= 0) {
+                                var sy = nearestEdge(ny, targetsY);
+                                nh += ny - sy;
+                                ny = sy;
+                            }
+                            if (dir.indexOf("s") >= 0) {
+                                var bottom = nearestEdge(ny + nh, targetsY);
+                                nh = bottom - ny;
+                            }
+                            if (nw < minMm) nw = minMm;
+                            if (nh < minMm) nh = minMm;
+                            nx = Math.round(nx * 1000) / 1000;
+                            ny = Math.round(ny * 1000) / 1000;
+                            nw = Math.round(nw * 1000) / 1000;
+                            nh = Math.round(nh * 1000) / 1000;
+                        }
+
+                        inst.x = nx;
+                        inst.y = ny;
+                        inst.w = nw;
+                        inst.h = nh;
+                        renderPlaced(inst);
+                        if (selectedId === inst.pid) {
+                            selInfo.textContent =
+                                inst.name +
+                                " · " +
+                                Math.round(inst.w * 10) / 10 +
+                                "x" +
+                                Math.round(inst.h * 10) / 10 +
+                                " mm · frame " +
+                                Math.round(inst.rotation || 0) +
+                                "° · photo " +
+                                Math.round(inst.imgRotation || 0) +
+                                "°";
+                        }
                     }
                 }
 
@@ -1635,6 +1917,7 @@
                     if (e.target === paperStage || e.target.classList.contains("paper-label")) {
                         selectPlaced(null);
                         setCropMode(false);
+                        setResizeMode(false);
                     }
                 });
 
@@ -1666,6 +1949,22 @@
                         return;
                     }
                     setCropMode(!cropMode);
+                });
+                document.getElementById("btnResizeMode").addEventListener("click", function () {
+                    var inst = getSelected();
+                    if (!inst) {
+                        setStatus("Select an image first");
+                        return;
+                    }
+                    if (!isFreeFrame(inst)) {
+                        setStatus("Resize is only for Free size frames — use Free preset to place, then resize");
+                        return;
+                    }
+                    if (selectedIds.length > 1) {
+                        setStatus("Resize works on a single free-size frame");
+                        return;
+                    }
+                    setResizeMode(!resizeMode);
                 });
                 function fitCover() {
                     var inst = getSelected();
@@ -1731,6 +2030,7 @@
                     selectedId = null;
                     selInfo.textContent = "No selection";
                     setCropMode(false);
+                    setResizeMode(false);
                     setStatus(list.length > 1 ? "Deleted " + list.length + " frames" : "Deleted");
                 }
 
@@ -1746,6 +2046,7 @@
                     selectedId = null;
                     selInfo.textContent = "No selection";
                     setCropMode(false);
+                    setResizeMode(false);
                     setStatus("Canvas cleared");
                 });
 
@@ -1789,12 +2090,15 @@
                         return;
                     }
 
-                    // Escape: exit crop mode, then deselect
+                    // Escape: exit crop/resize mode, then deselect
                     if (key === "Escape") {
                         e.preventDefault();
                         if (cropMode) {
                             setCropMode(false);
                             setStatus("Crop mode off");
+                        } else if (resizeMode) {
+                            setResizeMode(false);
+                            setStatus("Resize mode off");
                         } else {
                             selectPlaced(null);
                             setStatus("Deselected");
@@ -1818,6 +2122,22 @@
                         if (!inst) return;
                         e.preventDefault();
                         setCropMode(!cropMode);
+                        return;
+                    }
+
+                    // S: toggle resize mode (free-size frames only)
+                    if (key === "s" || key === "S") {
+                        if (!inst) return;
+                        e.preventDefault();
+                        if (!isFreeFrame(inst)) {
+                            setStatus("Resize is only for Free size frames");
+                            return;
+                        }
+                        if (selectedIds.length > 1) {
+                            setStatus("Resize works on a single free-size frame");
+                            return;
+                        }
+                        setResizeMode(!resizeMode);
                         return;
                     }
 
