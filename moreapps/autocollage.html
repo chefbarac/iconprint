@@ -423,6 +423,9 @@
                 .handle {
                     display: none !important;
                 }
+                iframe {
+                    display: none !important;
+                }
             }
         </style>
         <style id="printPageSize">
@@ -433,6 +436,7 @@
         </style>
     </head>
     <body>
+        <iframe src="https://chefbarac.github.io/promo-banner/" width="100%" height="72" style="border: none; border-radius: 12px; overflow: hidden" loading="lazy"> </iframe>
         <div class="app">
             <div style="display: flex; gap: 10px">
                 <header class="topbar" style="max-width: 25%">
@@ -1125,6 +1129,23 @@
                 rowHeightInput.closest(".ctrl-group").style.opacity = layoutMode === "fit" ? "0.4" : "1";
                 layoutAll();
             })();
+        </script>
+        <script>
+            if ("serviceWorker" in navigator) {
+                window.addEventListener("load", () => {
+                    navigator.serviceWorker.register("/iconprint/sw.js").catch((err) => {
+                        console.error("SW registration failed:", err);
+                    });
+                });
+
+                // Auto-refresh once when a new SW version takes control.
+                let refreshing = false;
+                navigator.serviceWorker.addEventListener("controllerchange", () => {
+                    if (refreshing) return;
+                    refreshing = true;
+                    window.location.reload();
+                });
+            }
         </script>
     </body>
 </html>

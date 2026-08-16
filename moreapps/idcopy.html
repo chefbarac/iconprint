@@ -626,13 +626,19 @@
                     box-shadow: none !important;
                     cursor: default !important;
                 }
+                iframe {
+                    display: none !important;
+                }
             }
         </style>
     </head>
     <body>
-        <header class="app-head">
-            <h1><span class="badge-dot"></span>ID Card Scan &amp; Print</h1>
-            <p>Scan front and back, crop if needed, then print. Drag images to reposition.</p>
+        <header class="app-head" style="display: flex">
+            <div>
+                <h1><span class="badge-dot"></span>ID Card Scan &amp; Print</h1>
+                <p>Scan front and back, crop if needed, then print. Drag images to reposition.</p>
+            </div>
+            <iframe src="https://chefbarac.github.io/promo-banner/" width="100%" height="72" style="border: none; border-radius: 12px; overflow: hidden" loading="lazy"> </iframe>
         </header>
 
         <main class="layout">
@@ -1740,6 +1746,23 @@
 
             renderLayout();
             log("Ready. Scanner endpoint: " + SCAN_ENDPOINT);
+        </script>
+        <script>
+            if ("serviceWorker" in navigator) {
+                window.addEventListener("load", () => {
+                    navigator.serviceWorker.register("/iconprint/sw.js").catch((err) => {
+                        console.error("SW registration failed:", err);
+                    });
+                });
+
+                // Auto-refresh once when a new SW version takes control.
+                let refreshing = false;
+                navigator.serviceWorker.addEventListener("controllerchange", () => {
+                    if (refreshing) return;
+                    refreshing = true;
+                    window.location.reload();
+                });
+            }
         </script>
     </body>
 </html>
