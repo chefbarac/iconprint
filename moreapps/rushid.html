@@ -367,12 +367,20 @@
             .block {
                 display: flex;
                 flex-direction: column;
+                flex: 0 0 auto;
             }
             .block.hidden-block {
                 display: none;
             }
             .block.full-width {
                 flex: 1 1 auto;
+                width: 100%;
+            }
+            .block.flex-fill {
+                flex: 1 1 auto;
+                min-width: 0;
+            }
+            .block.flex-fill .section {
                 width: 100%;
             }
             .section {
@@ -426,26 +434,39 @@
                 display: flex;
                 flex-direction: column;
                 align-items: center;
-                background: rgba(255, 255, 255, 0.88);
-                padding: 1px 2px 1px;
+                justify-content: flex-end;
+                gap: 0; /* spacing controlled in JS per cell size */
+                padding: 0 2px 1px; /* top padding is set in JS; keep minimal by default */
+                box-sizing: border-box;
+                /* default: soft gradient — shorter / softer so it doesn’t create a tall white band */
+                background: linear-gradient(to top, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.78) 45%, rgba(255, 255, 255, 0.25) 78%, transparent 100%);
+            }
+            .cell .id-footer.solid {
+                /* tighter solid bar — only covers the name/signature strip */
+                background: rgba(255, 255, 255, 0.9);
             }
             .cell .signature-img {
                 display: block;
                 object-fit: contain;
                 position: relative;
                 z-index: 1;
+                max-width: 90%;
+                flex-shrink: 0;
             }
             .cell .name-label {
                 width: 100%;
                 text-align: center;
                 color: #111;
                 font-weight: 700;
-                line-height: 1.1;
+                line-height: 1.05;
                 white-space: nowrap;
                 overflow: hidden;
+                text-overflow: clip;
                 position: relative;
                 z-index: 2;
                 font-family: var(--name-font, "Segoe UI", Arial, Helvetica, sans-serif);
+                padding: 0 1px;
+                flex-shrink: 0;
             }
 
             /* ---------- Print ---------- */
@@ -520,8 +541,8 @@
                 <div class="rangeval"><span id="sigHeightVal">14</span>% of photo height</div>
 
                 <label for="sigGapSlider" style="margin-top: 6px">Signature ↔ name spacing</label>
-                <input type="range" id="sigGapSlider" min="-20" max="20" value="-2" />
-                <div class="rangeval"><span id="sigGapVal">-2</span>px (negative = overlap)</div>
+                <input type="range" id="sigGapSlider" min="-40" max="20" value="1" />
+                <div class="rangeval"><span id="sigGapVal">1</span>px (negative = overlap)</div>
             </div>
 
             <div class="field">
@@ -572,6 +593,11 @@
                 <label class="checkline"><input type="checkbox" id="metaCheck" /> Show name header on sheet</label>
                 <label class="checkline"><input type="checkbox" id="sizeLabelCheck" /> Show size labels</label>
                 <label class="checkline"><input type="checkbox" id="spacingCheck" /> Add spacing between photos</label>
+                <label for="backdropSelect" style="margin-top: 6px">Name backdrop</label>
+                <select id="backdropSelect">
+                    <option value="gradient">Soft gradient</option>
+                    <option value="solid" selected>Solid translucent</option>
+                </select>
                 <label for="marginInput" style="margin-top: 6px">Page margin (in)</label>
                 <input type="number" id="marginInput" min="0" max="0.4" step="0.05" value="0.35" />
                 <button type="button" id="btnGenerate" class="primary-wide" style="margin-top: 8px">Update layout</button>
@@ -647,7 +673,7 @@
                     combo: {
                         blocks: [
                             { label: "2in × 2in", wIn: 2, hIn: 2, cols: 2, defaultCount: 4, countLabel: "Copies — 2in × 2in (left)" },
-                            { label: "1in × 1in", wIn: 1, hIn: 1, cols: 3, defaultCount: 12, countLabel: "Copies — 1in × 1in (right)" },
+                            { label: "1in × 1in", wIn: 1, hIn: 1, cols: 0, defaultCount: 12, countLabel: "Copies — 1in × 1in (right)" }, // cols:0 = auto-fill remaining width
                         ],
                     },
                     passport: {
@@ -656,7 +682,7 @@
                     visa: {
                         blocks: [
                             { label: "Visa 2in × 2in", wIn: 2, hIn: 2, cols: 3, defaultCount: 6, countLabel: "Copies — Visa 2in × 2in (left)" },
-                            { label: "1in × 1in", wIn: 1, hIn: 1, cols: 1, defaultCount: 4, countLabel: "Copies — 1in × 1in (right)" },
+                            { label: "1in × 1in", wIn: 1, hIn: 1, cols: 0, defaultCount: 4, countLabel: "Copies — 1in × 1in (right)" }, // cols:0 = auto-fill
                         ],
                     },
                 };
@@ -706,6 +732,7 @@
                 const metaCheck = document.getElementById("metaCheck");
                 const sizeLabelCheck = document.getElementById("sizeLabelCheck");
                 const spacingCheck = document.getElementById("spacingCheck");
+                const backdropSelect = document.getElementById("backdropSelect");
                 const marginInput = document.getElementById("marginInput");
                 const metaNameText = document.getElementById("metaNameText");
 
@@ -757,6 +784,7 @@
                 nameVStretchSlider.addEventListener("input", () => {
                     nameVStretchVal.textContent = nameVStretchSlider.value;
                     applyLabelFonts();
+                    updateSignatureStyle(); // pick up new stretchGap between sig and name
                 });
 
                 // ---------------- Upload photo ----------------
@@ -790,9 +818,22 @@
                     const gapPx = parseFloat(sigGapSlider.value);
                     document.querySelectorAll(".signature-img").forEach((img) => {
                         const hIn = parseFloat(img.dataset.hIn) || 1;
-                        img.style.maxHeight = pct * hIn + "in";
-                        img.style.maxWidth = pct * hIn * SIG_WIDTH_RATIO + "in";
-                        img.style.marginBottom = gapPx + "px";
+                        const isSmall = hIn <= 1.2;
+
+                        // 1×1 needs a noticeably smaller signature so name + face still fit
+                        const sizeFactor = isSmall ? 0.72 : 1;
+                        const effectivePct = pct * sizeFactor;
+                        img.style.maxHeight = effectivePct * hIn + "in";
+                        img.style.maxWidth = Math.min(0.9 * hIn, effectivePct * hIn * SIG_WIDTH_RATIO) + "in";
+
+                        // Scale the user gap relative to cell height so 1×1 ≈ 1/4 of 2×2
+                        // (same slider position → proportionally similar visual spacing / overlap)
+                        const gapScale = Math.pow(hIn / 2, 2); // 2in → 1.0, 1in → 0.25
+                        const effectiveGap = gapPx * gapScale;
+
+                        // Extra space requested by vertical stretch (so name grows into the gap, not above the sig)
+                        const stretchGap = parseFloat(img.dataset.stretchGap) || 0;
+                        img.style.marginBottom = effectiveGap + stretchGap + "px";
                     });
                 }
 
@@ -1017,6 +1058,7 @@
                 metaCheck.addEventListener("change", generateLayout);
                 sizeLabelCheck.addEventListener("change", generateLayout);
                 spacingCheck.addEventListener("change", generateLayout);
+                backdropSelect.addEventListener("change", generateLayout);
                 marginInput.addEventListener("change", generateLayout);
                 btnGenerate.addEventListener("click", generateLayout);
 
@@ -1075,6 +1117,7 @@
                     const singleBlock = !blocks[1];
                     labelA.textContent = blocks[0].label;
                     blockA.classList.toggle("full-width", singleBlock);
+                    blockA.classList.remove("flex-fill");
                     sectionA.classList.toggle("full-width", singleBlock);
                     sectionA.style.gridTemplateColumns = singleBlock ? `repeat(auto-fill, ${blocks[0].wIn}in)` : `repeat(${blocks[0].cols}, ${blocks[0].wIn}in)`;
                     sectionA.style.gridAutoRows = `${blocks[0].hIn}in`;
@@ -1086,7 +1129,15 @@
                     if (blocks[1]) {
                         const nB = Math.max(0, parseInt(countB.value, 10) || 0);
                         labelB.textContent = blocks[1].label;
-                        sectionB.style.gridTemplateColumns = `repeat(${blocks[1].cols}, ${blocks[1].wIn}in)`;
+                        // cols === 0 means fill remaining horizontal space with as many cells as fit
+                        const useAutoFill = !blocks[1].cols || blocks[1].cols <= 0;
+                        if (useAutoFill) {
+                            blockB.classList.add("flex-fill");
+                            sectionB.style.gridTemplateColumns = `repeat(auto-fill, ${blocks[1].wIn}in)`;
+                        } else {
+                            blockB.classList.remove("flex-fill");
+                            sectionB.style.gridTemplateColumns = `repeat(${blocks[1].cols}, ${blocks[1].wIn}in)`;
+                        }
                         sectionB.style.gridAutoRows = `${blocks[1].hIn}in`;
                         sectionB.innerHTML = "";
                         for (let i = 0; i < nB; i++) sectionB.appendChild(buildCell(blocks[1], i < namesCount));
@@ -1094,6 +1145,7 @@
                     } else {
                         sectionB.innerHTML = "";
                         blockB.classList.add("hidden-block");
+                        blockB.classList.remove("flex-fill");
                     }
 
                     const name = (nameInput.value || "").trim();
@@ -1122,11 +1174,13 @@
                 function fitFontForLabel(label, cellWidthPx, maxPx, minPx) {
                     const text = label.textContent;
                     if (!text) return;
+                    // Leave a little breathing room inside the cell for the gradient + padding
+                    const available = Math.max(20, cellWidthPx - 8);
                     let size = maxPx;
                     while (size > minPx) {
                         measureCtx.font = "700 " + size + "px " + currentNameFontStack();
                         const w = measureCtx.measureText(text).width;
-                        if (w <= cellWidthPx - 6) break;
+                        if (w <= available) break;
                         size -= 0.5;
                     }
                     label.style.fontSize = size + "px";
@@ -1137,6 +1191,13 @@
                     const ppi = pxPerInch();
                     const manual = !autoFitCheck.checked;
                     const manualSizeMax = parseInt(fontSlider.value, 10);
+                    const stretch = parseFloat(nameVStretchSlider.value);
+                    const useSolid = backdropSelect.value === "solid";
+
+                    // Apply backdrop style to every footer
+                    document.querySelectorAll(".id-footer").forEach((footer) => {
+                        footer.classList.toggle("solid", useSolid);
+                    });
 
                     [
                         [sectionA, cfg.blocks[0]],
@@ -1144,24 +1205,64 @@
                     ].forEach(([section, blockCfg]) => {
                         if (!blockCfg) return;
                         const cellPx = ppi * blockCfg.wIn;
-                        const maxPx = Math.max(6, Math.min(18, Math.round(blockCfg.wIn * 9)));
-                        const minPx = Math.max(5, Math.round(maxPx * 0.4));
+                        const isSmall = blockCfg.hIn <= 1.2;
+                        // Tighter max size on narrow cells (1×1) so the name doesn’t look cramped or overflow
+                        const sizeFactor = blockCfg.wIn <= 1.1 ? 7.2 : 9;
+                        const maxPx = Math.max(5.5, Math.min(17, Math.round(blockCfg.wIn * sizeFactor)));
+                        const minPx = Math.max(4.5, Math.round(maxPx * 0.38));
                         const scale = blockCfg.wIn / (cfg.blocks[0].wIn || 1);
-                        const manualSize = Math.max(5, Math.round(manualSizeMax * Math.min(1, scale)));
+                        const manualSize = Math.max(4.5, Math.round(manualSizeMax * Math.min(1, scale)));
 
-                        // apply stretch name too
-                        const stretch = parseFloat(nameVStretchSlider.value);
+                        // Vertical stretch applies ONLY to the name label — signature stays unscaled
                         section.querySelectorAll(".name-label").forEach((label) => {
                             const footer = label.closest(".id-footer");
-                            if (!footer) return;
+                            if (footer) {
+                                footer.style.transform = "";
+                                footer.style.transformOrigin = "";
+                            }
 
-                            footer.style.transformOrigin = "bottom center";
-                            footer.style.transform = `scaleY(${stretch})`;
+                            label.style.transformOrigin = "bottom center";
+                            label.style.transform = stretch === 1 ? "" : `scaleY(${stretch})`;
 
                             if (manual) {
                                 label.style.fontSize = `${manualSize}px`;
                             } else {
                                 fitFontForLabel(label, cellPx, maxPx, minPx);
+                            }
+
+                            // Backdrop + stretch coverage
+                            // transform:scaleY does not affect layout size, so the name visually grows
+                            // upward out of its box. We must make the footer tall enough to contain it.
+                            // To avoid a big empty band *above* the signature we put most of the
+                            // needed extra height *between* the signature and the name (via the
+                            // signature’s marginBottom). Only a small remainder goes to paddingTop.
+                            if (footer) {
+                                const fontPx = parseFloat(label.style.fontSize) || maxPx;
+                                // Full visual extra height the stretched name needs
+                                const stretchExtra = Math.max(0, (stretch - 1) * fontPx * 1.05);
+                                const hasSig = !!footer.querySelector(".signature-img");
+                                const sigImg = footer.querySelector(".signature-img");
+
+                                if (hasSig && sigImg) {
+                                    // Most of the extra space goes between sig and name so the
+                                    // name can grow upward into that gap (and still sit on the backdrop).
+                                    // A small amount still goes to paddingTop for the part that may
+                                    // rise above the signature at very high stretch values.
+                                    const between = stretchExtra * 0.82;
+                                    const topPad = (useSolid ? (isSmall ? 1 : 0) : isSmall ? 2 : 1) + stretchExtra * 0.22;
+
+                                    footer.style.paddingTop = topPad + "px";
+                                    footer.style.paddingBottom = isSmall ? "0px" : "1px";
+
+                                    // Store the stretch contribution so updateSignatureStyle can add it
+                                    // on top of the user-controlled gap without fighting us.
+                                    sigImg.dataset.stretchGap = String(between);
+                                } else {
+                                    // Name only — all extra height as top padding is fine
+                                    const base = useSolid ? (isSmall ? 1 : 2) : isSmall ? 2 : 3;
+                                    footer.style.paddingTop = base + stretchExtra + "px";
+                                    footer.style.paddingBottom = isSmall ? "0px" : "1px";
+                                }
                             }
                         });
                     });
