@@ -447,7 +447,8 @@
                         <span class="frame-count-badge" id="frameCountBadge">0 frames</span>
                     </div>
                     <p class="subtitle">
-                        Drop in photos — they're auto-arranged to fill each page edge to edge, and new pages are added automatically as needed. Drag to move, corner to resize, top handle to rotate.
+                        Drop in photos — auto-arranged to fill pages edge to edge. Choose “Fit to pages” and set a target page count (e.g. 6 images → 3 pages), or use Auto-paginate. Drag to move,
+                        corner to resize, top handle to rotate. Print outputs all pages in one go.
                     </p>
 
                     <div class="controls">
@@ -473,9 +474,14 @@
                         <div class="ctrl-group">
                             <label>Layout</label>
                             <div class="seg" id="layoutSeg">
-                                <button data-v="fit" class="on">Shrink to 1 page</button>
+                                <button data-v="fit" class="on">Fit to pages</button>
                                 <button data-v="paginate">Auto-paginate</button>
                             </div>
+                        </div>
+
+                        <div class="ctrl-group" id="targetPagesGroup">
+                            <label>Target pages</label>
+                            <input type="number" id="targetPages" min="1" max="50" value="1" step="1" title="Number of pages to shrink/fit images onto" />
                         </div>
 
                         <div class="ctrl-group" id="maxDimGroup">
@@ -555,7 +561,9 @@
                 const paperSizeSel = document.getElementById("paperSize");
                 const orientSeg = document.getElementById("orientSeg");
                 const layoutSeg = document.getElementById("layoutSeg");
-                let layoutMode = "fit"; // 'fit' = shrink everything onto one page, 'paginate' = auto-add pages
+                let layoutMode = "fit"; // 'fit' = shrink to N target pages, 'paginate' = auto-add pages
+                const targetPagesInput = document.getElementById("targetPages");
+                const targetPagesGroup = document.getElementById("targetPagesGroup");
                 const rowHeightInput = document.getElementById("rowHeight");
                 const gapInput = document.getElementById("gap");
                 const rowHeightVal = document.getElementById("rowHeightVal");
@@ -748,11 +756,7 @@
                         let row = [];
                         let aspectSum = 0;
                         list.forEach((rec) => {
-                            const hCap = maxDimPx
-                                ? rec.aspect >= 1
-                                    ? maxDimPx / rec.aspect
-                                    : maxDimPx
-                                : Infinity;
+                            const hCap = maxDimPx ? (rec.aspect >= 1 ? maxDimPx / rec.aspect : maxDimPx) : Infinity;
                             const effectiveT = Math.min(T, hCap);
                             row.push({ rec, effectiveT, hCap });
                             aspectSum += rec.aspect;
@@ -871,9 +875,27 @@
                     const pageDefs = []; // { rows }
 
                     if (layoutMode === "fit") {
+                        // Fit / shrink images onto a user-specified number of pages.
+                        // Images are split into N roughly equal chunks (by count), then each chunk is
+                        // justified/fitted to fill its own page (same algorithm as the old 1-page fit).
                         const maxDimIn = parseFloat(maxDimInput.value) || 0;
-                        const rows = fitAllToOnePage(remaining, contentW, gapPx, availH, maxDimIn);
-                        pageDefs.push({ rows });
+                        let nPages = parseInt(targetPagesInput.value, 10) || 1;
+                        nPages = Math.max(1, Math.min(50, nPages));
+                        // Don't create more pages than images
+                        nPages = Math.min(nPages, remaining.length);
+
+                        const total = remaining.length;
+                        // Split into nPages contiguous chunks of as equal size as possible
+                        const base = Math.floor(total / nPages);
+                        const extra = total % nPages;
+                        let start = 0;
+                        for (let p = 0; p < nPages; p++) {
+                            const size = base + (p < extra ? 1 : 0);
+                            const chunk = remaining.slice(start, start + size);
+                            start += size;
+                            const rows = fitAllToOnePage(chunk, contentW, gapPx, availH, maxDimIn);
+                            pageDefs.push({ rows });
+                        }
                         remaining = [];
                     } else {
                         let guard = 0;
@@ -1157,8 +1179,11 @@
                     });
                 });
                 function updateLayoutControlOpacity() {
-                    rowHeightInput.closest(".ctrl-group").style.opacity = layoutMode === "fit" ? "0.4" : "1";
-                    maxDimGroup.style.opacity = layoutMode === "fit" ? "1" : "0.4";
+                    const isFit = layoutMode === "fit";
+                    rowHeightInput.closest(".ctrl-group").style.opacity = isFit ? "0.4" : "1";
+                    maxDimGroup.style.opacity = isFit ? "1" : "0.4";
+                    targetPagesGroup.style.opacity = isFit ? "1" : "0.4";
+                    targetPagesInput.disabled = !isFit;
                 }
 
                 layoutSeg.querySelectorAll("button").forEach((b) => {
@@ -1184,6 +1209,12 @@
                     maxDimVal.textContent = v === 0 ? "0" : String(v);
                 });
                 maxDimInput.addEventListener("change", layoutAll);
+                targetPagesInput.addEventListener("change", () => {
+                    let v = parseInt(targetPagesInput.value, 10) || 1;
+                    v = Math.max(1, Math.min(50, v));
+                    targetPagesInput.value = v;
+                    layoutAll();
+                });
                 orderMode.addEventListener("change", layoutAll);
 
                 arrangeBtn.addEventListener("click", layoutAll);
