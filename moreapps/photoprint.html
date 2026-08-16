@@ -239,7 +239,7 @@
                 display: flex;
                 flex-direction: column;
                 gap: 6px;
-                max-height: 150px;
+                max-height: 340px;
                 overflow-y: auto;
                 margin-top: 8px;
             }
@@ -566,11 +566,11 @@
                         <div class="row">
                             <div>
                                 <label>Width</label>
-                                <input type="number" id="freeW" min="0.1" step="0.1" value="5" />
+                                <input type="number" id="freeW" min="0" step="0.1" value="5" />
                             </div>
                             <div>
                                 <label>Height</label>
-                                <input type="number" id="freeH" min="0.1" step="0.1" value="7" />
+                                <input type="number" id="freeH" min="0" step="0.1" value="7" />
                             </div>
                             <div>
                                 <label>Unit</label>
@@ -582,6 +582,7 @@
                             </div>
                         </div>
                         <p class="hint" id="freeMmHint">= 127 x 178 mm</p>
+                        <p class="hint">Leave width or height at 0 to auto-fill it from the selected image's aspect ratio.</p>
                     </div>
                     <p class="hint">Frame size is fixed (accurate print size). Use Crop/Zoom to pan the photo inside. 90° rotates frame dimensions.</p>
                 </div>
@@ -650,7 +651,7 @@
                     <div class="row" style="margin-top: 6px">
                         <button type="button" class="danger" id="btnDelete" style="width: 100%">Delete</button>
                     </div>
-                    <p class="hint">Shift/Ctrl+click multi-select · drag group together. Arrows nudge all. Del = delete. Esc = deselect. C = crop. R = rotate frame.</p>
+                    <p class="hint">Shift/Ctrl+click multi-select · drag group together. Arrows nudge all. Del = delete. Esc = deselect. C = crop. R = rotate frame. F = fit cover.</p>
                 </div>
             </aside>
 
@@ -743,11 +744,52 @@
                     });
                 }
 
+                // Returns the natural (unrotated-by-90) aspect ratio (w/h) of the
+                // currently-selected library image or placed frame's source image,
+                // used to auto-fill a zeroed width/height in the Free size box.
+                function getReferenceImageAspect() {
+                    var inst = getSelected();
+                    if (inst && inst.naturalW && inst.naturalH) {
+                        return inst.naturalW / inst.naturalH;
+                    }
+                    var selThumb = thumbList.querySelector(".thumb-item.selected");
+                    if (selThumb) {
+                        var id = parseInt(selThumb.getAttribute("data-id"), 10);
+                        for (var i = 0; i < images.length; i++) {
+                            if (images[i].id === id && images[i].naturalW && images[i].naturalH) {
+                                return images[i].naturalW / images[i].naturalH;
+                            }
+                        }
+                    }
+                    if (images.length) {
+                        var last = images[images.length - 1];
+                        if (last.naturalW && last.naturalH) return last.naturalW / last.naturalH;
+                    }
+                    return null;
+                }
+
                 function freeToMm() {
-                    var w = parseFloat(document.getElementById("freeW").value) || 0;
-                    var h = parseFloat(document.getElementById("freeH").value) || 0;
+                    var wField = document.getElementById("freeW");
+                    var hField = document.getElementById("freeH");
+                    var w = parseFloat(wField.value) || 0;
+                    var h = parseFloat(hField.value) || 0;
                     var unit = document.getElementById("freeUnit").value;
                     var f = unit === "in" ? IN_TO_MM : unit === "cm" ? CM_TO_MM : 1;
+
+                    if ((!w || w <= 0) && h > 0) {
+                        var aspectW = getReferenceImageAspect();
+                        if (aspectW) {
+                            w = h * aspectW;
+                            wField.value = Math.round((w / f) * 100) / 100;
+                        }
+                    } else if ((!h || h <= 0) && w > 0) {
+                        var aspectH = getReferenceImageAspect();
+                        if (aspectH) {
+                            h = w / aspectH;
+                            hField.value = Math.round((h / f) * 100) / 100;
+                        }
+                    }
+
                     return { w: w * f, h: h * f };
                 }
 
@@ -1016,6 +1058,7 @@
                         for (var i = 0; i < thumbs.length; i++) {
                             thumbs[i].classList.toggle("selected", parseInt(thumbs[i].getAttribute("data-id"), 10) === item.id);
                         }
+                        if (freeSizeBox.classList.contains("show")) updateFreeHint();
                     });
                     div.addEventListener("dragstart", function (e) {
                         e.dataTransfer.setData("text/plain", String(item.id));
@@ -1128,11 +1171,6 @@
                     renderPlaced(inst);
 
                     el.addEventListener("mousedown", onPlacedMouseDown);
-                    el.addEventListener("dblclick", function (e) {
-                        e.preventDefault();
-                        selectPlaced(inst.pid);
-                        setCropMode(true);
-                    });
                     rot.addEventListener("mousedown", onRotateHandleMouseDown);
                 }
 
@@ -1600,7 +1638,7 @@
                     }
                     setCropMode(!cropMode);
                 });
-                document.getElementById("btnFitCover").addEventListener("click", function () {
+                function fitCover() {
                     var inst = getSelected();
                     if (!inst) return;
                     inst.cropScale = 1;
@@ -1611,7 +1649,8 @@
                     renderPlaced(inst);
                     syncSourceTransforms(inst);
                     setStatus("Reset crop to cover-fit");
-                });
+                }
+                document.getElementById("btnFitCover").addEventListener("click", fitCover);
 
                 // 90° frame rotation = swap width/height, keep center, rotate image content 90°
                 function rotateFrame90(dir) {
@@ -1750,6 +1789,14 @@
                         if (!inst) return;
                         e.preventDefault();
                         setCropMode(!cropMode);
+                        return;
+                    }
+
+                    // F: fit cover (reset crop/zoom/pan/photo-rotation)
+                    if (key === "f" || key === "F") {
+                        if (!inst) return;
+                        e.preventDefault();
+                        fitCover();
                         return;
                     }
 
