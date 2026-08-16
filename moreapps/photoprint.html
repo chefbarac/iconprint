@@ -1775,66 +1775,92 @@
                         }
                     } else if (dragState.type === "resize") {
                         var scale = MM_TO_PX * zoom;
-                        // Screen delta → frame-local (inverse rotation) so resize follows mouse when frame is rotated
+                        var dir = dragState.dir;
+                        var rotDeg = dragState.frameRot || 0;
+                        var radFwd = (rotDeg * Math.PI) / 180;
+                        var cosF = Math.cos(radFwd);
+                        var sinF = Math.sin(radFwd);
+                        // Inverse rotation (screen → local)
+                        var radInv = -radFwd;
+                        var cosR = Math.cos(radInv);
+                        var sinR = Math.sin(radInv);
+
+                        // Screen mouse delta → local mm (so the grabbed handle tracks the cursor)
                         var sdx = e.clientX - dragState.startX;
                         var sdy = e.clientY - dragState.startY;
-                        var rad = -((dragState.frameRot * Math.PI) / 180);
-                        var cosR = Math.cos(rad);
-                        var sinR = Math.sin(rad);
                         var ldx = (sdx * cosR - sdy * sinR) / scale;
                         var ldy = (sdx * sinR + sdy * cosR) / scale;
 
-                        var dir = dragState.dir;
-                        var nx = dragState.origX;
-                        var ny = dragState.origY;
-                        var nw = dragState.origW;
-                        var nh = dragState.origH;
+                        var ow = dragState.origW;
+                        var oh = dragState.origH;
+                        var ox = dragState.origX;
+                        var oy = dragState.origY;
+                        var nw = ow;
+                        var nh = oh;
                         var minMm = 5;
 
-                        if (dir.indexOf("e") >= 0) nw = dragState.origW + ldx;
-                        if (dir.indexOf("w") >= 0) {
-                            nw = dragState.origW - ldx;
-                            nx = dragState.origX + ldx;
-                        }
-                        if (dir.indexOf("s") >= 0) nh = dragState.origH + ldy;
-                        if (dir.indexOf("n") >= 0) {
-                            nh = dragState.origH - ldy;
-                            ny = dragState.origY + ldy;
-                        }
+                        if (dir.indexOf("e") >= 0) nw = ow + ldx;
+                        if (dir.indexOf("w") >= 0) nw = ow - ldx;
+                        if (dir.indexOf("s") >= 0) nh = oh + ldy;
+                        if (dir.indexOf("n") >= 0) nh = oh - ldy;
 
-                        // Shift = lock aspect ratio (from start of drag)
+                        // Shift = lock aspect ratio
                         if (e.shiftKey) {
                             var aspect = dragState.aspect;
                             var isCorner = dir.length === 2;
                             if (isCorner) {
-                                if (Math.abs(nw - dragState.origW) * aspect > Math.abs(nh - dragState.origH)) {
+                                if (Math.abs(nw - ow) * aspect > Math.abs(nh - oh)) {
                                     nh = nw / aspect;
-                                    if (dir.indexOf("n") >= 0) ny = dragState.origY + (dragState.origH - nh);
                                 } else {
                                     nw = nh * aspect;
-                                    if (dir.indexOf("w") >= 0) nx = dragState.origX + (dragState.origW - nw);
                                 }
                             } else if (dir === "e" || dir === "w") {
                                 nh = nw / aspect;
-                                ny = dragState.origY + (dragState.origH - nh) / 2;
                             } else if (dir === "n" || dir === "s") {
                                 nw = nh * aspect;
-                                nx = dragState.origX + (dragState.origW - nw) / 2;
                             }
                         }
 
-                        if (nw < minMm) {
-                            if (dir.indexOf("w") >= 0) nx = dragState.origX + dragState.origW - minMm;
-                            nw = minMm;
-                        }
-                        if (nh < minMm) {
-                            if (dir.indexOf("n") >= 0) ny = dragState.origY + dragState.origH - minMm;
-                            nh = minMm;
-                        }
+                        if (nw < minMm) nw = minMm;
+                        if (nh < minMm) nh = minMm;
+
+                        // Fixed local point on the ORIGINAL frame (opposite the dragged handle).
+                        // Because CSS rotates around center, keeping x/y fixed is not enough when
+                        // rotation ≠ 0 — we must re-anchor so this point stays put on screen.
+                        var fixLX = ow / 2;
+                        var fixLY = oh / 2;
+                        if (dir.indexOf("e") >= 0) fixLX = 0;
+                        if (dir.indexOf("w") >= 0) fixLX = ow;
+                        if (dir.indexOf("s") >= 0) fixLY = 0;
+                        if (dir.indexOf("n") >= 0) fixLY = oh;
+
+                        // Screen position of fixed point before resize
+                        var c0x = ox + ow / 2;
+                        var c0y = oy + oh / 2;
+                        var o0x = fixLX - ow / 2;
+                        var o0y = fixLY - oh / 2;
+                        var fixSX = c0x + o0x * cosF - o0y * sinF;
+                        var fixSY = c0y + o0x * sinF + o0y * cosF;
+
+                        // Same fixed point in the NEW frame's local coords
+                        var newFixLX = nw / 2;
+                        var newFixLY = nh / 2;
+                        if (dir.indexOf("e") >= 0) newFixLX = 0;
+                        if (dir.indexOf("w") >= 0) newFixLX = nw;
+                        if (dir.indexOf("s") >= 0) newFixLY = 0;
+                        if (dir.indexOf("n") >= 0) newFixLY = nh;
+
+                        // Solve for top-left (nx, ny) so the fixed point maps to the same screen pos
+                        var o1x = newFixLX - nw / 2;
+                        var o1y = newFixLY - nh / 2;
+                        var c1x = fixSX - (o1x * cosF - o1y * sinF);
+                        var c1y = fixSY - (o1x * sinF + o1y * cosF);
+                        var nx = c1x - nw / 2;
+                        var ny = c1y - nh / 2;
 
                         // Optional edge snap (axis-aligned frames only)
                         var snap = document.getElementById("snapGrid").checked;
-                        var fr = Math.abs((inst.rotation || 0) % 180);
+                        var fr = Math.abs(rotDeg % 180);
                         if (snap && (fr < 2 || fr > 178)) {
                             var tol = 0.6;
                             var paper = getPaperDims();
