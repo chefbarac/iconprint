@@ -299,8 +299,30 @@
                 border: 2px solid var(--bg);
                 z-index: 5;
             }
+            .tile .rot90-btn {
+                position: absolute;
+                top: -9px;
+                right: 14px;
+                width: 22px;
+                height: 20px;
+                border-radius: 10px;
+                background: var(--panel);
+                color: var(--text);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                font-size: 11px;
+                line-height: 1;
+                cursor: pointer;
+                border: 2px solid var(--bg);
+                z-index: 5;
+                letter-spacing: 0;
+                padding: 0 2px;
+            }
             .tile:hover .del-btn,
-            .tile.selected .del-btn {
+            .tile.selected .del-btn,
+            .tile:hover .rot90-btn,
+            .tile.selected .rot90-btn {
                 display: flex;
             }
             .tile.selected {
@@ -422,6 +444,7 @@
                 }
                 .tile .frame-no,
                 .tile .del-btn,
+                .tile .rot90-btn,
                 .handle {
                     display: none !important;
                 }
@@ -490,13 +513,13 @@
                         </div>
 
                         <div class="ctrl-group">
-                            <label>Row height <span id="rowHeightVal">200</span>px</label>
-                            <input type="range" id="rowHeight" min="80" max="380" value="200" />
+                            <label>Max side <span id="rowHeightVal">200</span>px</label>
+                            <input type="range" id="rowHeight" min="40" max="800" value="200" />
                         </div>
 
                         <div class="ctrl-group">
                             <label>Gap / margin <span id="gapVal">8</span>px</label>
-                            <input type="range" id="gap" min="0" max="30" value="8" />
+                            <input type="range" id="gap" min="0" max="80" value="8" />
                         </div>
 
                         <div class="ctrl-group">
@@ -539,8 +562,8 @@
             <footer class="hint">
                 <span id="statusText">0 images · 0 pages · sheet fill 0%</span>
                 <span
-                    >Select a tile · drag <span class="accent">●</span> corner to resize · drag <span class="accent">◯</span> top handle to rotate · <kbd>Del</kbd> to remove · <kbd>Shift</kbd> while
-                    resizing = free aspect · <kbd>Shift</kbd> while rotating = snap 15°</span
+                    >Select a tile · drag across pages · drag <span class="accent">●</span> corner to resize · <span class="accent">90°</span> button or top handle to rotate · <kbd>Del</kbd> to remove
+                    · <kbd>Shift</kbd> while resizing = free aspect · <kbd>Shift</kbd> while rotating = snap 15°</span
                 >
             </footer>
         </div>
@@ -693,52 +716,69 @@
                     return { rows, usedHeight: used, count };
                 }
 
-                // Search candidate target heights to best fill availH without exceeding it.
-                function packPage(remaining, contentW, gapPx, availH, userT) {
-                    const candidates = [userT];
-                    const steps = 26;
-                    for (let i = 0; i <= steps; i++) {
-                        const t = 40 + (availH - 40) * (i / steps);
-                        if (t > 10) candidates.push(t);
-                    }
-                    let best = null;
-                    candidates.forEach((T) => {
-                        const r = greedyWithHeightLimit(remaining, contentW, gapPx, T, availH);
-                        if (r.count > 0 && (!best || r.usedHeight > best.usedHeight)) {
-                            best = r;
-                        }
-                    });
-                    if (!best || best.count === 0) {
-                        // fallback: force a single small row so we always make progress
-                        best = greedyWithHeightLimit(remaining, contentW, gapPx, 40, availH * 4);
-                        if (best.count === 0 && remaining.length) {
-                            const r0 = remaining[0];
-                            const w = Math.min(contentW, 200 * r0.aspect),
-                                h = w / r0.aspect;
-                            best = { rows: [{ items: [r0], rowH: h }], usedHeight: h, count: 1 };
+                // Size an image so the slider value is applied to its larger side:
+                // landscape → width = maxSide; portrait → height = maxSide.
+                function sizeByMaxSide(rec, maxSide, contentW) {
+                    let w, h;
+                    if (rec.aspect >= 1) {
+                        w = Math.min(maxSide, contentW);
+                        h = w / rec.aspect;
+                    } else {
+                        h = maxSide;
+                        w = h * rec.aspect;
+                        if (w > contentW) {
+                            w = contentW;
+                            h = w / rec.aspect;
                         }
                     }
-                    return best;
+                    return { w: Math.max(4, w), h: Math.max(4, h) };
                 }
 
-                // Classic justified layout (last row left natural, unstretched) - used for the final page.
-                function simpleJustify(list, contentW, gapPx, T) {
+                // Pack fixed-size tiles (max-side = userT) into rows until availH is filled.
+                function packPageMaxSide(remaining, contentW, gapPx, availH, maxSide) {
                     const rows = [];
-                    let row = [];
-                    let aspectSum = 0;
-                    list.forEach((rec) => {
-                        row.push(rec);
-                        aspectSum += rec.aspect;
-                        const widthAtT = aspectSum * T + gapPx * (row.length - 1);
-                        if (widthAtT >= contentW) {
-                            const rowH = (contentW - gapPx * (row.length - 1)) / aspectSum;
-                            rows.push({ items: row, rowH });
-                            row = [];
-                            aspectSum = 0;
+                    let idx = 0;
+                    let used = 0;
+                    while (idx < remaining.length) {
+                        const rowItems = [];
+                        let rowW = 0;
+                        let rowH = 0;
+                        let j = idx;
+                        while (j < remaining.length) {
+                            const sz = sizeByMaxSide(remaining[j], maxSide, contentW);
+                            const need = sz.w + (rowItems.length ? gapPx : 0);
+                            if (rowItems.length && rowW + need > contentW + 0.5) break;
+                            rowItems.push({ rec: remaining[j], w: sz.w, h: sz.h });
+                            rowW += need;
+                            rowH = Math.max(rowH, sz.h);
+                            j++;
                         }
-                    });
-                    if (row.length) rows.push({ items: row, rowH: T });
-                    return rows;
+                        if (!rowItems.length) {
+                            // Force at least one (already clamped to contentW in sizeByMaxSide)
+                            const sz = sizeByMaxSide(remaining[idx], maxSide, contentW);
+                            rowItems.push({ rec: remaining[idx], w: sz.w, h: sz.h });
+                            rowH = sz.h;
+                            j = idx + 1;
+                        }
+                        const newUsed = used + rowH + (rows.length ? gapPx : 0);
+                        if (rows.length && newUsed > availH + 0.5) break;
+                        rows.push({ items: rowItems, rowH });
+                        used = newUsed;
+                        idx = j;
+                    }
+                    const count = rows.reduce((s, r) => s + r.items.length, 0);
+                    return { rows, usedHeight: used, count };
+                }
+
+                // Legacy justified pack (kept for any residual use)
+                function packPage(remaining, contentW, gapPx, availH, userT) {
+                    return packPageMaxSide(remaining, contentW, gapPx, availH, userT);
+                }
+
+                function simpleJustify(list, contentW, gapPx, T) {
+                    // Final page: same max-side sizing, pack all remaining without height limit
+                    const packed = packPageMaxSide(list, contentW, gapPx, 1e9, T);
+                    return packed.rows;
                 }
 
                 function contentHeightOf(rows, gapPx) {
@@ -825,13 +865,16 @@
                     let y = gapPx;
                     rows.forEach((row) => {
                         let x = gapPx;
-                        row.items.forEach((rec) => {
-                            const w = rec.aspect * row.rowH;
+                        row.items.forEach((item) => {
+                            // Support both {rec, w, h} (max-side pack) and bare rec (fit/justify)
+                            const rec = item.rec || item;
+                            const w = item.w != null ? item.w : rec.aspect * row.rowH;
+                            const h = item.h != null ? item.h : row.rowH;
                             rec.x = x;
                             rec.y = y;
                             rec.w = w;
-                            rec.h = row.rowH;
-                            rec.rot = 0;
+                            rec.h = h;
+                            rec.rot = rec.rot || 0;
                             x += w + gapPx;
                         });
                         y += row.rowH + gapPx;
@@ -920,7 +963,8 @@
                         pagesEl.appendChild(shell.shell);
                         commitRows(def.rows, gapPx);
                         def.rows.forEach((row) => {
-                            row.items.forEach((rec) => {
+                            row.items.forEach((item) => {
+                                const rec = item.rec || item;
                                 totalImgArea += rec.w * rec.h;
                                 buildTile(rec, shell.page);
                             });
@@ -1002,6 +1046,17 @@
                     });
                     el.appendChild(del);
 
+                    const rot90 = document.createElement("div");
+                    rot90.className = "rot90-btn";
+                    rot90.textContent = "90°";
+                    rot90.title = "Rotate 90° clockwise";
+                    rot90.addEventListener("pointerdown", (e) => e.stopPropagation());
+                    rot90.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        rotate90(rec);
+                    });
+                    el.appendChild(rot90);
+
                     const rline = document.createElement("div");
                     rline.className = "handle rotate-line";
                     el.appendChild(rline);
@@ -1017,13 +1072,26 @@
                     el.appendChild(shandle);
 
                     el.addEventListener("pointerdown", (e) => {
-                        if (e.target === rhandle || e.target === shandle || e.target === del) return;
+                        if (e.target === rhandle || e.target === shandle || e.target === del || e.target === rot90) return;
                         selectTile(rec.id);
                         startDrag(e, rec);
                     });
 
                     rec.el = el;
                     pageEl.appendChild(el);
+                    renderTile(rec);
+                }
+
+                function rotate90(rec) {
+                    // Rotate 90° CW; swap box size so the frame matches the new orientation
+                    const cx = rec.x + rec.w / 2;
+                    const cy = rec.y + rec.h / 2;
+                    rec.rot = ((rec.rot || 0) + 90) % 360;
+                    const tw = rec.w;
+                    rec.w = rec.h;
+                    rec.h = tw;
+                    rec.x = cx - rec.w / 2;
+                    rec.y = cy - rec.h / 2;
                     renderTile(rec);
                 }
 
@@ -1054,24 +1122,53 @@
                 }
 
                 // ---------- drag / resize / rotate ----------
+                let recDragEl = null;
+
+                function pageUnderPoint(clientX, clientY) {
+                    const prev = recDragEl ? recDragEl.style.pointerEvents : null;
+                    if (recDragEl) recDragEl.style.pointerEvents = "none";
+                    const hit = document.elementFromPoint(clientX, clientY);
+                    if (recDragEl) recDragEl.style.pointerEvents = prev || "";
+                    if (!hit) return null;
+                    return hit.closest(".page");
+                }
+
                 function startDrag(e, rec) {
                     e.preventDefault();
-                    const startX = e.clientX,
-                        startY = e.clientY,
-                        ox = rec.x,
-                        oy = rec.y;
+                    const pageRect0 = rec.el.parentElement.getBoundingClientRect();
+                    // Offset from pointer to tile top-left (in page-local space at grab time)
+                    let grabOffX = e.clientX - pageRect0.left - rec.x;
+                    let grabOffY = e.clientY - pageRect0.top - rec.y;
+                    recDragEl = rec.el;
                     rec.el.classList.add("dragging");
                     rec.el.style.zIndex = zTop++;
                     rec.el.setPointerCapture(e.pointerId);
+
                     function move(ev) {
-                        rec.x = ox + (ev.clientX - startX);
-                        rec.y = oy + (ev.clientY - startY);
+                        const targetPage = pageUnderPoint(ev.clientX, ev.clientY);
+                        if (targetPage && targetPage !== rec.el.parentElement) {
+                            // Move tile to the other page; keep same visual position
+                            const oldRect = rec.el.parentElement.getBoundingClientRect();
+                            const newRect = targetPage.getBoundingClientRect();
+                            const visLeft = oldRect.left + rec.x;
+                            const visTop = oldRect.top + rec.y;
+                            targetPage.appendChild(rec.el);
+                            rec.x = visLeft - newRect.left;
+                            rec.y = visTop - newRect.top;
+                            // Refresh grab offset relative to the new page
+                            grabOffX = ev.clientX - newRect.left - rec.x;
+                            grabOffY = ev.clientY - newRect.top - rec.y;
+                        }
+                        const pageRect = rec.el.parentElement.getBoundingClientRect();
+                        rec.x = ev.clientX - pageRect.left - grabOffX;
+                        rec.y = ev.clientY - pageRect.top - grabOffY;
                         renderTile(rec);
                     }
                     function up() {
                         rec.el.classList.remove("dragging");
                         rec.el.removeEventListener("pointermove", move);
                         rec.el.removeEventListener("pointerup", up);
+                        recDragEl = null;
                     }
                     rec.el.addEventListener("pointermove", move);
                     rec.el.addEventListener("pointerup", up);
