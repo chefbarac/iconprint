@@ -1436,6 +1436,12 @@
         </script>
         <script>
             if ("serviceWorker" in navigator) {
+                window.addEventListener("load", () => {
+                    navigator.serviceWorker.register("/iconprint/sw.js").catch((err) => {
+                        console.error("SW registration failed:", err);
+                    });
+                });
+
                 // Auto-refresh once when a new SW version takes control.
                 let refreshing = false;
                 navigator.serviceWorker.addEventListener("controllerchange", () => {

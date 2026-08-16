@@ -1131,14 +1131,32 @@
                     rot.addEventListener("mousedown", onRotateHandleMouseDown);
                 }
 
+                // Single source of truth for frame mm → px. Same function for
+                // screen and 300 DPI export — continuous (no edge rounding).
+                // Independent Math.round on left/right previously collapsed
+                // intentional sub-mm gaps at one scale while keeping them at
+                // another (screen ~2.3 px/mm vs print ~11.8 px/mm). Float coords
+                // preserve exact mm gaps; snapped shared edges stay exact because
+                // mm values are already quantized to 0.001 mm in the snap path.
+                function computeFrameBoundsPx(inst, scale) {
+                    var leftPx = inst.x * scale;
+                    var topPx = inst.y * scale;
+                    var fw = Math.max(1e-6, inst.w * scale);
+                    var fh = Math.max(1e-6, inst.h * scale);
+                    return { left: leftPx, top: topPx, width: fw, height: fh };
+                }
+
                 function renderPlaced(inst) {
                     var el = paperStage.querySelector('[data-pid="' + inst.pid + '"]');
                     if (!el) return;
                     var scale = MM_TO_PX * zoom;
-                    var fw = inst.w * scale;
-                    var fh = inst.h * scale;
-                    el.style.left = inst.x * scale + "px";
-                    el.style.top = inst.y * scale + "px";
+                    var b = computeFrameBoundsPx(inst, scale);
+                    var leftPx = b.left,
+                        topPx = b.top,
+                        fw = b.width,
+                        fh = b.height;
+                    el.style.left = leftPx + "px";
+                    el.style.top = topPx + "px";
                     el.style.width = fw + "px";
                     el.style.height = fh + "px";
                     // rotate whole frame around center; flips applied on image content
@@ -1440,6 +1458,12 @@
                             }
                             nx = nearestSnap(nx, inst.w, targetsX);
                             ny = nearestSnap(ny, inst.h, targetsY);
+                            // Kill floating-point noise (e.g. target - width) so a
+                            // snapped edge is bit-exact with the frame it snapped to —
+                            // an exact 0mm gap, not a near-zero one that could round
+                            // to a stray pixel at export scale.
+                            nx = Math.round(nx * 1000) / 1000;
+                            ny = Math.round(ny * 1000) / 1000;
                         }
                         // delta after snap applied to whole group
                         var adx = nx - primaryOrig.x;
@@ -2088,13 +2112,16 @@
                         var img = new Image();
                         img.onload = function () {
                             ctx.save();
-                            var cx = (inst.x + inst.w / 2) * scale;
-                            var cy = (inst.y + inst.h / 2) * scale;
+
+                            // Same continuous computeFrameBoundsPx() as on screen.
+                            var b = computeFrameBoundsPx(inst, scale);
+                            var fw = b.width,
+                                fh = b.height;
+                            var cx = b.left + fw / 2;
+                            var cy = b.top + fh / 2;
+
                             ctx.translate(cx, cy);
                             ctx.rotate(((inst.rotation || 0) * Math.PI) / 180);
-
-                            var fw = inst.w * scale;
-                            var fh = inst.h * scale;
 
                             // clip to frame
                             ctx.save();
@@ -2235,6 +2262,12 @@
         </script>
         <script>
             if ("serviceWorker" in navigator) {
+                window.addEventListener("load", () => {
+                    navigator.serviceWorker.register("/iconprint/sw.js").catch((err) => {
+                        console.error("SW registration failed:", err);
+                    });
+                });
+
                 // Auto-refresh once when a new SW version takes control.
                 let refreshing = false;
                 navigator.serviceWorker.addEventListener("controllerchange", () => {
