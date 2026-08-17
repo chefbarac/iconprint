@@ -535,7 +535,7 @@
                 padding: 1px 5px;
             }
 
-            /* ---------- Modal / History ---------- */
+            /* ---------- Modal / History / Sync ---------- */
             .modal-overlay {
                 display: none;
                 position: fixed;
@@ -558,6 +558,9 @@
                 flex-direction: column;
                 box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
             }
+            .modal.sync-modal {
+                width: min(420px, 100%);
+            }
             .modal-header {
                 display: flex;
                 align-items: center;
@@ -578,6 +581,79 @@
             .modal-body {
                 padding: 18px 20px;
                 overflow-y: auto;
+            }
+            .sync-status-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                display: inline-block;
+                margin-right: 6px;
+                background: #9ca3af;
+            }
+            .sync-status-dot.connected {
+                background: #16a34a;
+            }
+            .sync-status-dot.connecting {
+                background: #eab308;
+                animation: pulse 1s infinite;
+            }
+            .sync-status-dot.error {
+                background: var(--accent);
+            }
+            @keyframes pulse {
+                0%,
+                100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.4;
+                }
+            }
+            .sync-field {
+                margin-bottom: 14px;
+            }
+            .sync-field label {
+                display: block;
+                font-size: 11.5px;
+                color: var(--muted);
+                font-weight: 500;
+                margin-bottom: 5px;
+            }
+            .sync-field input {
+                width: 100%;
+                border: 1px solid var(--line);
+                border-radius: var(--radius);
+                padding: 8px 10px;
+                font-size: 13px;
+                font-family: var(--font-mono);
+                background: #fff;
+                color: var(--ink);
+            }
+            .sync-field input:focus {
+                outline: none;
+                border-color: var(--cyan);
+            }
+            .sync-actions {
+                display: flex;
+                gap: 8px;
+                margin-top: 18px;
+            }
+            .sync-actions .btn {
+                flex: 1;
+                justify-content: center;
+            }
+            .sync-hint {
+                font-size: 11px;
+                color: var(--muted);
+                line-height: 1.45;
+                margin-top: 12px;
+            }
+            .sync-status-line {
+                font-family: var(--font-mono);
+                font-size: 11.5px;
+                margin-top: 10px;
+                display: flex;
+                align-items: center;
             }
             .history-grid {
                 display: grid;
@@ -704,7 +780,15 @@
                         Coming soon
                     </a> -->
                 </nav>
-                <div class="sidebar-footer">Icon Print v1.8<br />Bond Paper Stitcher</div>
+                <div class="sidebar-footer">
+                    Icon Print v1.9<br />Bond Paper Stitcher
+                    <div style="margin-top: 8px">
+                        <button class="btn small" id="syncBtn" style="width: 100%; justify-content: center; background: transparent; border-color: rgba(255, 255, 255, 0.2); color: #c8cbc3">
+                            <span class="sync-status-dot" id="syncDot"></span>
+                            Sync
+                        </button>
+                    </div>
+                </div>
             </aside>
 
             <!-- ============ MAIN ============ -->
@@ -910,7 +994,232 @@
             </div>
         </div>
 
+        <div class="modal-overlay" id="syncOverlay">
+            <div class="modal sync-modal">
+                <div class="modal-header">
+                    <h2>Layout Sync</h2>
+                    <div class="icon-btn" id="closeSync" title="Close">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 3l10 10M13 3 3 13" /></svg>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <div class="sync-field">
+                        <label for="syncHost">Host (WebSocket URL)</label>
+                        <input type="text" id="syncHost" placeholder="ws://localhost:1234" autocomplete="off" />
+                    </div>
+                    <div class="sync-field">
+                        <label for="syncKey">Sync Key (room name)</label>
+                        <input type="text" id="syncKey" placeholder="my-shop-secret" autocomplete="off" />
+                    </div>
+                    <div class="sync-status-line">
+                        <span class="sync-status-dot" id="syncStatusDot"></span>
+                        <span id="syncStatusText">Disconnected</span>
+                    </div>
+                    <div class="sync-actions">
+                        <button class="btn primary" id="syncConnectBtn">Connect</button>
+                        <button class="btn" id="syncDisconnectBtn" disabled>Disconnect</button>
+                    </div>
+                    <p class="sync-hint">
+                        Local-first CRDT sync (Yjs). Run a local server with:<br />
+                        <code style="font-family: var(--font-mono); font-size: 10.5px; background: #f2f0e9; padding: 2px 5px; border-radius: 2px">HOST=localhost PORT=1234 npx @y/websocket-server</code
+                        ><br />
+                        Then enter the Host + a shared Sync Key. Layouts (including images) sync across devices on the same key.
+                    </p>
+                </div>
+            </div>
+        </div>
+
         <div class="print-area" id="printArea"></div>
+
+        <!-- Modular Sync (Yjs CRDT) — load as ES module -->
+        <script type="importmap">
+            {
+                "imports": {
+                    "yjs": "https://esm.sh/yjs@13.6.18",
+                    "y-indexeddb": "https://esm.sh/y-indexeddb@9.0.12",
+                    "y-websocket": "https://esm.sh/y-websocket@2.0.4"
+                }
+            }
+        </script>
+        <script type="module">
+            /**
+             * SyncManager — modular local-first CRDT sync for Icon Print layouts.
+             * Uses Yjs + y-indexeddb (persistence) + y-websocket (local host).
+             * Exposes a tiny public API so the rest of the app stays decoupled.
+             */
+            import * as Y from "yjs";
+            import { IndexeddbPersistence } from "y-indexeddb";
+            import { WebsocketProvider } from "y-websocket";
+
+            class SyncManager {
+                constructor() {
+                    this.ydoc = null;
+                    this.yLayouts = null; // Y.Array of layout records
+                    this.provider = null;
+                    this.persistence = null;
+                    this.status = "disconnected"; // disconnected | connecting | connected | error
+                    this.listeners = new Set();
+                    this.host = localStorage.getItem("iconprint_sync_host") || "ws://localhost:1234";
+                    this.key = localStorage.getItem("iconprint_sync_key") || "";
+                    this._statusHandlers = new Set();
+                }
+
+                onStatus(fn) {
+                    this._statusHandlers.add(fn);
+                    fn(this.status);
+                    return () => this._statusHandlers.delete(fn);
+                }
+
+                _setStatus(s) {
+                    this.status = s;
+                    this._statusHandlers.forEach((fn) => fn(s));
+                }
+
+                onLayoutsChanged(fn) {
+                    this.listeners.add(fn);
+                    return () => this.listeners.delete(fn);
+                }
+
+                _emitLayouts() {
+                    if (!this.yLayouts) return;
+                    const list = this.yLayouts.toArray();
+                    this.listeners.forEach((fn) => fn(list));
+                }
+
+                getConfig() {
+                    return { host: this.host, key: this.key };
+                }
+
+                setConfig(host, key) {
+                    this.host = (host || "").trim();
+                    this.key = (key || "").trim();
+                    localStorage.setItem("iconprint_sync_host", this.host);
+                    localStorage.setItem("iconprint_sync_key", this.key);
+                }
+
+                isConnected() {
+                    return this.status === "connected";
+                }
+
+                async connect() {
+                    if (!this.host || !this.key) {
+                        throw new Error("Host and Sync Key are required");
+                    }
+                    this.disconnect();
+                    this._setStatus("connecting");
+
+                    this.ydoc = new Y.Doc();
+                    this.yLayouts = this.ydoc.getArray("layouts");
+
+                    // Local persistence so the CRDT state survives reloads even offline
+                    this.persistence = new IndexeddbPersistence("icon_print_yjs_" + this.key, this.ydoc);
+                    await this.persistence.whenSynced;
+
+                    this.provider = new WebsocketProvider(this.host, this.key, this.ydoc, {
+                        connect: true,
+                    });
+
+                    this.provider.on("status", (event) => {
+                        if (event.status === "connected") this._setStatus("connected");
+                        else if (event.status === "disconnected") this._setStatus("disconnected");
+                    });
+
+                    this.provider.on("connection-error", () => {
+                        this._setStatus("error");
+                    });
+
+                    // Observe remote + local changes
+                    this.yLayouts.observe(() => this._emitLayouts());
+                    this._emitLayouts();
+
+                    // Give the websocket a moment; status events will update the UI
+                    setTimeout(() => {
+                        if (this.provider && this.provider.wsconnected) {
+                            this._setStatus("connected");
+                        }
+                    }, 800);
+                }
+
+                disconnect() {
+                    if (this.provider) {
+                        this.provider.destroy();
+                        this.provider = null;
+                    }
+                    if (this.persistence) {
+                        this.persistence.destroy();
+                        this.persistence = null;
+                    }
+                    if (this.ydoc) {
+                        this.ydoc.destroy();
+                        this.ydoc = null;
+                    }
+                    this.yLayouts = null;
+                    this._setStatus("disconnected");
+                }
+
+                /**
+                 * Push a layout record into the shared CRDT array.
+                 * Deduplicates by a stable uuid if present.
+                 */
+                pushLayout(record) {
+                    if (!this.yLayouts || !this.isConnected()) return false;
+                    const uuid = record.uuid || this._makeUuid(record);
+                    const existing = this.yLayouts.toArray();
+                    const idx = existing.findIndex((r) => r.uuid === uuid);
+                    const toStore = Object.assign({}, record, { uuid });
+                    // Yjs arrays prefer push + delete for simplicity here
+                    if (idx >= 0) {
+                        this.yLayouts.delete(idx, 1);
+                        this.yLayouts.insert(idx, [toStore]);
+                    } else {
+                        this.yLayouts.push([toStore]);
+                    }
+                    return true;
+                }
+
+                /**
+                 * Remove a layout by uuid from the CRDT.
+                 */
+                removeLayout(uuid) {
+                    if (!this.yLayouts || !uuid) return;
+                    const arr = this.yLayouts.toArray();
+                    const idx = arr.findIndex((r) => r.uuid === uuid);
+                    if (idx >= 0) this.yLayouts.delete(idx, 1);
+                }
+
+                /**
+                 * Merge local IndexedDB records into the CRDT (one-way bootstrap).
+                 * Called after connect so offline saves appear on other devices.
+                 */
+                bootstrapFromLocal(localRecords) {
+                    if (!this.yLayouts || !Array.isArray(localRecords)) return;
+                    const existing = new Set(this.yLayouts.toArray().map((r) => r.uuid));
+                    const toAdd = [];
+                    localRecords.forEach((rec) => {
+                        const uuid = rec.uuid || this._makeUuid(rec);
+                        if (!existing.has(uuid)) {
+                            toAdd.push(Object.assign({}, rec, { uuid }));
+                        }
+                    });
+                    if (toAdd.length) this.yLayouts.push(toAdd);
+                }
+
+                getLayouts() {
+                    return this.yLayouts ? this.yLayouts.toArray() : [];
+                }
+
+                _makeUuid(rec) {
+                    // Stable-ish id from name + savedAt so re-saves of the same layout merge
+                    const base = (rec.name || "") + "|" + (rec.savedAt || 0);
+                    let h = 0;
+                    for (let i = 0; i < base.length; i++) h = (Math.imul(31, h) + base.charCodeAt(i)) | 0;
+                    return "local-" + Math.abs(h).toString(36) + "-" + (rec.savedAt || Date.now());
+                }
+            }
+
+            // Singleton exposed for the classic script
+            window.IconPrintSync = new SyncManager();
+        </script>
 
         <script>
             (function () {
@@ -1003,6 +1312,17 @@
                     historyGrid: document.getElementById("historyGrid"),
                     printBtn: document.getElementById("printBtn"),
                     printArea: document.getElementById("printArea"),
+                    // Sync UI
+                    syncBtn: document.getElementById("syncBtn"),
+                    syncDot: document.getElementById("syncDot"),
+                    syncOverlay: document.getElementById("syncOverlay"),
+                    closeSync: document.getElementById("closeSync"),
+                    syncHost: document.getElementById("syncHost"),
+                    syncKey: document.getElementById("syncKey"),
+                    syncStatusDot: document.getElementById("syncStatusDot"),
+                    syncStatusText: document.getElementById("syncStatusText"),
+                    syncConnectBtn: document.getElementById("syncConnectBtn"),
+                    syncDisconnectBtn: document.getElementById("syncDisconnectBtn"),
                 };
 
                 let state = {
@@ -1723,6 +2043,10 @@
 
                     try {
                         await dbSave(record);
+                        // Push into CRDT if currently synced (modular, non-blocking)
+                        if (window.IconPrintSync && window.IconPrintSync.isConnected()) {
+                            window.IconPrintSync.pushLayout(record);
+                        }
                     } catch (err) {
                         alert("Could not save layout: " + err.message);
                     }
@@ -1753,7 +2077,17 @@
                 }
 
                 async function openHistoryModal() {
-                    const records = await dbGetAll();
+                    // Prefer live CRDT list when connected; fall back to local IndexedDB
+                    let records = [];
+                    if (window.IconPrintSync && window.IconPrintSync.isConnected()) {
+                        records = window.IconPrintSync.getLayouts()
+                            .slice()
+                            .sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
+                    }
+                    if (records.length === 0) {
+                        records = await dbGetAll();
+                    }
+
                     const grid = els.historyGrid;
                     grid.innerHTML = "";
                     if (records.length === 0) {
@@ -1763,12 +2097,14 @@
                             const card = document.createElement("div");
                             card.className = "history-card";
                             const date = new Date(rec.savedAt).toLocaleString();
+                            const syncedBadge = rec.uuid ? ' <span style="font-size:9px;color:var(--cyan);font-family:var(--font-mono)">synced</span>' : "";
                             card.innerHTML =
                                 '<img class="history-thumb" src="' +
-                                rec.thumbnail +
+                                (rec.thumbnail || "") +
                                 '">' +
                                 '<div class="history-name">' +
                                 escapeHtml(rec.name) +
+                                syncedBadge +
                                 "</div>" +
                                 '<div class="history-date">' +
                                 escapeHtml(date) +
@@ -1782,7 +2118,10 @@
                             card.querySelector(".load-btn").addEventListener("click", () => loadLayoutRecord(rec));
                             card.querySelector(".del-btn").addEventListener("click", async () => {
                                 if (confirm('Delete "' + rec.name + "\"? This can't be undone.")) {
-                                    await dbDelete(rec.id);
+                                    if (rec.id != null) await dbDelete(rec.id);
+                                    if (window.IconPrintSync && rec.uuid) {
+                                        window.IconPrintSync.removeLayout(rec.uuid);
+                                    }
                                     openHistoryModal();
                                 }
                             });
@@ -1801,6 +2140,97 @@
                 });
                 document.addEventListener("keydown", (e) => {
                     if (e.key === "Escape" && els.historyOverlay.classList.contains("open")) closeHistoryModal();
+                });
+
+                // ---------- Sync UI (uses modular SyncManager) ----------
+                function updateSyncDots(status) {
+                    const map = {
+                        disconnected: "",
+                        connecting: "connecting",
+                        connected: "connected",
+                        error: "error",
+                    };
+                    const cls = map[status] || "";
+                    [els.syncDot, els.syncStatusDot].forEach((el) => {
+                        if (!el) return;
+                        el.className = "sync-status-dot" + (cls ? " " + cls : "");
+                    });
+                    if (els.syncStatusText) {
+                        const labels = {
+                            disconnected: "Disconnected",
+                            connecting: "Connecting…",
+                            connected: "Connected",
+                            error: "Connection error",
+                        };
+                        els.syncStatusText.textContent = labels[status] || status;
+                    }
+                    if (els.syncConnectBtn) els.syncConnectBtn.disabled = status === "connecting" || status === "connected";
+                    if (els.syncDisconnectBtn) els.syncDisconnectBtn.disabled = status === "disconnected";
+                }
+
+                function openSyncModal() {
+                    if (!window.IconPrintSync) {
+                        alert("Sync module is still loading. Try again in a moment.");
+                        return;
+                    }
+                    const cfg = window.IconPrintSync.getConfig();
+                    els.syncHost.value = cfg.host || "ws://localhost:1234";
+                    els.syncKey.value = cfg.key || "";
+                    updateSyncDots(window.IconPrintSync.status);
+                    els.syncOverlay.classList.add("open");
+                }
+                function closeSyncModal() {
+                    els.syncOverlay.classList.remove("open");
+                }
+
+                els.syncBtn.addEventListener("click", openSyncModal);
+                els.closeSync.addEventListener("click", closeSyncModal);
+                els.syncOverlay.addEventListener("click", (e) => {
+                    if (e.target === els.syncOverlay) closeSyncModal();
+                });
+
+                els.syncConnectBtn.addEventListener("click", async () => {
+                    if (!window.IconPrintSync) return;
+                    const host = els.syncHost.value.trim();
+                    const key = els.syncKey.value.trim();
+                    if (!host || !key) {
+                        alert("Please enter both Host and Sync Key.");
+                        return;
+                    }
+                    window.IconPrintSync.setConfig(host, key);
+                    try {
+                        await window.IconPrintSync.connect();
+                        // Bootstrap any local-only layouts into the shared room
+                        const local = await dbGetAll();
+                        window.IconPrintSync.bootstrapFromLocal(local);
+                    } catch (err) {
+                        alert("Could not connect: " + (err.message || err));
+                        updateSyncDots("error");
+                    }
+                });
+
+                els.syncDisconnectBtn.addEventListener("click", () => {
+                    if (window.IconPrintSync) window.IconPrintSync.disconnect();
+                });
+
+                // Status + live history refresh
+                function wireSyncWhenReady() {
+                    if (!window.IconPrintSync) {
+                        setTimeout(wireSyncWhenReady, 120);
+                        return;
+                    }
+                    window.IconPrintSync.onStatus(updateSyncDots);
+                    window.IconPrintSync.onLayoutsChanged(() => {
+                        // If history modal is open, refresh it so remote saves appear
+                        if (els.historyOverlay.classList.contains("open")) {
+                            openHistoryModal();
+                        }
+                    });
+                }
+                wireSyncWhenReady();
+
+                document.addEventListener("keydown", (e) => {
+                    if (e.key === "Escape" && els.syncOverlay.classList.contains("open")) closeSyncModal();
                 });
 
                 // ---------- Icon SVGs ----------

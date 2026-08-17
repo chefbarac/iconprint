@@ -96,3 +96,10 @@ console.error("SW registration failed:", err);
 `pm2 start scan.py --interpreter C:\Users\chefr\iconprint\.venv\Scripts\python.exe --name scanner-backend`
 
 `git rm -r --cached folder/`
+
+`# one-time
+npm i -g @y/websocket-server # or just use npx
+
+# start the relay
+
+HOST=localhost PORT=1234 npx @y/websocket-server`
