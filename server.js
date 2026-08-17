@@ -1,24 +1,22 @@
 #!/usr/bin/env node
 
-import WebSocket from 'ws'
 import http from 'http'
+import WebSocket from 'ws'                    // default import
 import * as number from 'lib0/number'
-import { setupWSConnection } from '@y/websocket-server/utils'   // ← correct path
+import { setupWSConnection } from 'y-websocket/bin/utils'
 
 const host = process.env.HOST || '0.0.0.0'
 const port = number.parseInt(process.env.PORT || '1234')
+const maxPayload = 500 * 1024 * 1024          // 500 MB
 
-// Increase the limit (500 MB). Use 0 to disable the limit completely.
-const maxPayload = 500 * 1024 * 1024
-
-const wss = new WebSocket.Server({
+const wss = new WebSocket.Server({            // WebSocket.Server (not WebSocketServer)
 	noServer: true,
-	maxPayload: maxPayload
+	maxPayload
 })
 
-const server = http.createServer((_request, response) => {
-	response.writeHead(200, { 'Content-Type': 'text/plain' })
-	response.end('okay')
+const server = http.createServer((_req, res) => {
+	res.writeHead(200, { 'Content-Type': 'text/plain' })
+	res.end('okay')
 })
 
 wss.on('connection', setupWSConnection)
@@ -30,5 +28,5 @@ server.on('upgrade', (request, socket, head) => {
 })
 
 server.listen(port, host, () => {
-	console.log(`running at '${host}' on port ${port} (maxPayload: ${maxPayload} bytes)`)
+	console.log(`Yjs 13 server running at ${host}:${port} (maxPayload: ${maxPayload} bytes)`)
 })

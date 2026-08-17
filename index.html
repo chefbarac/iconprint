@@ -1033,193 +1033,209 @@
 
         <!-- Modular Sync (Yjs CRDT) — load as ES module -->
         <script type="importmap">
-            {
-                "imports": {
-                    "yjs": "https://esm.sh/yjs@13.6.18",
-                    "y-indexeddb": "https://esm.sh/y-indexeddb@9.0.12",
-                    "y-websocket": "https://esm.sh/y-websocket@2.0.4"
-                }
+{
+    "imports": {
+        "yjs": "https://esm.sh/yjs@13.6.18",
+        "y-protocols": "https://esm.sh/y-protocols@1.0.6",
+        "lib0": "https://esm.sh/lib0@0.2.99",
+        "y-indexeddb": "https://esm.sh/y-indexeddb@9.0.12?deps=yjs@13.6.18",
+        "y-websocket": "https://esm.sh/y-websocket@2.0.4?deps=yjs@13.6.18"
+    }
+}
+</script>
+<script type="module">
+    import * as Y from "yjs";
+    import { IndexeddbPersistence } from "y-indexeddb";
+    import { WebsocketProvider } from "y-websocket";
+
+    class SyncManager {
+        constructor() {
+            this.ydoc = null;
+            this.yLayouts = null;
+            this.provider = null;
+            this.persistence = null;
+            this.status = "disconnected";
+            this.listeners = new Set();
+            this.host = localStorage.getItem("iconprint_sync_host") || "ws://localhost:1234";
+            this.key = localStorage.getItem("iconprint_sync_key") || "";
+            this._statusHandlers = new Set();
+        }
+
+        onStatus(fn) {
+            this._statusHandlers.add(fn);
+            fn(this.status);
+            return () => this._statusHandlers.delete(fn);
+        }
+
+        _setStatus(s) {
+            this.status = s;
+            this._statusHandlers.forEach((fn) => fn(s));
+        }
+
+        onLayoutsChanged(fn) {
+            this.listeners.add(fn);
+            return () => this.listeners.delete(fn);
+        }
+
+        _emitLayouts() {
+            if (!this.yLayouts) return;
+            const list = this.yLayouts.toArray();
+            this.listeners.forEach((fn) => fn(list));
+        }
+
+        getConfig() {
+            return { host: this.host, key: this.key };
+        }
+
+        setConfig(host, key) {
+            this.host = (host || "").trim();
+            this.key = (key || "").trim();
+            localStorage.setItem("iconprint_sync_host", this.host);
+            localStorage.setItem("iconprint_sync_key", this.key);
+        }
+
+        isConnected() {
+            return this.status === "connected";
+        }
+
+        async connect() {
+            if (!this.host || !this.key) {
+                throw new Error("Host and Sync Key are required");
             }
-        </script>
-        <script type="module">
-            /**
-             * SyncManager — modular local-first CRDT sync for Icon Print layouts.
-             * Uses Yjs + y-indexeddb (persistence) + y-websocket (local host).
-             * Exposes a tiny public API so the rest of the app stays decoupled.
-             */
-            import * as Y from "yjs";
-            import { IndexeddbPersistence } from "y-indexeddb";
-            import { WebsocketProvider } from "y-websocket";
+            this.disconnect();
+            this._setStatus("connecting");
 
-            class SyncManager {
-                constructor() {
-                    this.ydoc = null;
-                    this.yLayouts = null; // Y.Array of layout records
-                    this.provider = null;
-                    this.persistence = null;
-                    this.status = "disconnected"; // disconnected | connecting | connected | error
-                    this.listeners = new Set();
-                    this.host = localStorage.getItem("iconprint_sync_host") || "ws://localhost:1234";
-                    this.key = localStorage.getItem("iconprint_sync_key") || "";
-                    this._statusHandlers = new Set();
+            this.ydoc = new Y.Doc();
+            this.yLayouts = this.ydoc.getArray("layouts");
+
+            this.persistence = new IndexeddbPersistence("icon_print_yjs_" + this.key, this.ydoc);
+            await this.persistence.whenSynced;
+
+            this.provider = new WebsocketProvider(this.host, this.key, this.ydoc, {
+                connect: true,
+            });
+
+            this.provider.on("status", (event) => {
+                if (event.status === "connected") this._setStatus("connected");
+                else if (event.status === "disconnected") this._setStatus("disconnected");
+            });
+
+            this.provider.on("connection-error", (err) => {
+                console.error("[IconPrintSync] connection-error", err);
+                this._setStatus("error");
+            });
+
+            // Catch WebSocket-level errors (including "Max payload size exceeded")
+            this.provider.on("connection-close", (event) => {
+                console.warn("[IconPrintSync] connection closed", event);
+                if (event && event.code === 1009) {
+                    console.error("Message too large (code 1009). Increase maxPayload on the server.");
+                    this._setStatus("error");
                 }
+            });
 
-                onStatus(fn) {
-                    this._statusHandlers.add(fn);
-                    fn(this.status);
-                    return () => this._statusHandlers.delete(fn);
-                }
+            this.yLayouts.observe(() => this._emitLayouts());
+            this._emitLayouts();
 
-                _setStatus(s) {
-                    this.status = s;
-                    this._statusHandlers.forEach((fn) => fn(s));
-                }
-
-                onLayoutsChanged(fn) {
-                    this.listeners.add(fn);
-                    return () => this.listeners.delete(fn);
-                }
-
-                _emitLayouts() {
-                    if (!this.yLayouts) return;
-                    const list = this.yLayouts.toArray();
-                    this.listeners.forEach((fn) => fn(list));
-                }
-
-                getConfig() {
-                    return { host: this.host, key: this.key };
-                }
-
-                setConfig(host, key) {
-                    this.host = (host || "").trim();
-                    this.key = (key || "").trim();
-                    localStorage.setItem("iconprint_sync_host", this.host);
-                    localStorage.setItem("iconprint_sync_key", this.key);
-                }
-
-                isConnected() {
-                    return this.status === "connected";
-                }
-
-                async connect() {
-                    if (!this.host || !this.key) {
-                        throw new Error("Host and Sync Key are required");
-                    }
-                    this.disconnect();
-                    this._setStatus("connecting");
-
-                    this.ydoc = new Y.Doc();
-                    this.yLayouts = this.ydoc.getArray("layouts");
-
-                    // Local persistence so the CRDT state survives reloads even offline
-                    this.persistence = new IndexeddbPersistence("icon_print_yjs_" + this.key, this.ydoc);
-                    await this.persistence.whenSynced;
-
-                    this.provider = new WebsocketProvider(this.host, this.key, this.ydoc, {
-                        connect: true,
-                    });
-
-                    this.provider.on("status", (event) => {
-                        if (event.status === "connected") this._setStatus("connected");
-                        else if (event.status === "disconnected") this._setStatus("disconnected");
-                    });
-
-                    this.provider.on("connection-error", () => {
+            // Also listen for the underlying ws errors if available
+            const checkWs = () => {
+                if (this.provider && this.provider.ws) {
+                    this.provider.ws.addEventListener("error", (e) => {
+                        console.error("[IconPrintSync] ws error", e);
                         this._setStatus("error");
                     });
-
-                    // Observe remote + local changes
-                    this.yLayouts.observe(() => this._emitLayouts());
-                    this._emitLayouts();
-
-                    // Give the websocket a moment; status events will update the UI
-                    setTimeout(() => {
-                        if (this.provider && this.provider.wsconnected) {
-                            this._setStatus("connected");
-                        }
-                    }, 800);
+                } else {
+                    setTimeout(checkWs, 200);
                 }
+            };
+            checkWs();
 
-                disconnect() {
-                    if (this.provider) {
-                        this.provider.destroy();
-                        this.provider = null;
-                    }
-                    if (this.persistence) {
-                        this.persistence.destroy();
-                        this.persistence = null;
-                    }
-                    if (this.ydoc) {
-                        this.ydoc.destroy();
-                        this.ydoc = null;
-                    }
-                    this.yLayouts = null;
-                    this._setStatus("disconnected");
+            setTimeout(() => {
+                if (this.provider && this.provider.wsconnected) {
+                    this._setStatus("connected");
                 }
+            }, 1000);
+        }
 
-                /**
-                 * Push a layout record into the shared CRDT array.
-                 * Deduplicates by a stable uuid if present.
-                 */
-                pushLayout(record) {
-                    if (!this.yLayouts || !this.isConnected()) return false;
-                    const uuid = record.uuid || this._makeUuid(record);
-                    const existing = this.yLayouts.toArray();
-                    const idx = existing.findIndex((r) => r.uuid === uuid);
-                    const toStore = Object.assign({}, record, { uuid });
-                    // Yjs arrays prefer push + delete for simplicity here
-                    if (idx >= 0) {
-                        this.yLayouts.delete(idx, 1);
-                        this.yLayouts.insert(idx, [toStore]);
-                    } else {
-                        this.yLayouts.push([toStore]);
-                    }
-                    return true;
-                }
-
-                /**
-                 * Remove a layout by uuid from the CRDT.
-                 */
-                removeLayout(uuid) {
-                    if (!this.yLayouts || !uuid) return;
-                    const arr = this.yLayouts.toArray();
-                    const idx = arr.findIndex((r) => r.uuid === uuid);
-                    if (idx >= 0) this.yLayouts.delete(idx, 1);
-                }
-
-                /**
-                 * Merge local IndexedDB records into the CRDT (one-way bootstrap).
-                 * Called after connect so offline saves appear on other devices.
-                 */
-                bootstrapFromLocal(localRecords) {
-                    if (!this.yLayouts || !Array.isArray(localRecords)) return;
-                    const existing = new Set(this.yLayouts.toArray().map((r) => r.uuid));
-                    const toAdd = [];
-                    localRecords.forEach((rec) => {
-                        const uuid = rec.uuid || this._makeUuid(rec);
-                        if (!existing.has(uuid)) {
-                            toAdd.push(Object.assign({}, rec, { uuid }));
-                        }
-                    });
-                    if (toAdd.length) this.yLayouts.push(toAdd);
-                }
-
-                getLayouts() {
-                    return this.yLayouts ? this.yLayouts.toArray() : [];
-                }
-
-                _makeUuid(rec) {
-                    // Stable-ish id from name + savedAt so re-saves of the same layout merge
-                    const base = (rec.name || "") + "|" + (rec.savedAt || 0);
-                    let h = 0;
-                    for (let i = 0; i < base.length; i++) h = (Math.imul(31, h) + base.charCodeAt(i)) | 0;
-                    return "local-" + Math.abs(h).toString(36) + "-" + (rec.savedAt || Date.now());
-                }
+        disconnect() {
+            if (this.provider) {
+                this.provider.destroy();
+                this.provider = null;
             }
+            if (this.persistence) {
+                this.persistence.destroy();
+                this.persistence = null;
+            }
+            if (this.ydoc) {
+                this.ydoc.destroy();
+                this.ydoc = null;
+            }
+            this.yLayouts = null;
+            this._setStatus("disconnected");
+        }
 
-            // Singleton exposed for the classic script
-            window.IconPrintSync = new SyncManager();
-        </script>
+        pushLayout(record) {
+            if (!this.yLayouts || !this.isConnected()) return false;
+
+            // Rough size warning (base64 is ~1.37× the binary size)
+            try {
+                const approxBytes = new Blob([JSON.stringify(record)]).size;
+                if (approxBytes > 80 * 1024 * 1024) {
+                    console.warn(
+                        `[IconPrintSync] Layout is ~${(approxBytes / 1024 / 1024).toFixed(1)} MB. ` +
+                        `If the other PC does not receive it, raise maxPayload on the server.`
+                    );
+                }
+            } catch (_) {}
+
+            const uuid = record.uuid || this._makeUuid(record);
+            const existing = this.yLayouts.toArray();
+            const idx = existing.findIndex((r) => r.uuid === uuid);
+            const toStore = Object.assign({}, record, { uuid });
+
+            if (idx >= 0) {
+                this.yLayouts.delete(idx, 1);
+                this.yLayouts.insert(idx, [toStore]);
+            } else {
+                this.yLayouts.push([toStore]);
+            }
+            return true;
+        }
+
+        removeLayout(uuid) {
+            if (!this.yLayouts || !uuid) return;
+            const arr = this.yLayouts.toArray();
+            const idx = arr.findIndex((r) => r.uuid === uuid);
+            if (idx >= 0) this.yLayouts.delete(idx, 1);
+        }
+
+        bootstrapFromLocal(localRecords) {
+            if (!this.yLayouts || !Array.isArray(localRecords)) return;
+            const existing = new Set(this.yLayouts.toArray().map((r) => r.uuid));
+            const toAdd = [];
+            localRecords.forEach((rec) => {
+                const uuid = rec.uuid || this._makeUuid(rec);
+                if (!existing.has(uuid)) {
+                    toAdd.push(Object.assign({}, rec, { uuid }));
+                }
+            });
+            if (toAdd.length) this.yLayouts.push(toAdd);
+        }
+
+        getLayouts() {
+            return this.yLayouts ? this.yLayouts.toArray() : [];
+        }
+
+        _makeUuid(rec) {
+            const base = (rec.name || "") + "|" + (rec.savedAt || 0);
+            let h = 0;
+            for (let i = 0; i < base.length; i++) h = (Math.imul(31, h) + base.charCodeAt(i)) | 0;
+            return "local-" + Math.abs(h).toString(36) + "-" + (rec.savedAt || Date.now());
+        }
+    }
+
+    window.IconPrintSync = new SyncManager();
+</script>
 
         <script>
             (function () {
