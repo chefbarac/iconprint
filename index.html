@@ -965,9 +965,12 @@
                             Auto
                         </button>
                         <button class="btn small" id="resetBrightBtn">Reset</button>
+                        <button class="btn small" id="compareBrightBtn" title="Hold to preview original (unadjusted) brightness">
+                            Compare
+                        </button>
                     </div>
                     <div class="hint">
-                        Adjusts exposure of the whole stitched page — background and both scans together, applied once to the final canvas. Auto normalizes it toward a clean white background.
+                        Adjusts exposure of the whole stitched page — background and both scans together, applied once to the final canvas. Auto normalizes it toward a clean white background. Hold <b>Compare</b> to briefly see the before (original) vs after brightness.
                     </div>
                 </div>
 
@@ -1320,6 +1323,7 @@
                     brightVal: document.getElementById("brightVal"),
                     autoBrightBtn: document.getElementById("autoBrightBtn"),
                     resetBrightBtn: document.getElementById("resetBrightBtn"),
+                    compareBrightBtn: document.getElementById("compareBrightBtn"),
                     selectedControls: document.getElementById("selectedControls"),
                     saveLayoutBtn: document.getElementById("saveLayoutBtn"),
                     historyBtn: document.getElementById("historyBtn"),
@@ -1722,6 +1726,49 @@
                 els.resetBrightBtn.addEventListener("click", () => {
                     setBrightness(1);
                 });
+
+                // Hold-to-compare: show original brightness while pressed, restore on release
+                (function () {
+                    let savedBrightness = null;
+                    let comparing = false;
+
+                    function showOriginal() {
+                        if (comparing) return;
+                        comparing = true;
+                        savedBrightness = state.brightness;
+                        // Temporarily force unadjusted preview without touching the slider value
+                        state.brightness = 1;
+                        els.page.style.filter = "";
+                        els.brightVal.textContent = "original";
+                    }
+
+                    function restoreAdjusted() {
+                        if (!comparing) return;
+                        comparing = false;
+                        state.brightness = savedBrightness;
+                        savedBrightness = null;
+                        const pct = Math.round(state.brightness * 100);
+                        els.brightVal.textContent = pct + "%";
+                        els.page.style.filter = state.brightness !== 1 ? "brightness(" + state.brightness + ")" : "";
+                    }
+
+                    const btn = els.compareBrightBtn;
+                    if (btn) {
+                        btn.addEventListener("pointerdown", (e) => {
+                            e.preventDefault();
+                            btn.setPointerCapture(e.pointerId);
+                            showOriginal();
+                        });
+                        btn.addEventListener("pointerup", (e) => {
+                            btn.releasePointerCapture(e.pointerId);
+                            restoreAdjusted();
+                        });
+                        btn.addEventListener("pointercancel", restoreAdjusted);
+                        btn.addEventListener("lostpointercapture", restoreAdjusted);
+                        // Prevent accidental click focus steal / text selection
+                        btn.addEventListener("click", (e) => e.preventDefault());
+                    }
+                })();
 
                 // ---------- Keyboard nudge ----------
                 document.addEventListener("keydown", (e) => {

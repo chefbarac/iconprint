@@ -690,11 +690,12 @@
                             <input type="range" id="brightnessSlider" min="50" max="180" step="1" value="100" />
                             <span class="brightness-value" id="brightnessValue">100%</span>
                         </div>
-                        <div class="hint">Applies to the whole printable page (both images and background together) — not each scan individually.</div>
+                        <div class="hint">Applies to the whole printable page (both images and background together) — not each scan individually. Hold <b>Compare</b> to briefly see the before (original) vs after brightness.</div>
                     </div>
                     <div class="brightness-btn-row">
                         <button type="button" class="btn-scan btn-adjust" id="btnAutoBrightness">Auto Brightness</button>
                         <button type="button" class="btn-scan btn-adjust" id="btnResetBrightness">Reset</button>
+                        <button type="button" class="btn-scan btn-adjust" id="btnCompareBrightness" title="Hold to preview original (unadjusted) brightness">Compare</button>
                     </div>
                 </div>
 
@@ -1424,6 +1425,49 @@
                 setBrightness(100);
                 log("Brightness reset to 100%.");
             });
+
+            // Hold-to-compare: show original brightness while pressed, restore on release
+            (function () {
+                let savedBrightness = null;
+                let comparing = false;
+                const btn = document.getElementById("btnCompareBrightness");
+                const valueEl = document.getElementById("brightnessValue");
+                const page = () => document.getElementById("printPage");
+
+                function showOriginal() {
+                    if (comparing) return;
+                    comparing = true;
+                    savedBrightness = state.brightness;
+                    // Temporarily force unadjusted preview without changing the slider
+                    state.brightness = 100;
+                    if (page()) page().style.filter = "brightness(1)";
+                    if (valueEl) valueEl.textContent = "original";
+                }
+
+                function restoreAdjusted() {
+                    if (!comparing) return;
+                    comparing = false;
+                    state.brightness = savedBrightness;
+                    savedBrightness = null;
+                    if (valueEl) valueEl.textContent = state.brightness + "%";
+                    applyBrightnessFilter();
+                }
+
+                if (btn) {
+                    btn.addEventListener("pointerdown", (e) => {
+                        e.preventDefault();
+                        btn.setPointerCapture(e.pointerId);
+                        showOriginal();
+                    });
+                    btn.addEventListener("pointerup", (e) => {
+                        btn.releasePointerCapture(e.pointerId);
+                        restoreAdjusted();
+                    });
+                    btn.addEventListener("pointercancel", restoreAdjusted);
+                    btn.addEventListener("lostpointercapture", restoreAdjusted);
+                    btn.addEventListener("click", (e) => e.preventDefault());
+                }
+            })();
 
             /* ============================================================
            WORD-STYLE CROP (with 90° rotation)
