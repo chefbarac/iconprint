@@ -700,6 +700,12 @@
                         <button type="button" class="secondary" id="btnResizeMode">Resize</button>
                         <button type="button" class="secondary" id="btnFitCover">Fit Cover</button>
                     </div>
+                    <label style="margin-top: 2px">Image mode</label>
+                    <div class="row" style="margin-bottom: 8px">
+                        <button type="button" class="secondary active-mode" id="btnFitFill" title="Cover frame, crop edges (default)">Fill</button>
+                        <button type="button" class="secondary" id="btnFitContain" title="Fit inside frame, letterbox">Contain</button>
+                        <button type="button" class="secondary" id="btnFitStretch" title="Stretch to fill frame, ignore aspect">Stretch</button>
+                    </div>
                     <div class="row">
                         <button type="button" class="secondary" id="btnRotateL" title="Rotate whole frame 90° CCW">↺ 90° frame</button>
                         <button type="button" class="secondary" id="btnRotateR" title="Rotate whole frame 90° CW">↻ 90° frame</button>
@@ -711,7 +717,10 @@
                     <div class="row" style="margin-top: 6px">
                         <button type="button" class="danger" id="btnDelete" style="width: 100%">Delete</button>
                     </div>
-                    <p class="hint">Shift/Ctrl+click multi-select · drag group together. Arrows nudge all. Del = delete. Esc = deselect. C = crop. S = resize (free size). R = rotate frame. F = fit cover.</p>
+                    <p class="hint">
+                        Image mode: Fill (cover/crop), Contain (fit inside), Stretch (distort). Shift/Ctrl+click multi-select · drag group. Arrows nudge. Del = delete. Esc = deselect. C = crop. S =
+                        resize. R = rotate frame. F = fit cover.
+                    </p>
                 </div>
             </aside>
 
@@ -1239,6 +1248,7 @@
                         name: item.name,
                         presetName: activePreset.name,
                         isFree: isFree,
+                        fitMode: item.fitMode || "fill",
                     };
                     placed.push(inst);
                     createPlacedEl(inst);
@@ -1336,7 +1346,10 @@
                     if (badge) {
                         var fr = Math.round(inst.rotation || 0);
                         var ir = Math.round(inst.imgRotation || 0);
-                        badge.textContent = (inst.presetName || "Free") + " · " + Math.round(inst.w) + "x" + Math.round(inst.h) + " mm" + (fr ? " · F" + fr + "°" : "") + (ir ? " · P" + ir + "°" : "");
+                        var fm = inst.fitMode || "fill";
+                        var modeTag = fm === "contain" ? " · contain" : fm === "stretch" ? " · stretch" : "";
+                        badge.textContent =
+                            (inst.presetName || "Free") + " · " + Math.round(inst.w) + "x" + Math.round(inst.h) + " mm" + modeTag + (fr ? " · F" + fr + "°" : "") + (ir ? " · P" + ir + "°" : "");
                     }
 
                     var guides = el.querySelector(".cut-guides");
@@ -1349,20 +1362,37 @@
                     var natW = inst.naturalW;
                     var natH = inst.naturalH;
                     var rot = ((inst.imgRotation % 360) + 360) % 360;
-                    // when image is rotated 90/270, swap effective aspect for cover calc
+                    // when image is rotated 90/270, swap effective aspect for cover/contain calc
                     var swap = rot === 90 || rot === 270;
                     var effW = swap ? natH : natW;
                     var effH = swap ? natW : natH;
-                    var imgAspect = effW / effH;
-                    var frameAspect = fwPx / fhPx;
+                    var imgAspect = effW / Math.max(1e-6, effH);
+                    var frameAspect = fwPx / Math.max(1e-6, fhPx);
+                    var mode = inst.fitMode || "fill";
 
                     var baseW, baseH;
-                    if (imgAspect > frameAspect) {
-                        baseH = fhPx;
-                        baseW = baseH * imgAspect;
-                    } else {
+                    if (mode === "stretch") {
+                        // ignore aspect — fill frame exactly
                         baseW = fwPx;
-                        baseH = baseW / imgAspect;
+                        baseH = fhPx;
+                    } else if (mode === "contain") {
+                        // fit entire image inside frame (letterbox)
+                        if (imgAspect > frameAspect) {
+                            baseW = fwPx;
+                            baseH = baseW / imgAspect;
+                        } else {
+                            baseH = fhPx;
+                            baseW = baseH * imgAspect;
+                        }
+                    } else {
+                        // fill (cover): scale to cover frame, crop overflow
+                        if (imgAspect > frameAspect) {
+                            baseH = fhPx;
+                            baseW = baseH * imgAspect;
+                        } else {
+                            baseW = fwPx;
+                            baseH = baseW / imgAspect;
+                        }
                     }
 
                     var s = inst.cropScale || 1;
@@ -1400,6 +1430,7 @@
                         selInfo.textContent = selectedIds.length + " frames selected · drag to move together";
                         setCropMode(false);
                         setResizeMode(false);
+                        updateFitModeUI(null);
                     } else if (inst) {
                         selInfo.textContent =
                             inst.name +
@@ -1423,11 +1454,13 @@
                         document.getElementById("lvlContrast").value = inst.contrast;
                         document.getElementById("lvlContrastN").value = inst.contrast;
                         renderPlaced(inst);
+                        updateFitModeUI(inst);
                         if (resizeMode && !isFreeFrame(inst)) setResizeMode(false);
                     } else {
                         selInfo.textContent = "No selection";
                         setCropMode(false);
                         setResizeMode(false);
+                        updateFitModeUI(null);
                     }
                 }
 
@@ -1995,6 +2028,7 @@
                 function fitCover() {
                     var inst = getSelected();
                     if (!inst) return;
+                    inst.fitMode = "fill";
                     inst.cropScale = 1;
                     inst.cropX = 0;
                     inst.cropY = 0;
@@ -2002,9 +2036,45 @@
                     // keep frame rotation
                     renderPlaced(inst);
                     syncSourceTransforms(inst);
-                    setStatus("Reset crop to cover-fit");
+                    updateFitModeUI(inst);
+                    setStatus("Reset to Fill (cover-fit)");
                 }
                 document.getElementById("btnFitCover").addEventListener("click", fitCover);
+
+                function setFitMode(mode) {
+                    var inst = getSelected();
+                    if (!inst) {
+                        setStatus("Select an image first");
+                        return;
+                    }
+                    if (mode !== "fill" && mode !== "contain" && mode !== "stretch") mode = "fill";
+                    inst.fitMode = mode;
+                    // reset pan/zoom when switching mode so framing is predictable
+                    inst.cropScale = 1;
+                    inst.cropX = 0;
+                    inst.cropY = 0;
+                    renderPlaced(inst);
+                    updateFitModeUI(inst);
+                    setStatus("Image mode: " + (mode === "fill" ? "Fill (cover)" : mode === "contain" ? "Contain" : "Stretch"));
+                }
+                function updateFitModeUI(inst) {
+                    var mode = (inst && inst.fitMode) || "fill";
+                    var fillBtn = document.getElementById("btnFitFill");
+                    var containBtn = document.getElementById("btnFitContain");
+                    var stretchBtn = document.getElementById("btnFitStretch");
+                    if (fillBtn) fillBtn.classList.toggle("active-mode", mode === "fill");
+                    if (containBtn) containBtn.classList.toggle("active-mode", mode === "contain");
+                    if (stretchBtn) stretchBtn.classList.toggle("active-mode", mode === "stretch");
+                }
+                document.getElementById("btnFitFill").addEventListener("click", function () {
+                    setFitMode("fill");
+                });
+                document.getElementById("btnFitContain").addEventListener("click", function () {
+                    setFitMode("contain");
+                });
+                document.getElementById("btnFitStretch").addEventListener("click", function () {
+                    setFitMode("stretch");
+                });
 
                 // 90° frame rotation = swap width/height, keep center, rotate image content 90°
                 function rotateFrame90(dir) {
@@ -2636,13 +2706,28 @@
                             var effH = swap ? natW : natH;
                             var imgAspect = effW / Math.max(1e-6, effH);
                             var frameAspect = fw / Math.max(1e-6, fh);
+                            var mode = inst.fitMode || "fill";
                             var baseW, baseH;
-                            if (imgAspect > frameAspect) {
-                                baseH = fh;
-                                baseW = baseH * imgAspect;
-                            } else {
+                            if (mode === "stretch") {
                                 baseW = fw;
-                                baseH = baseW / imgAspect;
+                                baseH = fh;
+                            } else if (mode === "contain") {
+                                if (imgAspect > frameAspect) {
+                                    baseW = fw;
+                                    baseH = baseW / imgAspect;
+                                } else {
+                                    baseH = fh;
+                                    baseW = baseH * imgAspect;
+                                }
+                            } else {
+                                // fill (cover)
+                                if (imgAspect > frameAspect) {
+                                    baseH = fh;
+                                    baseW = baseH * imgAspect;
+                                } else {
+                                    baseW = fw;
+                                    baseH = baseW / imgAspect;
+                                }
                             }
                             var s = inst.cropScale || 1;
                             var dispW = baseW * s;
