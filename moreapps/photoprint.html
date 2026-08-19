@@ -1011,6 +1011,36 @@
                     fileInput.value = "";
                 });
 
+                var pendingNames = {};
+
+                function uniqueImageName(baseName) {
+                    var used = {};
+                    for (var i = 0; i < images.length; i++) {
+                        used[images[i].name] = true;
+                    }
+                    for (var k in pendingNames) {
+                        if (pendingNames[k]) used[k] = true;
+                    }
+                    if (!used[baseName]) {
+                        pendingNames[baseName] = true;
+                        return baseName;
+                    }
+                    var dot = baseName.lastIndexOf(".");
+                    var stem = dot > 0 ? baseName.slice(0, dot) : baseName;
+                    var ext = dot > 0 ? baseName.slice(dot) : "";
+                    // strip existing " (n)" suffix so re-uploads keep clean numbering
+                    var m = stem.match(/^(.*)\s\((\d+)\)$/);
+                    if (m) stem = m[1];
+                    var n = 2;
+                    var candidate;
+                    do {
+                        candidate = stem + " (" + n + ")" + ext;
+                        n++;
+                    } while (used[candidate]);
+                    pendingNames[candidate] = true;
+                    return candidate;
+                }
+
                 function handleFiles(fileList) {
                     Array.prototype.forEach.call(fileList, function (file) {
                         if (!file.type || file.type.indexOf("image/") !== 0) return;
@@ -1019,9 +1049,10 @@
                             prepareImage(ev.target.result, file.name, file.type)
                                 .then(function (prepared) {
                                     var id = nextId++;
+                                    var displayName = uniqueImageName(file.name);
                                     var item = {
                                         id: id,
-                                        name: file.name,
+                                        name: displayName,
                                         src: prepared.dataURL,
                                         originalDataURL: prepared.dataURL,
                                         naturalW: prepared.w,
@@ -1033,8 +1064,9 @@
                                         contrast: 0,
                                     };
                                     images.push(item);
+                                    delete pendingNames[displayName];
                                     addThumb(item);
-                                    setStatus("Loaded: " + file.name + (prepared.hadAlpha ? " (transparency → white)" : ""));
+                                    setStatus("Loaded: " + displayName + (prepared.hadAlpha ? " (transparency → white)" : ""));
                                 })
                                 .catch(function () {
                                     setStatus("Failed to load image");
