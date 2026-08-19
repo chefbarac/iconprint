@@ -1498,7 +1498,7 @@
                     return list;
                 }
 
-                // Sync photo rotation, zoom (crop scale), pan, and flips across every
+                // Sync photo rotation, zoom (crop scale), pan, flips, and fit mode across every
                 // placement that shares the same source imageId (mirrors levels sync).
                 function syncSourceTransforms(fromInst) {
                     if (!fromInst) return;
@@ -1510,6 +1510,7 @@
                         cropY: fromInst.cropY || 0,
                         flipH: !!fromInst.flipH,
                         flipV: !!fromInst.flipV,
+                        fitMode: fromInst.fitMode || "fill",
                     };
                     for (var i = 0; i < placed.length; i++) {
                         var p = placed[i];
@@ -1520,6 +1521,7 @@
                         p.cropY = props.cropY;
                         p.flipH = props.flipH;
                         p.flipV = props.flipV;
+                        p.fitMode = props.fitMode;
                         renderPlaced(p);
                     }
                     for (var j = 0; j < images.length; j++) {
@@ -1530,6 +1532,7 @@
                             images[j].cropY = props.cropY;
                             images[j].flipH = props.flipH;
                             images[j].flipV = props.flipV;
+                            images[j].fitMode = props.fitMode;
                             break;
                         }
                     }
@@ -2054,6 +2057,7 @@
                     inst.cropX = 0;
                     inst.cropY = 0;
                     renderPlaced(inst);
+                    syncSourceTransforms(inst);
                     updateFitModeUI(inst);
                     setStatus("Image mode: " + (mode === "fill" ? "Fill (cover)" : mode === "contain" ? "Contain" : "Stretch"));
                 }
