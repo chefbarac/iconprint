@@ -294,45 +294,6 @@
                     0 2px 6px rgba(0, 0, 0, 0.08);
                 overflow: hidden;
             }
-
-            /* Landscape rectangular loupe (hover inspect) */
-            .loupe {
-                position: fixed;
-                width: 320px;
-                height: 200px;
-                border-radius: 6px;
-                border: 2.5px solid var(--cyan);
-                box-shadow:
-                    0 0 0 1px rgba(255, 255, 255, 0.85),
-                    0 12px 32px rgba(0, 0, 0, 0.28);
-                overflow: hidden;
-                pointer-events: none;
-                z-index: 950;
-                display: none;
-                background: #fff;
-            }
-            .loupe.visible {
-                display: block;
-            }
-            .loupe canvas {
-                display: block;
-                width: 100%;
-                height: 100%;
-            }
-            .loupe .loupe-label {
-                position: absolute;
-                bottom: 6px;
-                right: 8px;
-                font-family: var(--font-mono);
-                font-size: 10px;
-                color: #fff;
-                background: rgba(23, 123, 134, 0.88);
-                padding: 2px 7px;
-                border-radius: 3px;
-                white-space: nowrap;
-                pointer-events: none;
-            }
-
             .page.no-image {
                 display: flex;
                 align-items: center;
@@ -379,21 +340,62 @@
                 left: 0;
                 right: 0;
                 height: 0;
-                border-top: 1.5px dashed var(--accent);
+                border-top: 2.5px dashed var(--accent);
                 pointer-events: none;
                 z-index: 500;
                 display: none;
             }
             .seam-guide span {
                 position: absolute;
-                right: 6px;
-                top: -19px;
+                right: 8px;
+                bottom: 6px; /* sit just above the line = bottom of top portion */
+                font-family: var(--font-mono);
+                font-size: 13px;
+                font-weight: 600;
+                color: #fff;
+                background: var(--accent);
+                padding: 3px 9px;
+                border-radius: 3px;
+                letter-spacing: 0.02em;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+            }
+
+            /* Landscape rectangular loupe (hover inspect) */
+            .loupe {
+                position: fixed;
+                width: 320px;
+                height: 200px;
+                border-radius: 6px;
+                border: 2.5px solid var(--cyan);
+                box-shadow:
+                    0 0 0 1px rgba(255, 255, 255, 0.85),
+                    0 12px 32px rgba(0, 0, 0, 0.28);
+                overflow: hidden;
+                pointer-events: none;
+                z-index: 950;
+                display: none;
+                background: #fff;
+            }
+            .loupe.visible {
+                display: block;
+            }
+            .loupe canvas {
+                display: block;
+                width: 100%;
+                height: 100%;
+            }
+            .loupe .loupe-label {
+                position: absolute;
+                bottom: 6px;
+                right: 8px;
                 font-family: var(--font-mono);
                 font-size: 10px;
-                color: var(--accent);
-                background: #fff;
-                padding: 1px 5px;
-                border-radius: 2px;
+                color: #fff;
+                background: rgba(23, 123, 134, 0.88);
+                padding: 2px 7px;
+                border-radius: 3px;
+                white-space: nowrap;
+                pointer-events: none;
             }
 
             .layer {
@@ -1023,7 +1025,7 @@
 
                 <div class="divider"></div>
                 <p class="hint">Nudge selected layer with arrow keys (<kbd>Shift</kbd> = 10px). Press <kbd>Delete</kbd> to remove it.</p>
-                <p class="hint" style="margin-top: 10px">Hover the page for a 2× landscape magnifier — useful for checking the seam.</p>
+                <p class="hint" style="margin-top: 10px">Hover the page for a 2× landscape magnifier (includes ghost overlay when enabled).</p>
             </aside>
         </div>
 
@@ -1457,9 +1459,12 @@
                 }
 
                 // ---------- Landscape loupe (hover inspect) ----------
+                // Display magnification of the loupe window; source is sampled at 0.25× page
+                // resolution for speed (avoids freezes on large scans).
                 const LOUPE_W = 320;
                 const LOUPE_H = 200;
                 const LOUPE_ZOOM = 0.25;
+                const LOUPE_SAMPLE_SCALE = 0.5;
                 let loupeSource = null;
                 let loupeDirty = true;
 
@@ -1474,8 +1479,8 @@
                         loupeDirty = false;
                         return null;
                     }
-                    const sampleScale = Math.min(1, 1400 / Math.max(state.pageW, state.pageH));
-                    loupeSource = buildStitchedCanvas(sampleScale);
+                    // Include ghost overlay so seam fitment is visible in the loupe
+                    loupeSource = buildStitchedCanvas(LOUPE_SAMPLE_SCALE, false, true);
                     loupeDirty = false;
                     return loupeSource;
                 }
@@ -1524,7 +1529,6 @@
                     ctx.fillRect(0, 0, LOUPE_W, LOUPE_H);
                     ctx.drawImage(src, sx, sy, sw, sh, 0, 0, LOUPE_W, LOUPE_H);
 
-                    // Offset so the loupe doesn't cover the point under the cursor
                     const offset = 18;
                     let left = e.clientX + offset;
                     let top = e.clientY + offset;
@@ -1672,7 +1676,8 @@
                     const top = state.layers.find((l) => l.slot === "top");
                     const bottom = state.layers.find((l) => l.slot === "bottom");
                     if (top && bottom && top.placed && bottom.placed && top.w && bottom.w) {
-                        const seamY = bottom.y;
+                        // Marker at the bottom edge of the top portion (not the top of the bottom scan)
+                        const seamY = top.y + top.h;
                         els.seamGuide.style.display = "block";
                         els.seamGuide.style.top = seamY + "px";
                         const overlapPx = Math.round(top.y + top.h - bottom.y);
@@ -1830,7 +1835,8 @@
                     e.target.addEventListener("pointerup", onUp);
                 }
 
-                // ---------- Overlap slider ----------
+                // ---------- Overlap slider (debounced to avoid freezes) ----------
+                let overlapDebounceTimer = null;
                 els.overlapSlider.addEventListener("input", () => {
                     const val = parseInt(els.overlapSlider.value, 10);
                     els.overlapVal.textContent = val + " px";
@@ -1838,11 +1844,22 @@
                     if (bottom) {
                         const base = state.pageH - bottom.h;
                         bottom.y = base - val;
-                        renderAll();
+                        // Lightweight live update of position + seam without full re-render
+                        const el = els.page.querySelector('.layer[data-id="' + bottom.id + '"]');
+                        if (el) el.style.top = bottom.y + "px";
+                        updateSeamGuide();
+                        invalidateLoupeSource();
                     }
+                    clearTimeout(overlapDebounceTimer);
+                    overlapDebounceTimer = setTimeout(() => {
+                        renderAll();
+                    }, 80);
                 });
 
-                els.ghostToggle.addEventListener("change", renderAll);
+                els.ghostToggle.addEventListener("change", () => {
+                    invalidateLoupeSource();
+                    renderAll();
+                });
 
                 // ---------- Brightness (whole page) ----------
                 els.brightSlider.addEventListener("input", () => {
@@ -1906,6 +1923,8 @@
                 })();
 
                 // ---------- Keyboard nudge ----------
+                // Arrow-key nudge is debounced so holding a key doesn't freeze the UI
+                let arrowDebounceTimer = null;
                 document.addEventListener("keydown", (e) => {
                     const active = document.activeElement;
                     if (active && (active.tagName === "SELECT" || active.tagName === "INPUT")) return;
@@ -1913,15 +1932,40 @@
                     if (!layer) return;
                     const step = e.shiftKey ? 10 : 1;
                     let handled = true;
-                    if (e.key === "ArrowUp") layer.y -= step;
-                    else if (e.key === "ArrowDown") layer.y += step;
-                    else if (e.key === "ArrowLeft") layer.x -= step;
-                    else if (e.key === "ArrowRight") layer.x += step;
-                    else if (e.key === "Delete" || e.key === "Backspace") deleteLayer(layer);
-                    else handled = false;
+                    let isNudge = false;
+                    if (e.key === "ArrowUp") {
+                        layer.y -= step;
+                        isNudge = true;
+                    } else if (e.key === "ArrowDown") {
+                        layer.y += step;
+                        isNudge = true;
+                    } else if (e.key === "ArrowLeft") {
+                        layer.x -= step;
+                        isNudge = true;
+                    } else if (e.key === "ArrowRight") {
+                        layer.x += step;
+                        isNudge = true;
+                    } else if (e.key === "Delete" || e.key === "Backspace") {
+                        deleteLayer(layer);
+                    } else {
+                        handled = false;
+                    }
                     if (handled) {
                         e.preventDefault();
-                        renderAll();
+                        if (isNudge) {
+                            // Instant visual move; full re-render (list, loupe cache) is debounced
+                            const el = els.page.querySelector('.layer[data-id="' + layer.id + '"]');
+                            if (el) {
+                                el.style.left = layer.x + "px";
+                                el.style.top = layer.y + "px";
+                            }
+                            updateSeamGuide();
+                            invalidateLoupeSource();
+                            clearTimeout(arrowDebounceTimer);
+                            arrowDebounceTimer = setTimeout(() => {
+                                renderAll();
+                            }, 80);
+                        }
                     }
                 });
 
@@ -2021,7 +2065,7 @@
                 // ---------- Canvas building (shared by export, print, thumbnails) ----------
                 // skipBrightness=true is used when sampling the page for auto-brightness detection,
                 // so the measurement isn't skewed by a brightness adjustment already in effect.
-                function buildStitchedCanvas(scaleFactor, skipBrightness) {
+                function buildStitchedCanvas(scaleFactor, skipBrightness, withGhost) {
                     scaleFactor = scaleFactor || 1;
                     const canvas = document.createElement("canvas");
                     canvas.width = Math.max(1, Math.round(state.pageW * scaleFactor));
@@ -2038,9 +2082,11 @@
                     ctx.fillStyle = "#FFFFFF";
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                    state.layers.forEach((layer) => {
+                    const useGhost = withGhost && els.ghostToggle && els.ghostToggle.checked && state.layers.length > 1;
+                    state.layers.forEach((layer, idx) => {
                         ctx.save();
-                        ctx.globalAlpha = 1;
+                        // Match on-screen ghost: topmost layer (last in stack) is see-through
+                        ctx.globalAlpha = useGhost && idx === state.layers.length - 1 ? 0.55 : 1;
                         ctx.translate((layer.x + layer.w / 2) * scaleFactor, (layer.y + layer.h / 2) * scaleFactor);
                         ctx.rotate((layer.rot * Math.PI) / 180);
                         const w = layer.w * scaleFactor,
