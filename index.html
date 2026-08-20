@@ -1015,7 +1015,7 @@
                 <div class="field">
                     <div class="field-label"><span>Seam overlap nudge</span><span id="overlapVal">0 px</span></div>
                     <input type="range" id="overlapSlider" min="-300" max="300" value="0" />
-                    <div class="hint">Fine-tunes where the bottom scan sits under the top scan. Drag a layer directly for pixel-perfect alignment.</div>
+                    <div class="hint">Slider right moves the bottom scan lower; left moves it higher (more overlap). Drag a layer directly for pixel-perfect alignment.</div>
                 </div>
 
                 <div class="check-row">
@@ -1689,28 +1689,40 @@
                             return;
                         }
 
-                        setStitchStatus("Analyzing scan overlap…");
+                        setStitchStatus("Analyzing scan overlap (multi-scale)…");
                         // Let the status message paint before the heavier pixel-analysis work.
                         await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
 
-                        const result = computeSmartAlignment(top, bottom);
+                        const result = await computeSmartAlignment(top, bottom);
 
-                        if (result && result.confidence > 0.15) {
-                            bottom.y = state.pageH - bottom.h - result.overlapPx;
+                        if (result && result.confidence > 0.12) {
+                            // Geometric overlap: bottom sits higher by overlapPx → y = base - overlapPx
+                            // Clamp so the bottom scan never climbs more than ~22% of the page
+                            // (long/legal halves share a modest seam, not half the sheet).
+                            const maxOverlap = Math.min(
+                                Math.round(2.0 * state.dpi),
+                                Math.round(state.pageH * 0.22),
+                                Math.round(Math.min(top.h, bottom.h) * 0.28),
+                            );
+                            const minOverlap = Math.round(0.2 * state.dpi);
+                            const overlapPx = Math.max(minOverlap, Math.min(maxOverlap, result.overlapPx));
+
+                            bottom.y = state.pageH - bottom.h - overlapPx;
                             bottom.x = result.dxPx;
-                            bottom.fineRot = result.rot;
+                            bottom.fineRot = 0; // position-only alignment (no rotation)
 
-                            const overlapValClamped = Math.max(-300, Math.min(300, Math.round(result.overlapPx)));
-                            els.overlapSlider.value = overlapValClamped;
-                            els.overlapVal.textContent = Math.round(result.overlapPx) + " px";
+                            // Slider convention: positive = bottom lower. So stored nudge = -overlap.
+                            const nudge = Math.max(-300, Math.min(300, -Math.round(overlapPx)));
+                            els.overlapSlider.value = nudge;
+                            els.overlapVal.textContent = nudge + " px";
 
                             renderAll();
                             setStitchStatus(
                                 "Smart-aligned — overlap " +
-                                    Math.round(result.overlapPx) +
-                                    "px, rotation " +
-                                    result.rot.toFixed(2) +
-                                    "° (confidence " +
+                                    Math.round(overlapPx) +
+                                    "px, shift " +
+                                    Math.round(result.dxPx) +
+                                    "px (confidence " +
                                     Math.round(result.confidence * 100) +
                                     "%).",
                             );
@@ -1726,12 +1738,11 @@
                     }
                 }
 
-                // ---------- Smart stitch: pixel-based alignment ----------
-                // Analyzes the overlapping band between the bottom edge of the top scan and
-                // the top edge of the bottom scan, searching for the vertical overlap (dy),
-                // horizontal shift (dx), and small rotation correction that maximize the
-                // normalized cross-correlation between the two — i.e. the fitment where the
-                // printed content actually lines up, not just where the page edges sit.
+                // ---------- Smart stitch: multi-scale edge + intensity alignment (position only) ----------
+                // Matches the bottom edge of the top scan against the top edge of the bottom
+                // scan using hierarchical (coarse → fine) search over vertical overlap (dy)
+                // and horizontal shift (dx). No rotation. Uses gradient (edge) maps plus
+                // grayscale intensity; takes longer but aims for a stronger, more reliable peak.
                 function drawLayerToSmallCanvas(layer, workScale) {
                     const w = Math.max(1, Math.round(layer.w * workScale));
                     const h = Math.max(1, Math.round(layer.h * workScale));
@@ -1741,6 +1752,8 @@
                     const ctx = canvas.getContext("2d");
                     ctx.fillStyle = "#ffffff";
                     ctx.fillRect(0, 0, w, h);
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = "high";
                     ctx.drawImage(layer.img, 0, 0, w, h);
                     return canvas;
                 }
@@ -1754,48 +1767,45 @@
                     return { data: out, width, height };
                 }
 
-                // Extracts `height` rows starting at row y0 (rows outside the source are NaN,
-                // which correlateOverlap() skips).
-                function getStrip(gray, y0, height) {
-                    const w = gray.width;
+                // Simple gradient magnitude (|dx| + |dy|) — emphasizes text/lines over flat paper.
+                function toGradient(gray) {
+                    const { data, width, height } = gray;
+                    const out = new Float32Array(width * height);
+                    for (let y = 1; y < height - 1; y++) {
+                        const row = y * width;
+                        for (let x = 1; x < width - 1; x++) {
+                            const i = row + x;
+                            const dx = data[i + 1] - data[i - 1];
+                            const dy = data[i + width] - data[i - width];
+                            out[i] = Math.abs(dx) + Math.abs(dy);
+                        }
+                    }
+                    return { data: out, width, height };
+                }
+
+                function getStrip(src, y0, height) {
+                    const w = src.width;
                     const out = new Float32Array(w * height);
                     for (let y = 0; y < height; y++) {
                         const srcY = y0 + y;
-                        if (srcY < 0 || srcY >= gray.height) {
+                        if (srcY < 0 || srcY >= src.height) {
                             for (let x = 0; x < w; x++) out[y * w + x] = NaN;
                             continue;
                         }
                         const rowStart = srcY * w;
                         const outStart = y * w;
-                        for (let x = 0; x < w; x++) out[outStart + x] = gray.data[rowStart + x];
+                        for (let x = 0; x < w; x++) out[outStart + x] = src.data[rowStart + x];
                     }
                     return { data: out, width: w, height };
                 }
 
-                function rotateCanvas(srcCanvas, angleDeg) {
-                    const rad = (angleDeg * Math.PI) / 180;
-                    const w = srcCanvas.width,
-                        h = srcCanvas.height;
-                    const canvas = document.createElement("canvas");
-                    canvas.width = w;
-                    canvas.height = h;
-                    const ctx = canvas.getContext("2d");
-                    ctx.fillStyle = "#ffffff";
-                    ctx.fillRect(0, 0, w, h);
-                    ctx.translate(w / 2, h / 2);
-                    ctx.rotate(rad);
-                    ctx.drawImage(srcCanvas, -w / 2, -h / 2);
-                    return canvas;
-                }
-
-                // Pearson correlation between the last `dy` rows of topStrip (shifted by dx
-                // horizontally) and the first `dy` rows of bottomStrip. Returns null if there
-                // isn't enough valid (in-bounds, non-NaN) overlap to trust the score.
+                // Zero-mean normalized cross-correlation on a rectangular window.
+                // Works on either intensity or gradient strips.
                 function correlateOverlap(topStrip, bottomStrip, w, stripH, dy, dx) {
                     const topStartRow = stripH - dy;
                     const xStart = Math.max(0, -dx);
                     const xEnd = Math.min(w, w - dx);
-                    if (xEnd <= xStart) return null;
+                    if (xEnd <= xStart || dy < 2) return null;
 
                     let sumA = 0,
                         sumB = 0,
@@ -1810,7 +1820,7 @@
                         for (let x = xStart; x < xEnd; x++) {
                             const a = topStrip.data[rowA + x];
                             const b = bottomStrip.data[rowB + x + dx];
-                            if (a !== a || b !== b) continue; // NaN check
+                            if (a !== a || b !== b) continue;
                             sumA += a;
                             sumB += b;
                             sumAB += a * b;
@@ -1821,74 +1831,199 @@
                     }
 
                     const expected = (xEnd - xStart) * dy;
-                    if (n < expected * 0.6) return null;
+                    if (n < expected * 0.55) return null;
 
                     const meanA = sumA / n,
                         meanB = sumB / n;
                     const covAB = sumAB / n - meanA * meanB;
                     const varA = sumA2 / n - meanA * meanA;
                     const varB = sumB2 / n - meanB * meanB;
-                    if (varA <= 1e-6 || varB <= 1e-6) return null;
+                    if (varA <= 1e-8 || varB <= 1e-8) return null;
                     return covAB / Math.sqrt(varA * varB);
                 }
 
-                function computeSmartAlignment(topLayer, bottomLayer) {
-                    const workW = 180; // working resolution for the pixel search — small & fast
-                    const workScale = workW / state.pageW;
+                // Combined score: primarily edges (structure), with a smaller intensity term
+                // so solid regions still contribute when edges are sparse.
+                function scoreAt(topEdge, botEdge, topGray, botGray, w, stripH, dy, dx) {
+                    const se = correlateOverlap(topEdge, botEdge, w, stripH, dy, dx);
+                    if (se === null) return null;
+                    const si = correlateOverlap(topGray, botGray, w, stripH, dy, dx);
+                    if (si === null) return se;
+                    return 0.72 * se + 0.28 * si;
+                }
 
-                    const topCanvas = drawLayerToSmallCanvas(topLayer, workScale);
-                    const bottomCanvas = drawLayerToSmallCanvas(bottomLayer, workScale);
-                    const w = topCanvas.width;
+                // Parabolic sub-pixel peak around integer (dy, dx).
+                function subPixelPeak(scores, bestDy, bestDx, dyMin, dyMax, dxMin, dxMax) {
+                    let dy = bestDy,
+                        dx = bestDx;
+                    const key = (y, x) => y + "," + x;
+                    const s = (y, x) => {
+                        if (y < dyMin || y > dyMax || x < dxMin || x > dxMax) return null;
+                        const v = scores.get(key(y, x));
+                        return v == null ? null : v;
+                    };
+                    const c = s(bestDy, bestDx);
+                    if (c == null) return { dy, dx };
 
-                    const topGrayFull = toGray(topCanvas.getContext("2d").getImageData(0, 0, topCanvas.width, topCanvas.height));
-                    const bottomGrayFull0 = toGray(bottomCanvas.getContext("2d").getImageData(0, 0, bottomCanvas.width, bottomCanvas.height));
-
-                    const maxOverlapPxFull = Math.min(topLayer.h, bottomLayer.h) * 0.35;
-                    const stripH = Math.min(60, Math.max(8, Math.round(maxOverlapPxFull * workScale)));
-                    const minOverlapRows = Math.max(4, Math.round(stripH * 0.15));
-                    const maxDx = Math.round(0.025 * w) + 3;
-
-                    const topStrip = getStrip(topGrayFull, topGrayFull.height - stripH, stripH);
-                    const bottomStrip0 = getStrip(bottomGrayFull0, 0, stripH);
-
-                    // Coarse search: translation only (dy = overlap amount, dx = horizontal shift)
-                    let best = { score: -Infinity, dy: Math.round(stripH * 0.5), dx: 0, rot: 0 };
-                    for (let dy = minOverlapRows; dy <= stripH; dy++) {
-                        for (let dx = -maxDx; dx <= maxDx; dx++) {
-                            const score = correlateOverlap(topStrip, bottomStrip0, w, stripH, dy, dx);
-                            if (score !== null && score > best.score) {
-                                best = { score, dy, dx, rot: 0 };
-                            }
+                    const yl = s(bestDy - 1, bestDx),
+                        yr = s(bestDy + 1, bestDx);
+                    if (yl != null && yr != null) {
+                        const denom = yl - 2 * c + yr;
+                        if (Math.abs(denom) > 1e-9) {
+                            const delta = 0.5 * (yl - yr) / denom;
+                            if (delta > -1 && delta < 1) dy = bestDy + delta;
                         }
                     }
+                    const xl = s(bestDy, bestDx - 1),
+                        xr = s(bestDy, bestDx + 1);
+                    if (xl != null && xr != null) {
+                        const denom = xl - 2 * c + xr;
+                        if (Math.abs(denom) > 1e-9) {
+                            const delta = 0.5 * (xl - xr) / denom;
+                            if (delta > -1 && delta < 1) dx = bestDx + delta;
+                        }
+                    }
+                    return { dy, dx };
+                }
 
-                    // Refine with small rotation corrections around the coarse best fit —
-                    // handles slight skew between the two scans (crooked feed, hand-scanned, etc).
-                    const rotCandidates = [-3, -2.25, -1.5, -0.75, 0.75, 1.5, 2.25, 3];
-                    let bestOverall = best;
-                    for (const rot of rotCandidates) {
-                        const rotatedCanvas = rotateCanvas(bottomCanvas, rot);
-                        const rotatedGray = toGray(rotatedCanvas.getContext("2d").getImageData(0, 0, rotatedCanvas.width, rotatedCanvas.height));
-                        const rotatedStrip = getStrip(rotatedGray, 0, stripH);
+                async function computeSmartAlignment(topLayer, bottomLayer) {
+                    // Long / legal bond paper: top + bottom halves usually share only a modest
+                    // seam band (roughly 0.3"–1.75"). Searching much larger overlaps tends to
+                    // latch onto repeating headers/footers or blank regions and push the
+                    // bottom scan way up the page.
+                    const dpi = state.dpi || 300;
+                    const minOverlapFull = Math.round(0.25 * dpi); // ~0.25"
+                    const maxOverlapFull = Math.min(
+                        Math.round(2.0 * dpi), // hard cap ~2"
+                        Math.round(Math.min(topLayer.h, bottomLayer.h) * 0.28),
+                        Math.round(state.pageH * 0.22),
+                    );
 
-                        const dyLo = Math.max(minOverlapRows, best.dy - 3);
-                        const dyHi = Math.min(stripH, best.dy + 3);
-                        for (let dy = dyLo; dy <= dyHi; dy++) {
-                            for (let dx = best.dx - 3; dx <= best.dx + 3; dx++) {
-                                const score = correlateOverlap(topStrip, rotatedStrip, w, stripH, dy, dx);
-                                if (score !== null && score > bestOverall.score) {
-                                    bestOverall = { score, dy, dx, rot };
+                    // Hierarchical scales. dy search is always clamped to realistic seam sizes.
+                    const scales = [
+                        { workW: 180, maxDxFrac: 0.06, step: 2 },
+                        { workW: 400, maxDxFrac: 0.04, step: 1 },
+                        { workW: 700, maxDxFrac: 0.028, step: 1 },
+                    ];
+
+                    let bestFull = { overlapPx: 0, dxPx: 0, confidence: -Infinity, rot: 0 };
+                    let prevDyPx = null;
+                    let prevDxPx = null;
+
+                    for (let si = 0; si < scales.length; si++) {
+                        const cfg = scales[si];
+                        const workScale = cfg.workW / state.pageW;
+                        const topCanvas = drawLayerToSmallCanvas(topLayer, workScale);
+                        const bottomCanvas = drawLayerToSmallCanvas(bottomLayer, workScale);
+                        const w = topCanvas.width;
+
+                        const topGrayFull = toGray(topCanvas.getContext("2d").getImageData(0, 0, topCanvas.width, topCanvas.height));
+                        const botGrayFull = toGray(bottomCanvas.getContext("2d").getImageData(0, 0, bottomCanvas.width, bottomCanvas.height));
+                        const topEdgeFull = toGradient(topGrayFull);
+                        const botEdgeFull = toGradient(botGrayFull);
+
+                        // Strip height covers the max realistic overlap (+ a little margin).
+                        const stripH = Math.max(
+                            12,
+                            Math.round(maxOverlapFull * workScale) + 4,
+                        );
+                        const minOverlapRows = Math.max(3, Math.round(minOverlapFull * workScale));
+                        const maxOverlapRows = Math.min(stripH, Math.round(maxOverlapFull * workScale));
+                        const maxDx = Math.round(cfg.maxDxFrac * w) + 4;
+
+                        const topEdge = getStrip(topEdgeFull, topEdgeFull.height - stripH, stripH);
+                        const botEdge = getStrip(botEdgeFull, 0, stripH);
+                        const topGray = getStrip(topGrayFull, topGrayFull.height - stripH, stripH);
+                        const botGray = getStrip(botGrayFull, 0, stripH);
+
+                        // Search window: full realistic range at coarse; narrowed later.
+                        let dyLo = minOverlapRows;
+                        let dyHi = maxOverlapRows;
+                        let dxLo = -maxDx;
+                        let dxHi = maxDx;
+                        if (prevDyPx != null) {
+                            const centerDy = Math.round(prevDyPx * workScale);
+                            const centerDx = Math.round(prevDxPx * workScale);
+                            const radiusDy = Math.max(5, Math.round((maxOverlapRows - minOverlapRows) * 0.18));
+                            const radiusDx = Math.max(4, Math.round(maxDx * 0.4));
+                            dyLo = Math.max(minOverlapRows, centerDy - radiusDy);
+                            dyHi = Math.min(maxOverlapRows, centerDy + radiusDy);
+                            dxLo = Math.max(-maxDx, centerDx - radiusDx);
+                            dxHi = Math.min(maxDx, centerDx + radiusDx);
+                        }
+
+                        const scores = new Map();
+                        let best = { score: -Infinity, dy: Math.round((dyLo + dyHi) / 2), dx: 0 };
+                        let second = -Infinity;
+                        const step = cfg.step;
+
+                        // Prefer smaller overlaps when scores are nearly equal (avoids
+                        // "bottom way above" from weak matches on large blank bands).
+                        function consider(dy, dx, score) {
+                            if (score == null) return;
+                            scores.set(dy + "," + dx, score);
+                            const better =
+                                score > best.score + 0.012 ||
+                                (score > best.score - 0.008 && dy < best.dy);
+                            if (better) {
+                                if (score < best.score) {
+                                    /* kept for smaller-dy preference within margin */
+                                } else if (score > best.score) {
+                                    second = best.score;
+                                }
+                                best = { score, dy, dx };
+                            } else if (score > second) {
+                                second = score;
+                            }
+                        }
+
+                        for (let dy = dyLo; dy <= dyHi; dy += step) {
+                            for (let dx = dxLo; dx <= dxHi; dx += step) {
+                                consider(dy, dx, scoreAt(topEdge, botEdge, topGray, botGray, w, stripH, dy, dx));
+                            }
+                        }
+
+                        // Neighbors for sub-pixel when stride > 1
+                        if (step > 1) {
+                            for (let dy = Math.max(dyLo, best.dy - 1); dy <= Math.min(dyHi, best.dy + 1); dy++) {
+                                for (let dx = Math.max(dxLo, best.dx - 1); dx <= Math.min(dxHi, best.dx + 1); dx++) {
+                                    if (scores.has(dy + "," + dx)) continue;
+                                    consider(dy, dx, scoreAt(topEdge, botEdge, topGray, botGray, w, stripH, dy, dx));
                                 }
                             }
                         }
+
+                        // Dense local refine
+                        for (let dy = Math.max(dyLo, best.dy - 2); dy <= Math.min(dyHi, best.dy + 2); dy++) {
+                            for (let dx = Math.max(dxLo, best.dx - 2); dx <= Math.min(dxHi, best.dx + 2); dx++) {
+                                if (scores.has(dy + "," + dx)) continue;
+                                consider(dy, dx, scoreAt(topEdge, botEdge, topGray, botGray, w, stripH, dy, dx));
+                            }
+                        }
+
+                        const sub = subPixelPeak(scores, best.dy, best.dx, dyLo, dyHi, dxLo, dxHi);
+                        let overlapPx = sub.dy / workScale;
+                        let dxPx = sub.dx / workScale;
+
+                        // Clamp to the realistic full-resolution band
+                        overlapPx = Math.max(minOverlapFull, Math.min(maxOverlapFull, overlapPx));
+
+                        let conf = best.score;
+                        if (second > -Infinity && best.score > second) {
+                            const gap = best.score - second;
+                            conf = Math.min(1, best.score + 0.12 * Math.min(gap, 0.35));
+                        }
+                        // Soft penalty if the peak is still weak (blank / noisy seam)
+                        if (conf < 0.2) conf *= 0.85;
+
+                        bestFull = { overlapPx, dxPx, confidence: conf, rot: 0 };
+                        prevDyPx = overlapPx;
+                        prevDxPx = dxPx;
+
+                        await new Promise((r) => setTimeout(r, 0));
                     }
 
-                    return {
-                        overlapPx: bestOverall.dy / workScale,
-                        dxPx: bestOverall.dx / workScale,
-                        rot: bestOverall.rot,
-                        confidence: bestOverall.score,
-                    };
+                    return bestFull;
                 }
 
                 // ---------- Rendering ----------
@@ -2121,7 +2256,8 @@
                     const bottom = state.layers.find((l) => l.slot === "bottom");
                     if (bottom) {
                         const base = state.pageH - bottom.h;
-                        bottom.y = base - val;
+                        // Positive val (slider right) moves the bottom scan lower (increases y).
+                        bottom.y = base + val;
                         // Lightweight live update of position + seam without full re-render
                         const el = els.page.querySelector('.layer[data-id="' + bottom.id + '"]');
                         if (el) el.style.top = bottom.y + "px";
