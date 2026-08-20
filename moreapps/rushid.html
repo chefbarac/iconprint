@@ -34,6 +34,7 @@
                 --gap: 0in;
                 --pad: 0.2in;
                 --guide-color: rgba(30, 40, 50, 0.186);
+                --sidebar-w: 360px;
             }
             * {
                 box-sizing: border-box;
@@ -53,133 +54,75 @@
                     Arial,
                     sans-serif;
                 color: var(--ink);
-                padding: 12px 12px 40px;
-                min-height: 100vh;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
             }
 
             h1 {
-                font-size: 18px;
+                font-size: 20px;
                 letter-spacing: 0.02em;
                 margin: 0;
             }
             .eyebrow {
-                font-size: 10px;
+                font-size: 11px;
                 text-transform: uppercase;
                 letter-spacing: 0.14em;
                 color: var(--accent);
                 font-weight: 700;
-                margin: 0 0 2px;
+                margin: 0 0 4px;
             }
             .header-wrap {
-                margin: 0 0 12px;
-                display: flex;
-                align-items: baseline;
-                justify-content: space-between;
-                gap: 12px;
-                flex-wrap: wrap;
+                margin: 0 0 18px;
             }
             .header-wrap p {
                 margin: 2px 0 0;
-                font-size: 12px;
+                font-size: 13px;
                 color: #5a6672;
             }
 
-            /* ---------- Main side-by-side layout ---------- */
-            .main-layout {
-                display: flex;
-                gap: 18px;
-                align-items: flex-start;
-                max-width: 1600px;
-                margin: 0 auto;
+            .promo-frame {
+                flex: 0 0 auto;
+                border: none;
+                width: 100%;
             }
-            .controls-panel {
-                flex: 0 0 340px;
-                max-width: 340px;
-                position: sticky;
-                top: 12px;
-                max-height: calc(100vh - 24px);
-                overflow-y: auto;
-                scrollbar-width: thin;
-            }
-            .canvas-panel {
+
+            /* ---------- App layout ---------- */
+            .app-layout {
                 flex: 1 1 auto;
-                min-width: 0;
+                min-height: 0;
                 display: flex;
-                flex-direction: column;
-                gap: 10px;
-            }
-            .zoom-bar {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                background: #fff;
-                border: 1px solid var(--line);
-                border-radius: 8px;
-                padding: 8px 14px;
-                flex-wrap: wrap;
-            }
-            .zoom-bar label {
-                font-size: 11px;
-                font-weight: 700;
-                text-transform: uppercase;
-                letter-spacing: 0.06em;
-                color: #5a6672;
-                white-space: nowrap;
-            }
-            .zoom-bar input[type="range"] {
-                flex: 1;
-                min-width: 80px;
-                max-width: 180px;
-                accent-color: var(--accent);
-            }
-            .zoom-bar .zoom-val {
-                font-size: 12px;
-                font-weight: 600;
-                min-width: 42px;
-                color: var(--ink);
-            }
-            .zoom-bar button {
-                padding: 6px 10px;
-                font-size: 12px;
-            }
-            .canvas-scroll {
-                overflow: auto;
-                background: #e4e8ea;
-                border: 1px solid var(--line);
-                border-radius: 8px;
-                padding: 20px;
-                max-height: calc(100vh - 120px);
-                display: flex;
-                justify-content: center;
-                align-items: flex-start;
-            }
-            .sheet-scale-wrap {
-                /* sized by JS to visual (scaled) dimensions */
-                flex-shrink: 0;
-            }
-            .sheet-scale-inner {
-                transform-origin: top left;
-                transition: transform 0.12s ease;
-                will-change: transform;
+                overflow: hidden;
             }
 
-            /* ---------- Toolbar ---------- */
-            .toolbar {
+            /* ---------- Sidebar (controls) ---------- */
+            .sidebar {
+                flex: 0 0 var(--sidebar-w);
+                width: var(--sidebar-w);
+                max-width: 100%;
+                overflow-y: auto;
                 background: #fff;
-                border: 1px solid var(--line);
-                border-radius: 10px;
-                padding: 14px 16px;
-                display: flex;
-                flex-direction: column;
-                gap: 14px;
+                border-right: 1px solid var(--line);
+                padding: 20px 18px 60px;
+            }
+
+            .toolbar {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 18px;
             }
             .field {
                 display: flex;
                 flex-direction: column;
-                gap: 5px;
+                gap: 6px;
+                background: #fbfcfc;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                padding: 12px 12px 14px;
             }
             .field label {
-                font-size: 10px;
+                font-size: 11px;
                 font-weight: 700;
                 text-transform: uppercase;
                 letter-spacing: 0.06em;
@@ -190,10 +133,10 @@
             .field select {
                 border: 1px solid var(--line);
                 border-radius: 6px;
-                padding: 7px 9px;
-                font-size: 13px;
+                padding: 8px 10px;
+                font-size: 14px;
                 font-family: inherit;
-                background: #fbfcfc;
+                background: #fff;
             }
             .field input:focus,
             .field select:focus {
@@ -202,18 +145,18 @@
             }
             .btnrow {
                 display: flex;
-                gap: 6px;
+                gap: 8px;
                 flex-wrap: wrap;
             }
 
             button {
                 font-family: inherit;
-                font-size: 12px;
+                font-size: 13px;
                 font-weight: 600;
                 cursor: pointer;
                 border-radius: 6px;
                 border: 1px solid var(--accent);
-                padding: 8px 12px;
+                padding: 9px 14px;
                 background: var(--accent);
                 color: #fff;
                 transition: background 0.15s ease;
@@ -242,8 +185,8 @@
             }
             button.primary-wide {
                 width: 100%;
-                padding: 10px 12px;
-                font-size: 13px;
+                padding: 11px 14px;
+                font-size: 14px;
             }
 
             .checkline {
@@ -391,6 +334,78 @@
                 pointer-events: none;
             }
 
+            /* ---------- Canvas area (right side) ---------- */
+            .canvas-area {
+                flex: 1 1 auto;
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+
+            .zoom-toolbar {
+                flex: 0 0 auto;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 18px;
+                background: #fff;
+                border-bottom: 1px solid var(--line);
+                flex-wrap: wrap;
+            }
+            .zoom-toolbar .zoom-label {
+                font-size: 11px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                color: #5a6672;
+                margin-right: 2px;
+            }
+            .zoom-btn {
+                width: 30px;
+                height: 30px;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 16px;
+                line-height: 1;
+            }
+            #zoomSlider {
+                width: 130px;
+            }
+            .zoom-pct {
+                font-size: 13px;
+                font-weight: 700;
+                min-width: 44px;
+                text-align: center;
+            }
+            .zoom-hint {
+                font-size: 11px;
+                color: #8a95a0;
+                margin-left: auto;
+                white-space: nowrap;
+            }
+            @media (max-width: 900px) {
+                .zoom-hint {
+                    display: none;
+                }
+            }
+
+            .zoom-viewport {
+                flex: 1 1 auto;
+                overflow: auto;
+                background: var(--paper);
+                padding: 32px;
+            }
+            .zoom-stage {
+                display: inline-block;
+                /* zoom is applied here via JS; using the CSS `zoom` property (not transform)
+                   forces the browser to re-layout and re-rasterize raster images at the
+                   target size, instead of stretching an already-rasterized compositor
+                   layer — this keeps the customer-facing preview crisp at any zoom level. */
+            }
+
             /* ---------- Sheet ---------- */
             .sheet-wrapper {
                 display: flex;
@@ -401,7 +416,7 @@
                 min-height: 11.69in;
                 background: #fff;
                 padding: var(--pad);
-                box-shadow: 0 4px 18px rgba(0, 0, 0, 0.16);
+                box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
                 border-radius: 2px;
             }
 
@@ -435,23 +450,6 @@
             }
             .section.full-width {
                 width: 100%;
-            }
-
-            /* Responsive: stack on narrow screens */
-            @media (max-width: 900px) {
-                .main-layout {
-                    flex-direction: column;
-                }
-                .controls-panel {
-                    flex: none;
-                    max-width: none;
-                    width: 100%;
-                    position: static;
-                    max-height: none;
-                }
-                .canvas-scroll {
-                    max-height: none;
-                }
             }
 
             .cell {
@@ -532,6 +530,30 @@
                 flex-shrink: 0;
             }
 
+            /* ---------- Responsive: stack sidebar above canvas on narrow screens ---------- */
+            @media (max-width: 900px) {
+                .app-layout {
+                    flex-direction: column;
+                    overflow: auto;
+                }
+                .sidebar {
+                    flex: 0 0 auto;
+                    width: 100%;
+                    max-height: 48vh;
+                    border-right: none;
+                    border-bottom: 1px solid var(--line);
+                }
+                .canvas-area {
+                    flex: 1 1 auto;
+                    min-height: 50vh;
+                }
+                body {
+                    height: auto;
+                    min-height: 100vh;
+                    overflow: auto;
+                }
+            }
+
             /* ---------- Print ---------- */
             @page {
                 size: A4;
@@ -542,27 +564,31 @@
                     background: #fff;
                     padding: 0;
                     margin: 0;
+                    display: block;
+                    height: auto;
+                    overflow: visible;
                 }
                 .no-print {
                     display: none !important;
                 }
-                .main-layout {
+                .app-layout {
                     display: block;
+                    overflow: visible;
                 }
-                .controls-panel,
-                .zoom-bar,
-                .canvas-scroll {
+                .sidebar {
                     display: none !important;
                 }
-                .canvas-panel {
+                .canvas-area {
                     display: block;
+                    overflow: visible;
                 }
-                .sheet-scale-wrap,
-                .sheet-scale-inner {
-                    width: auto !important;
-                    height: auto !important;
-                    transform: none !important;
-                    overflow: visible !important;
+                .zoom-viewport {
+                    overflow: visible;
+                    padding: 0;
+                }
+                .zoom-stage {
+                    zoom: 1 !important;
+                    display: block;
                 }
                 .sheet-wrapper {
                     display: block;
@@ -582,17 +608,15 @@
         </style>
     </head>
     <body>
-        <iframe src="https://chefbarac.github.io/promo-banner/" width="100%" height="72" style="border: none; border-radius: 12px; overflow: hidden" loading="lazy" class="no-print"> </iframe>
+        <iframe class="promo-frame no-print" src="https://chefbarac.github.io/promo-banner/" width="100%" height="72" style="border: none; border-radius: 0" loading="lazy"> </iframe>
 
-        <div class="main-layout">
-            <!-- ================= LEFT: CONTROLS ================= -->
-            <div class="controls-panel no-print">
+        <div class="app-layout">
+            <!-- ================= SIDEBAR (CONTROLS) ================= -->
+            <div class="sidebar no-print">
                 <div class="header-wrap">
-                    <div>
-                        <p class="eyebrow">Rush ID · Print Sheet Generator</p>
-                        <h1>Auto Layout</h1>
-                        <p>Capture or upload a photo, crop it, add a name and signature, and print a ready-to-cut A4 sheet.</p>
-                    </div>
+                    <p class="eyebrow">Rush ID · Print Sheet Generator</p>
+                    <h1>Auto Layout</h1>
+                    <p>Capture or upload a photo, crop it, add a name and signature, and print a ready-to-cut A4 sheet.</p>
                 </div>
 
                 <div class="toolbar">
@@ -693,29 +717,28 @@
                 </div>
             </div>
 
-            <!-- ================= RIGHT: CANVAS ================= -->
-            <div class="canvas-panel">
-                <div class="zoom-bar no-print">
-                    <label for="zoomSlider">Zoom</label>
-                    <button type="button" id="btnZoomOut" class="ghost" title="Zoom out">−</button>
-                    <input type="range" id="zoomSlider" min="30" max="150" value="70" />
-                    <button type="button" id="btnZoomIn" class="ghost" title="Zoom in">+</button>
-                    <span class="zoom-val"><span id="zoomVal">70</span>%</span>
-                    <button type="button" id="btnZoomFit" class="ghost">Fit</button>
-                    <button type="button" id="btnZoom100" class="ghost">100%</button>
+            <!-- ================= CANVAS AREA (PREVIEW) ================= -->
+            <div class="canvas-area">
+                <div class="zoom-toolbar no-print">
+                    <span class="zoom-label">Zoom</span>
+                    <button type="button" id="zoomOutBtn" class="ghost zoom-btn" title="Zoom out">−</button>
+                    <input type="range" id="zoomSlider" min="25" max="300" step="5" value="100" />
+                    <button type="button" id="zoomInBtn" class="ghost zoom-btn" title="Zoom in">+</button>
+                    <span class="zoom-pct" id="zoomPct">100%</span>
+                    <button type="button" id="zoomResetBtn" class="ghost">100%</button>
+                    <button type="button" id="zoomFitBtn" class="ghost">Fit width</button>
+                    <span class="zoom-hint">Tip: hold Ctrl / ⌘ and scroll to zoom</span>
                 </div>
-                <div class="canvas-scroll" id="canvasScroll">
-                    <div class="sheet-scale-wrap" id="sheetScaleWrap">
-                        <div class="sheet-scale-inner" id="sheetScaleInner">
-                            <div class="sheet-wrapper">
-                                <div class="sheet" id="sheet">
-                                    <div class="layout-row">
-                                        <div class="block" id="blockA">
-                                            <div class="section" id="sectionA"></div>
-                                        </div>
-                                        <div class="block" id="blockB">
-                                            <div class="section" id="sectionB"></div>
-                                        </div>
+                <div class="zoom-viewport" id="zoomViewport">
+                    <div class="zoom-stage" id="zoomStage">
+                        <div class="sheet-wrapper">
+                            <div class="sheet" id="sheet">
+                                <div class="layout-row">
+                                    <div class="block" id="blockA">
+                                        <div class="section" id="sectionA"></div>
+                                    </div>
+                                    <div class="block" id="blockB">
+                                        <div class="section" id="sectionB"></div>
                                     </div>
                                 </div>
                             </div>
@@ -835,6 +858,16 @@
                 const blockB = document.getElementById("blockB");
                 const sectionA = document.getElementById("sectionA");
                 const sectionB = document.getElementById("sectionB");
+
+                // Zoom / canvas
+                const zoomViewport = document.getElementById("zoomViewport");
+                const zoomStage = document.getElementById("zoomStage");
+                const zoomOutBtn = document.getElementById("zoomOutBtn");
+                const zoomInBtn = document.getElementById("zoomInBtn");
+                const zoomResetBtn = document.getElementById("zoomResetBtn");
+                const zoomFitBtn = document.getElementById("zoomFitBtn");
+                const zoomSlider = document.getElementById("zoomSlider");
+                const zoomPct = document.getElementById("zoomPct");
 
                 // Crop modal
                 const cropModal = document.getElementById("cropModal");
@@ -1095,15 +1128,19 @@
                     const sw = boxState.w * scaleX;
                     const sh = boxState.h * scaleY;
 
-                    const OUT_W = 700;
+                    // Export at a high resolution so the photo still looks sharp when the
+                    // customer zooms in on the preview to inspect it before printing.
+                    const OUT_W = 1400;
                     const OUT_H = Math.round(OUT_W / cropRatio);
                     const canvas = document.createElement("canvas");
                     canvas.width = OUT_W;
                     canvas.height = OUT_H;
                     const ctx = canvas.getContext("2d");
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = "high";
                     ctx.drawImage(cropImg, sx, sy, sw, sh, 0, 0, OUT_W, OUT_H);
 
-                    currentPhoto = canvas.toDataURL("image/jpeg", 0.92);
+                    currentPhoto = canvas.toDataURL("image/jpeg", 0.95);
                     photoThumb.src = currentPhoto;
                     photoThumb.style.display = "block";
                     thumbPlaceholder.style.display = "none";
@@ -1242,10 +1279,6 @@
                     updateNameFontStyle();
                     applyLabelFonts();
                     updateSignatureStyle();
-                    // Keep zoom sizing in sync after layout rebuild
-                    if (typeof applyZoom === "function" && zoomSlider) {
-                        applyZoom(parseFloat(zoomSlider.value) || 70);
-                    }
                 }
 
                 // Shrink-to-fit text sizing using canvas measurement
@@ -1360,6 +1393,59 @@
                     return px || 96;
                 }
 
+                // ---------------- Zoom (crisp, non-blurry preview) ----------------
+                // Uses the CSS `zoom` property rather than `transform: scale()`. `zoom`
+                // triggers an actual re-layout at the new size, so the browser re-decodes
+                // / re-samples the underlying photo and signature images at the zoomed-in
+                // resolution instead of stretching a fixed-resolution compositor layer —
+                // that's what keeps the preview sharp when the customer inspects it closely.
+                const ZOOM_MIN = 0.25;
+                const ZOOM_MAX = 3;
+                let zoomLevel = 1;
+
+                function clampZoom(v) {
+                    return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, v));
+                }
+
+                function applyZoom(newLevel) {
+                    zoomLevel = clampZoom(newLevel);
+                    zoomStage.style.zoom = zoomLevel;
+                    const pctVal = Math.round(zoomLevel * 100);
+                    zoomPct.textContent = pctVal + "%";
+                    zoomSlider.value = Math.round(clampZoom(zoomLevel) * 100);
+                }
+
+                function fitZoomToWidth() {
+                    const ppi = pxPerInch();
+                    const sheetWidthPx = 8.27 * ppi;
+                    const available = zoomViewport.clientWidth - 64; // account for viewport padding
+                    if (sheetWidthPx <= 0 || available <= 0) return;
+                    applyZoom(available / sheetWidthPx);
+                }
+
+                zoomInBtn.addEventListener("click", () => applyZoom(zoomLevel + 0.1));
+                zoomOutBtn.addEventListener("click", () => applyZoom(zoomLevel - 0.1));
+                zoomResetBtn.addEventListener("click", () => applyZoom(1));
+                zoomFitBtn.addEventListener("click", fitZoomToWidth);
+                zoomSlider.addEventListener("input", () => applyZoom(parseInt(zoomSlider.value, 10) / 100));
+
+                zoomViewport.addEventListener(
+                    "wheel",
+                    (e) => {
+                        if (!(e.ctrlKey || e.metaKey)) return; // plain scroll pans normally
+                        e.preventDefault();
+                        const step = e.deltaY < 0 ? 0.1 : -0.1;
+                        applyZoom(zoomLevel + step);
+                    },
+                    { passive: false },
+                );
+
+                let resizeTimer = null;
+                window.addEventListener("resize", () => {
+                    clearTimeout(resizeTimer);
+                    resizeTimer = setTimeout(fitZoomToWidth, 150);
+                });
+
                 // ---------------- Print / reset ----------------
                 btnPrint.addEventListener("click", () => window.print());
 
@@ -1378,76 +1464,9 @@
                     generateLayout();
                 });
 
-                // ---------------- Canvas zoom ----------------
-                const zoomSlider = document.getElementById("zoomSlider");
-                const zoomVal = document.getElementById("zoomVal");
-                const sheetScaleWrap = document.getElementById("sheetScaleWrap");
-                const canvasScroll = document.getElementById("canvasScroll");
-                const btnZoomIn = document.getElementById("btnZoomIn");
-                const btnZoomOut = document.getElementById("btnZoomOut");
-                const btnZoomFit = document.getElementById("btnZoomFit");
-                const btnZoom100 = document.getElementById("btnZoom100");
-
-                const sheetScaleInner = document.getElementById("sheetScaleInner");
-
-                function applyZoom(pct) {
-                    pct = Math.max(30, Math.min(150, pct));
-                    zoomSlider.value = pct;
-                    zoomVal.textContent = Math.round(pct);
-                    const scale = pct / 100;
-                    const sheet = document.getElementById("sheet");
-                    if (!sheet || !sheetScaleInner) return;
-
-                    // Temporarily clear transform to measure natural size
-                    sheetScaleInner.style.transform = "none";
-                    const w = sheet.offsetWidth;
-                    const h = sheet.offsetHeight;
-
-                    // Outer box = visual size after scale (so scrollbars match what you see)
-                    sheetScaleWrap.style.width = w * scale + "px";
-                    sheetScaleWrap.style.height = h * scale + "px";
-                    sheetScaleWrap.style.overflow = "hidden";
-
-                    // Inner keeps original layout size and is visually scaled from top-left
-                    sheetScaleInner.style.width = w + "px";
-                    sheetScaleInner.style.height = h + "px";
-                    sheetScaleInner.style.transformOrigin = "top left";
-                    sheetScaleInner.style.transform = "scale(" + scale + ")";
-                }
-
-                zoomSlider.addEventListener("input", () => applyZoom(parseFloat(zoomSlider.value)));
-                btnZoomIn.addEventListener("click", () => applyZoom(parseFloat(zoomSlider.value) + 10));
-                btnZoomOut.addEventListener("click", () => applyZoom(parseFloat(zoomSlider.value) - 10));
-                btnZoom100.addEventListener("click", () => applyZoom(100));
-                btnZoomFit.addEventListener("click", () => {
-                    const sheet = document.getElementById("sheet");
-                    if (!sheet || !canvasScroll) return;
-                    // Measure natural size
-                    if (sheetScaleInner) sheetScaleInner.style.transform = "none";
-                    const availW = canvasScroll.clientWidth - 40;
-                    const availH = canvasScroll.clientHeight - 40;
-                    const sheetW = sheet.offsetWidth || 794;
-                    const sheetH = sheet.offsetHeight || 1123;
-                    const fit = Math.min(availW / sheetW, availH / sheetH, 1.5) * 100;
-                    applyZoom(Math.max(30, Math.min(150, Math.floor(fit))));
-                });
-
-                // Ctrl/Cmd + wheel to zoom
-                canvasScroll.addEventListener(
-                    "wheel",
-                    (e) => {
-                        if (e.ctrlKey || e.metaKey) {
-                            e.preventDefault();
-                            const delta = e.deltaY > 0 ? -5 : 5;
-                            applyZoom(parseFloat(zoomSlider.value) + delta);
-                        }
-                    },
-                    { passive: false }
-                );
-
                 // ---------------- Init ----------------
                 generateLayout();
-                applyZoom(70);
+                fitZoomToWidth();
             })();
         </script>
         <script>
