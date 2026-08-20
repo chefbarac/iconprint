@@ -1,5 +1,5 @@
 const PREFIX = 'iconprint-cache';
-const CACHE_NAME = PREFIX + '-v1.9.13';
+const CACHE_NAME = PREFIX + '-v1.9.14';
 const PRECACHE_URLS = [
     './',
 ];

@@ -579,6 +579,10 @@
                 line-height: 1.5;
                 margin-top: 4px;
             }
+            .hint.warn {
+                color: var(--accent);
+                font-weight: 600;
+            }
             .divider {
                 height: 1px;
                 background: var(--line);
@@ -1002,6 +1006,12 @@
 
                 <div class="divider"></div>
 
+                <div class="check-row">
+                    <input type="checkbox" id="smartStitchToggle" checked />
+                    <label for="smartStitchToggle">Smart stitch (auto pixel alignment)</label>
+                </div>
+                <div class="hint" id="stitchStatus"></div>
+
                 <div class="field">
                     <div class="field-label"><span>Seam overlap nudge</span><span id="overlapVal">0 px</span></div>
                     <input type="range" id="overlapSlider" min="-300" max="300" value="0" />
@@ -1382,6 +1392,8 @@
                     overlapSlider: document.getElementById("overlapSlider"),
                     overlapVal: document.getElementById("overlapVal"),
                     ghostToggle: document.getElementById("ghostToggle"),
+                    smartStitchToggle: document.getElementById("smartStitchToggle"),
+                    stitchStatus: document.getElementById("stitchStatus"),
                     brightSlider: document.getElementById("brightSlider"),
                     brightVal: document.getElementById("brightVal"),
                     autoBrightBtn: document.getElementById("autoBrightBtn"),
@@ -1416,11 +1428,13 @@
                     pageW: 0,
                     pageH: 0,
                     scale: 1,
-                    layers: [], // {id, name, img, natW, natH, x, y, w, h, rot, opacity}
+                    layers: [], // {id, name, img, natW, natH, x, y, w, h, rot, fineRot, opacity}
                     selectedId: null,
                     nextId: 1,
                     brightness: 1, // 1 = 100%, applied to the whole stitched page (preview + export)
                 };
+
+                let stitchInProgress = false;
 
                 // Cached scan payload so we don't rebuild options on every scan.
                 // Invalidated when image type, DPI, or paper size changes.
@@ -1584,6 +1598,7 @@
                             slot: slotName,
                             name: slotName === "top" ? "Top scan" : "Bottom scan",
                             rot: 0,
+                            fineRot: 0,
                             opacity: 1,
                         };
                         state.layers.push(layer);
@@ -1592,6 +1607,10 @@
                     layer.src = src;
                     layer.natW = img.naturalWidth;
                     layer.natH = img.naturalHeight;
+                    // A freshly (re)loaded image invalidates any prior placement/fine-rotation
+                    // so the next stitch pass recomputes everything from scratch.
+                    layer.placed = false;
+                    layer.fineRot = 0;
 
                     // default placement before auto-fit: natural size, centered-ish
                     if (!layer.placed) {
@@ -1604,21 +1623,29 @@
                     }
 
                     renderAll();
-                }
 
-                // ---------- Auto-fit & stitch ----------
-                function autoFitStitch() {
+                    // Automate the stitch: as soon as both halves are present (whichever
+                    // just finished loading — upload or scan), fit + smart-align them
+                    // without requiring the user to press "Auto-fit & Stitch".
                     const top = state.layers.find((l) => l.slot === "top");
                     const bottom = state.layers.find((l) => l.slot === "bottom");
-                    if (!top && !bottom) {
-                        alert("Upload the top and bottom scans first.");
-                        return;
+                    if (top && bottom) {
+                        performAutoStitch();
                     }
+                }
+
+                // ---------- Auto-fit & stitch (basic geometry + optional smart pixel alignment) ----------
+                function basicAutoFit() {
+                    const top = state.layers.find((l) => l.slot === "top");
+                    const bottom = state.layers.find((l) => l.slot === "bottom");
+                    if (!top && !bottom) return { top, bottom };
+
                     [top, bottom].forEach((layer) => {
                         if (!layer) return;
                         layer.w = state.pageW;
                         layer.h = layer.natH * (state.pageW / layer.natW);
                         layer.x = 0;
+                        if (typeof layer.fineRot !== "number") layer.fineRot = 0;
                     });
                     if (top) top.y = 0;
                     if (bottom) bottom.y = state.pageH - bottom.h;
@@ -1627,7 +1654,241 @@
                     state.layers.sort((a, b) => (a.slot === "bottom" ? -1 : 1) - (b.slot === "bottom" ? -1 : 1));
 
                     els.overlapSlider.value = 0;
+                    els.overlapVal.textContent = "0 px";
                     renderAll();
+                    return { top, bottom };
+                }
+
+                function setStitchStatus(msg, warn) {
+                    if (!els.stitchStatus) return;
+                    els.stitchStatus.textContent = msg || "";
+                    els.stitchStatus.classList.toggle("warn", !!warn);
+                }
+
+                async function performAutoStitch() {
+                    if (stitchInProgress) return;
+                    stitchInProgress = true;
+                    els.autoFit.disabled = true;
+
+                    try {
+                        const { top, bottom } = basicAutoFit();
+
+                        if (!top || !bottom) {
+                            setStitchStatus("");
+                            return; // nothing more to align until both halves exist
+                        }
+
+                        if (!els.smartStitchToggle || !els.smartStitchToggle.checked) {
+                            setStitchStatus("Auto-fit complete. Enable smart stitch for pixel-perfect alignment.");
+                            return;
+                        }
+
+                        const canSmart = top.rot % 180 === 0 && bottom.rot % 180 === 0;
+                        if (!canSmart) {
+                            setStitchStatus("Smart alignment skipped (a scan is rotated 90°). Adjust the seam manually.", true);
+                            return;
+                        }
+
+                        setStitchStatus("Analyzing scan overlap…");
+                        // Let the status message paint before the heavier pixel-analysis work.
+                        await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
+
+                        const result = computeSmartAlignment(top, bottom);
+
+                        if (result && result.confidence > 0.15) {
+                            bottom.y = state.pageH - bottom.h - result.overlapPx;
+                            bottom.x = result.dxPx;
+                            bottom.fineRot = result.rot;
+
+                            const overlapValClamped = Math.max(-300, Math.min(300, Math.round(result.overlapPx)));
+                            els.overlapSlider.value = overlapValClamped;
+                            els.overlapVal.textContent = Math.round(result.overlapPx) + " px";
+
+                            renderAll();
+                            setStitchStatus(
+                                "Smart-aligned — overlap " +
+                                    Math.round(result.overlapPx) +
+                                    "px, rotation " +
+                                    result.rot.toFixed(2) +
+                                    "° (confidence " +
+                                    Math.round(result.confidence * 100) +
+                                    "%).",
+                            );
+                        } else {
+                            setStitchStatus("Couldn't confidently auto-align the seam — please fine-tune it manually.", true);
+                        }
+                    } catch (err) {
+                        console.error("Smart stitch failed:", err);
+                        setStitchStatus("Smart alignment failed — using basic auto-fit instead.", true);
+                    } finally {
+                        stitchInProgress = false;
+                        els.autoFit.disabled = false;
+                    }
+                }
+
+                // ---------- Smart stitch: pixel-based alignment ----------
+                // Analyzes the overlapping band between the bottom edge of the top scan and
+                // the top edge of the bottom scan, searching for the vertical overlap (dy),
+                // horizontal shift (dx), and small rotation correction that maximize the
+                // normalized cross-correlation between the two — i.e. the fitment where the
+                // printed content actually lines up, not just where the page edges sit.
+                function drawLayerToSmallCanvas(layer, workScale) {
+                    const w = Math.max(1, Math.round(layer.w * workScale));
+                    const h = Math.max(1, Math.round(layer.h * workScale));
+                    const canvas = document.createElement("canvas");
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext("2d");
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(0, 0, w, h);
+                    ctx.drawImage(layer.img, 0, 0, w, h);
+                    return canvas;
+                }
+
+                function toGray(imgData) {
+                    const { data, width, height } = imgData;
+                    const out = new Float32Array(width * height);
+                    for (let i = 0, p = 0; i < data.length; i += 4, p++) {
+                        out[p] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                    }
+                    return { data: out, width, height };
+                }
+
+                // Extracts `height` rows starting at row y0 (rows outside the source are NaN,
+                // which correlateOverlap() skips).
+                function getStrip(gray, y0, height) {
+                    const w = gray.width;
+                    const out = new Float32Array(w * height);
+                    for (let y = 0; y < height; y++) {
+                        const srcY = y0 + y;
+                        if (srcY < 0 || srcY >= gray.height) {
+                            for (let x = 0; x < w; x++) out[y * w + x] = NaN;
+                            continue;
+                        }
+                        const rowStart = srcY * w;
+                        const outStart = y * w;
+                        for (let x = 0; x < w; x++) out[outStart + x] = gray.data[rowStart + x];
+                    }
+                    return { data: out, width: w, height };
+                }
+
+                function rotateCanvas(srcCanvas, angleDeg) {
+                    const rad = (angleDeg * Math.PI) / 180;
+                    const w = srcCanvas.width,
+                        h = srcCanvas.height;
+                    const canvas = document.createElement("canvas");
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext("2d");
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(0, 0, w, h);
+                    ctx.translate(w / 2, h / 2);
+                    ctx.rotate(rad);
+                    ctx.drawImage(srcCanvas, -w / 2, -h / 2);
+                    return canvas;
+                }
+
+                // Pearson correlation between the last `dy` rows of topStrip (shifted by dx
+                // horizontally) and the first `dy` rows of bottomStrip. Returns null if there
+                // isn't enough valid (in-bounds, non-NaN) overlap to trust the score.
+                function correlateOverlap(topStrip, bottomStrip, w, stripH, dy, dx) {
+                    const topStartRow = stripH - dy;
+                    const xStart = Math.max(0, -dx);
+                    const xEnd = Math.min(w, w - dx);
+                    if (xEnd <= xStart) return null;
+
+                    let sumA = 0,
+                        sumB = 0,
+                        sumAB = 0,
+                        sumA2 = 0,
+                        sumB2 = 0,
+                        n = 0;
+
+                    for (let y = 0; y < dy; y++) {
+                        const rowA = (topStartRow + y) * w;
+                        const rowB = y * w;
+                        for (let x = xStart; x < xEnd; x++) {
+                            const a = topStrip.data[rowA + x];
+                            const b = bottomStrip.data[rowB + x + dx];
+                            if (a !== a || b !== b) continue; // NaN check
+                            sumA += a;
+                            sumB += b;
+                            sumAB += a * b;
+                            sumA2 += a * a;
+                            sumB2 += b * b;
+                            n++;
+                        }
+                    }
+
+                    const expected = (xEnd - xStart) * dy;
+                    if (n < expected * 0.6) return null;
+
+                    const meanA = sumA / n,
+                        meanB = sumB / n;
+                    const covAB = sumAB / n - meanA * meanB;
+                    const varA = sumA2 / n - meanA * meanA;
+                    const varB = sumB2 / n - meanB * meanB;
+                    if (varA <= 1e-6 || varB <= 1e-6) return null;
+                    return covAB / Math.sqrt(varA * varB);
+                }
+
+                function computeSmartAlignment(topLayer, bottomLayer) {
+                    const workW = 180; // working resolution for the pixel search — small & fast
+                    const workScale = workW / state.pageW;
+
+                    const topCanvas = drawLayerToSmallCanvas(topLayer, workScale);
+                    const bottomCanvas = drawLayerToSmallCanvas(bottomLayer, workScale);
+                    const w = topCanvas.width;
+
+                    const topGrayFull = toGray(topCanvas.getContext("2d").getImageData(0, 0, topCanvas.width, topCanvas.height));
+                    const bottomGrayFull0 = toGray(bottomCanvas.getContext("2d").getImageData(0, 0, bottomCanvas.width, bottomCanvas.height));
+
+                    const maxOverlapPxFull = Math.min(topLayer.h, bottomLayer.h) * 0.35;
+                    const stripH = Math.min(60, Math.max(8, Math.round(maxOverlapPxFull * workScale)));
+                    const minOverlapRows = Math.max(4, Math.round(stripH * 0.15));
+                    const maxDx = Math.round(0.025 * w) + 3;
+
+                    const topStrip = getStrip(topGrayFull, topGrayFull.height - stripH, stripH);
+                    const bottomStrip0 = getStrip(bottomGrayFull0, 0, stripH);
+
+                    // Coarse search: translation only (dy = overlap amount, dx = horizontal shift)
+                    let best = { score: -Infinity, dy: Math.round(stripH * 0.5), dx: 0, rot: 0 };
+                    for (let dy = minOverlapRows; dy <= stripH; dy++) {
+                        for (let dx = -maxDx; dx <= maxDx; dx++) {
+                            const score = correlateOverlap(topStrip, bottomStrip0, w, stripH, dy, dx);
+                            if (score !== null && score > best.score) {
+                                best = { score, dy, dx, rot: 0 };
+                            }
+                        }
+                    }
+
+                    // Refine with small rotation corrections around the coarse best fit —
+                    // handles slight skew between the two scans (crooked feed, hand-scanned, etc).
+                    const rotCandidates = [-3, -2.25, -1.5, -0.75, 0.75, 1.5, 2.25, 3];
+                    let bestOverall = best;
+                    for (const rot of rotCandidates) {
+                        const rotatedCanvas = rotateCanvas(bottomCanvas, rot);
+                        const rotatedGray = toGray(rotatedCanvas.getContext("2d").getImageData(0, 0, rotatedCanvas.width, rotatedCanvas.height));
+                        const rotatedStrip = getStrip(rotatedGray, 0, stripH);
+
+                        const dyLo = Math.max(minOverlapRows, best.dy - 3);
+                        const dyHi = Math.min(stripH, best.dy + 3);
+                        for (let dy = dyLo; dy <= dyHi; dy++) {
+                            for (let dx = best.dx - 3; dx <= best.dx + 3; dx++) {
+                                const score = correlateOverlap(topStrip, rotatedStrip, w, stripH, dy, dx);
+                                if (score !== null && score > bestOverall.score) {
+                                    bestOverall = { score, dy, dx, rot };
+                                }
+                            }
+                        }
+                    }
+
+                    return {
+                        overlapPx: bestOverall.dy / workScale,
+                        dxPx: bestOverall.dx / workScale,
+                        rot: bestOverall.rot,
+                        confidence: bestOverall.score,
+                    };
                 }
 
                 // ---------- Rendering ----------
@@ -1664,7 +1925,7 @@
                             img.style.left = (layer.w - layer.h) / 2 + "px";
                             img.style.top = (layer.h - layer.w) / 2 + "px";
                         }
-                        img.style.transform = "rotate(" + layer.rot + "deg)";
+                        img.style.transform = "rotate(" + (layer.rot + (layer.fineRot || 0)) + "deg)";
                         el.appendChild(img);
 
                         const tag = document.createElement("div");
@@ -2040,7 +2301,7 @@
                     loadFile(file, section);
                 }
 
-                els.autoFit.addEventListener("click", autoFitStitch);
+                els.autoFit.addEventListener("click", performAutoStitch);
 
                 els.paperSize.addEventListener("change", () => {
                     state.paperKey = els.paperSize.value;
@@ -2076,6 +2337,7 @@
                     state.brightness = 1;
                     els.brightSlider.value = 100;
                     els.brightVal.textContent = "100%";
+                    setStitchStatus("");
                     renderAll();
                 });
 
@@ -2105,7 +2367,7 @@
                         // Match on-screen ghost: topmost layer (last in stack) is see-through
                         ctx.globalAlpha = useGhost && idx === state.layers.length - 1 ? 0.55 : 1;
                         ctx.translate((layer.x + layer.w / 2) * scaleFactor, (layer.y + layer.h / 2) * scaleFactor);
-                        ctx.rotate((layer.rot * Math.PI) / 180);
+                        ctx.rotate(((layer.rot + (layer.fineRot || 0)) * Math.PI) / 180);
                         const w = layer.w * scaleFactor,
                             h = layer.h * scaleFactor;
                         if (layer.rot % 180 === 0) {
@@ -2292,6 +2554,7 @@
                             slot: l.slot,
                             name: l.name,
                             rot: l.rot,
+                            fineRot: l.fineRot || 0,
                             x: l.x,
                             y: l.y,
                             w: l.w,
@@ -2319,7 +2582,7 @@
                         record.layers.map((ld) => {
                             return new Promise((resolve) => {
                                 const img = new Image();
-                                img.onload = () => resolve(Object.assign({}, ld, { img: img, placed: true, id: state.nextId++ }));
+                                img.onload = () => resolve(Object.assign({}, ld, { fineRot: ld.fineRot || 0, img: img, placed: true, id: state.nextId++ }));
                                 img.src = ld.src;
                             });
                         }),
@@ -2334,6 +2597,7 @@
                     state.layers = loadedLayers;
                     state.selectedId = null;
                     closeHistoryModal();
+                    setStitchStatus("");
                     renderAll();
                 }
 
