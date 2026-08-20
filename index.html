@@ -285,6 +285,7 @@
 
             .page-scaler {
                 position: relative;
+                overflow: visible;
             }
             .page {
                 position: relative;
@@ -293,6 +294,17 @@
                     0 18px 40px var(--paper-edge),
                     0 2px 6px rgba(0, 0, 0, 0.08);
                 overflow: hidden;
+                transition: transform 0.12s ease-out;
+                will-change: transform;
+            }
+            .page.inspecting {
+                box-shadow:
+                    0 28px 60px rgba(0, 0, 0, 0.22),
+                    0 4px 12px rgba(0, 0, 0, 0.1);
+                z-index: 20;
+            }
+            .page-scaler.inspecting {
+                z-index: 20;
             }
             .page.no-image {
                 display: flex;
@@ -980,6 +992,7 @@
 
                 <div class="divider"></div>
                 <p class="hint">Nudge selected layer with arrow keys (<kbd>Shift</kbd> = 10px). Press <kbd>Delete</kbd> to remove it.</p>
+                <p class="hint" style="margin-top: 10px">Hover the page to zoom-inspect (~2×). Move the cursor to focus different areas; drag is unchanged.</p>
             </aside>
         </div>
 
@@ -1355,6 +1368,9 @@
                     selectedId: null,
                     nextId: 1,
                     brightness: 1, // 1 = 100%, applied to the whole stitched page (preview + export)
+                    inspectZoom: 1, // 1 = normal fit; >1 when hovering to inspect
+                    inspectOrigin: "top left",
+                    isPointerDown: false, // disable inspect zoom while dragging/resizing
                 };
 
                 // Cached scan payload so we don't rebuild options on every scan.
@@ -1402,13 +1418,52 @@
                     const availW = avail.width - 80;
                     const availH = avail.height - 80;
                     state.scale = Math.min(availW / state.pageW, availH / state.pageH, 1);
+
+                    const zoom = state.inspectZoom > 1 && state.layers.length > 0 ? state.inspectZoom : 1;
+                    const effectiveScale = state.scale * zoom;
+
+                    // Keep the scaler box at the fitted size so layout stays stable;
+                    // the page transform may overflow (pageScaler + workspace allow it).
                     els.pageScaler.style.width = state.pageW * state.scale + "px";
                     els.pageScaler.style.height = state.pageH * state.scale + "px";
-                    els.page.style.transform = "scale(" + state.scale + ")";
-                    els.page.style.transformOrigin = "top left";
+                    els.page.style.transform = "scale(" + effectiveScale + ")";
+                    els.page.style.transformOrigin = zoom > 1 ? state.inspectOrigin : "top left";
+                    els.page.classList.toggle("inspecting", zoom > 1);
+                    els.pageScaler.classList.toggle("inspecting", zoom > 1);
 
                     els.emptyHint.style.display = state.layers.length === 0 ? "block" : "none";
                 }
+
+                // ---------- Hover zoom (inspect canvas) ----------
+                const INSPECT_ZOOM = 2.15;
+
+                function setInspectFromEvent(e) {
+                    if (state.layers.length === 0 || state.isPointerDown) {
+                        if (state.inspectZoom !== 1) {
+                            state.inspectZoom = 1;
+                            layoutPage();
+                        }
+                        return;
+                    }
+                    const rect = els.pageScaler.getBoundingClientRect();
+                    if (rect.width <= 0 || rect.height <= 0) return;
+                    const xPct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+                    const yPct = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+                    state.inspectOrigin = xPct + "% " + yPct + "%";
+                    state.inspectZoom = INSPECT_ZOOM;
+                    layoutPage();
+                }
+
+                function clearInspect() {
+                    if (state.inspectZoom === 1) return;
+                    state.inspectZoom = 1;
+                    state.inspectOrigin = "top left";
+                    layoutPage();
+                }
+
+                els.pageScaler.addEventListener("mousemove", setInspectFromEvent);
+                els.pageScaler.addEventListener("mouseenter", setInspectFromEvent);
+                els.pageScaler.addEventListener("mouseleave", clearInspect);
 
                 // ---------- File loading ----------
                 function loadFile(file, slotName) {
@@ -1640,6 +1695,8 @@
                 function startDrag(e, layer, el) {
                     if (e.target.classList.contains("handle")) return;
                     e.stopPropagation();
+                    state.isPointerDown = true;
+                    clearInspect();
                     state.selectedId = layer.id;
                     renderAll();
                     const startX = e.clientX,
@@ -1659,6 +1716,7 @@
                         updateSeamGuide();
                     }
                     function onUp(ev) {
+                        state.isPointerDown = false;
                         el.releasePointerCapture(ev.pointerId);
                         el.removeEventListener("pointermove", onMove);
                         el.removeEventListener("pointerup", onUp);
@@ -1671,6 +1729,8 @@
 
                 function startResize(e, layer, el) {
                     e.stopPropagation();
+                    state.isPointerDown = true;
+                    clearInspect();
                     state.selectedId = layer.id;
                     const startX = e.clientX;
                     const origW = layer.w,
@@ -1687,6 +1747,7 @@
                         renderAll();
                     }
                     function onUp(ev) {
+                        state.isPointerDown = false;
                         e.target.releasePointerCapture(ev.pointerId);
                         e.target.removeEventListener("pointermove", onMove);
                         e.target.removeEventListener("pointerup", onUp);

@@ -327,37 +327,6 @@
                 box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
                 border-radius: 2px;
             }
-            .sheet-meta {
-                display: flex;
-                justify-content: space-between;
-                align-items: baseline;
-                border-bottom: 1px solid var(--line);
-                padding-bottom: 8px;
-                margin-bottom: 14px;
-            }
-            .sheet-meta .brand {
-                font-size: 12px;
-                font-weight: 800;
-                letter-spacing: 0.1em;
-                color: var(--accent);
-                text-transform: uppercase;
-            }
-            .sheet-meta .metaname {
-                font-size: 12px;
-                color: #5a6672;
-            }
-
-            .section-label {
-                font-size: 10px;
-                font-weight: 700;
-                text-transform: uppercase;
-                letter-spacing: 0.1em;
-                color: #8a95a0;
-                margin: 0 0 8px;
-            }
-            .section-label.hidden-label {
-                display: none;
-            }
 
             .layout-row {
                 display: flex;
@@ -590,8 +559,6 @@
             <div class="field">
                 <label>Sheet options</label>
                 <label class="checkline"><input type="checkbox" id="guidesCheck" checked /> Show cut guides</label>
-                <label class="checkline"><input type="checkbox" id="metaCheck" /> Show name header on sheet</label>
-                <label class="checkline"><input type="checkbox" id="sizeLabelCheck" /> Show size labels</label>
                 <label class="checkline"><input type="checkbox" id="spacingCheck" /> Add spacing between photos</label>
                 <label for="backdropSelect" style="margin-top: 6px">Name backdrop</label>
                 <select id="backdropSelect">
@@ -645,18 +612,11 @@
         <!-- ================= PRINT SHEET ================= -->
         <div class="sheet-wrapper">
             <div class="sheet" id="sheet">
-                <div class="sheet-meta" id="sheetMeta">
-                    <span class="brand">Rush ID</span>
-                    <span class="metaname" id="metaNameText">&nbsp;</span>
-                </div>
-
                 <div class="layout-row">
                     <div class="block" id="blockA">
-                        <div class="section-label" id="labelA">2in × 2in</div>
                         <div class="section" id="sectionA"></div>
                     </div>
                     <div class="block" id="blockB">
-                        <div class="section-label" id="labelB">1in × 1in</div>
                         <div class="section" id="sectionB"></div>
                     </div>
                 </div>
@@ -729,12 +689,9 @@
                 const countNames = document.getElementById("countNames");
 
                 const guidesCheck = document.getElementById("guidesCheck");
-                const metaCheck = document.getElementById("metaCheck");
-                const sizeLabelCheck = document.getElementById("sizeLabelCheck");
                 const spacingCheck = document.getElementById("spacingCheck");
                 const backdropSelect = document.getElementById("backdropSelect");
                 const marginInput = document.getElementById("marginInput");
-                const metaNameText = document.getElementById("metaNameText");
 
                 const btnGenerate = document.getElementById("btnGenerate");
                 const btnPrint = document.getElementById("btnPrint");
@@ -742,8 +699,6 @@
 
                 const blockA = document.getElementById("blockA");
                 const blockB = document.getElementById("blockB");
-                const labelA = document.getElementById("labelA");
-                const labelB = document.getElementById("labelB");
                 const sectionA = document.getElementById("sectionA");
                 const sectionB = document.getElementById("sectionB");
 
@@ -1055,8 +1010,6 @@
                 countB.addEventListener("change", generateLayout);
                 countNames.addEventListener("change", generateLayout);
                 guidesCheck.addEventListener("change", generateLayout);
-                metaCheck.addEventListener("change", generateLayout);
-                sizeLabelCheck.addEventListener("change", generateLayout);
                 spacingCheck.addEventListener("change", generateLayout);
                 backdropSelect.addEventListener("change", generateLayout);
                 marginInput.addEventListener("change", generateLayout);
@@ -1115,7 +1068,6 @@
                     // Block A
                     const nA = Math.max(0, parseInt(countA.value, 10) || 0);
                     const singleBlock = !blocks[1];
-                    labelA.textContent = blocks[0].label;
                     blockA.classList.toggle("full-width", singleBlock);
                     blockA.classList.remove("flex-fill");
                     sectionA.classList.toggle("full-width", singleBlock);
@@ -1128,7 +1080,6 @@
                     // Block B (optional)
                     if (blocks[1]) {
                         const nB = Math.max(0, parseInt(countB.value, 10) || 0);
-                        labelB.textContent = blocks[1].label;
                         // cols === 0 means fill remaining horizontal space with as many cells as fit
                         const useAutoFill = !blocks[1].cols || blocks[1].cols <= 0;
                         if (useAutoFill) {
@@ -1147,14 +1098,6 @@
                         blockB.classList.add("hidden-block");
                         blockB.classList.remove("flex-fill");
                     }
-
-                    const name = (nameInput.value || "").trim();
-                    metaNameText.textContent = metaCheck.checked && name ? name : "\u00A0";
-                    document.getElementById("sheetMeta").style.visibility = metaCheck.checked ? "visible" : "hidden";
-
-                    document.querySelectorAll(".section-label").forEach((el) => {
-                        el.classList.toggle("hidden-label", !sizeLabelCheck.checked);
-                    });
 
                     const sheetEl = document.getElementById("sheet");
                     sheetEl.style.setProperty("--gap", spacingCheck.checked ? "0.12in" : "0in");
