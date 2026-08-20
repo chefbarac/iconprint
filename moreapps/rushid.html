@@ -53,25 +53,25 @@
                     Arial,
                     sans-serif;
                 color: var(--ink);
-                padding: 22px 16px 60px;
+                padding: 12px 12px 40px;
+                min-height: 100vh;
             }
 
             h1 {
-                font-size: 20px;
+                font-size: 18px;
                 letter-spacing: 0.02em;
                 margin: 0;
             }
             .eyebrow {
-                font-size: 11px;
+                font-size: 10px;
                 text-transform: uppercase;
                 letter-spacing: 0.14em;
                 color: var(--accent);
                 font-weight: 700;
-                margin: 0 0 4px;
+                margin: 0 0 2px;
             }
             .header-wrap {
-                max-width: 1020px;
-                margin: 0 auto 18px;
+                margin: 0 0 12px;
                 display: flex;
                 align-items: baseline;
                 justify-content: space-between;
@@ -80,29 +80,106 @@
             }
             .header-wrap p {
                 margin: 2px 0 0;
-                font-size: 13px;
+                font-size: 12px;
                 color: #5a6672;
+            }
+
+            /* ---------- Main side-by-side layout ---------- */
+            .main-layout {
+                display: flex;
+                gap: 18px;
+                align-items: flex-start;
+                max-width: 1600px;
+                margin: 0 auto;
+            }
+            .controls-panel {
+                flex: 0 0 340px;
+                max-width: 340px;
+                position: sticky;
+                top: 12px;
+                max-height: calc(100vh - 24px);
+                overflow-y: auto;
+                scrollbar-width: thin;
+            }
+            .canvas-panel {
+                flex: 1 1 auto;
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+            .zoom-bar {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                background: #fff;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                padding: 8px 14px;
+                flex-wrap: wrap;
+            }
+            .zoom-bar label {
+                font-size: 11px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                color: #5a6672;
+                white-space: nowrap;
+            }
+            .zoom-bar input[type="range"] {
+                flex: 1;
+                min-width: 80px;
+                max-width: 180px;
+                accent-color: var(--accent);
+            }
+            .zoom-bar .zoom-val {
+                font-size: 12px;
+                font-weight: 600;
+                min-width: 42px;
+                color: var(--ink);
+            }
+            .zoom-bar button {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+            .canvas-scroll {
+                overflow: auto;
+                background: #e4e8ea;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                padding: 20px;
+                max-height: calc(100vh - 120px);
+                display: flex;
+                justify-content: center;
+                align-items: flex-start;
+            }
+            .sheet-scale-wrap {
+                /* sized by JS to visual (scaled) dimensions */
+                flex-shrink: 0;
+            }
+            .sheet-scale-inner {
+                transform-origin: top left;
+                transition: transform 0.12s ease;
+                will-change: transform;
             }
 
             /* ---------- Toolbar ---------- */
             .toolbar {
-                max-width: 1020px;
-                margin: 0 auto 22px;
                 background: #fff;
                 border: 1px solid var(--line);
                 border-radius: 10px;
-                padding: 18px 20px;
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-                gap: 16px 20px;
+                padding: 14px 16px;
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
             }
             .field {
                 display: flex;
                 flex-direction: column;
-                gap: 6px;
+                gap: 5px;
             }
             .field label {
-                font-size: 11px;
+                font-size: 10px;
                 font-weight: 700;
                 text-transform: uppercase;
                 letter-spacing: 0.06em;
@@ -113,8 +190,8 @@
             .field select {
                 border: 1px solid var(--line);
                 border-radius: 6px;
-                padding: 8px 10px;
-                font-size: 14px;
+                padding: 7px 9px;
+                font-size: 13px;
                 font-family: inherit;
                 background: #fbfcfc;
             }
@@ -125,18 +202,18 @@
             }
             .btnrow {
                 display: flex;
-                gap: 8px;
+                gap: 6px;
                 flex-wrap: wrap;
             }
 
             button {
                 font-family: inherit;
-                font-size: 13px;
+                font-size: 12px;
                 font-weight: 600;
                 cursor: pointer;
                 border-radius: 6px;
                 border: 1px solid var(--accent);
-                padding: 9px 14px;
+                padding: 8px 12px;
                 background: var(--accent);
                 color: #fff;
                 transition: background 0.15s ease;
@@ -165,8 +242,8 @@
             }
             button.primary-wide {
                 width: 100%;
-                padding: 11px 14px;
-                font-size: 14px;
+                padding: 10px 12px;
+                font-size: 13px;
             }
 
             .checkline {
@@ -324,7 +401,7 @@
                 min-height: 11.69in;
                 background: #fff;
                 padding: var(--pad);
-                box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+                box-shadow: 0 4px 18px rgba(0, 0, 0, 0.16);
                 border-radius: 2px;
             }
 
@@ -358,6 +435,23 @@
             }
             .section.full-width {
                 width: 100%;
+            }
+
+            /* Responsive: stack on narrow screens */
+            @media (max-width: 900px) {
+                .main-layout {
+                    flex-direction: column;
+                }
+                .controls-panel {
+                    flex: none;
+                    max-width: none;
+                    width: 100%;
+                    position: static;
+                    max-height: none;
+                }
+                .canvas-scroll {
+                    max-height: none;
+                }
             }
 
             .cell {
@@ -452,6 +546,24 @@
                 .no-print {
                     display: none !important;
                 }
+                .main-layout {
+                    display: block;
+                }
+                .controls-panel,
+                .zoom-bar,
+                .canvas-scroll {
+                    display: none !important;
+                }
+                .canvas-panel {
+                    display: block;
+                }
+                .sheet-scale-wrap,
+                .sheet-scale-inner {
+                    width: auto !important;
+                    height: auto !important;
+                    transform: none !important;
+                    overflow: visible !important;
+                }
                 .sheet-wrapper {
                     display: block;
                 }
@@ -470,110 +582,146 @@
         </style>
     </head>
     <body>
-        <iframe src="https://chefbarac.github.io/promo-banner/" width="100%" height="72" style="border: none; border-radius: 12px; overflow: hidden" loading="lazy"> </iframe>
-        <div class="header-wrap no-print">
-            <div>
-                <p class="eyebrow">Rush ID · Print Sheet Generator</p>
-                <h1>Auto Layout</h1>
-                <p>Capture or upload a photo, crop it, add a name and signature, and print a ready-to-cut A4 sheet.</p>
-            </div>
-        </div>
+        <iframe src="https://chefbarac.github.io/promo-banner/" width="100%" height="72" style="border: none; border-radius: 12px; overflow: hidden" loading="lazy" class="no-print"> </iframe>
 
-        <!-- ================= TOOLBAR ================= -->
-        <div class="toolbar no-print">
-            <div class="field">
-                <label>Photo</label>
-                <div class="thumb-wrap">
-                    <img id="photoThumb" alt="Current photo" />
-                    <div class="thumb-placeholder" id="thumbPlaceholder">No<br />photo</div>
-                    <div class="btnrow" style="flex-direction: column">
-                        <button type="button" id="btnUpload">Upload photo</button>
-                        <button type="button" id="btnCamera" class="ghost">Capture photo</button>
+        <div class="main-layout">
+            <!-- ================= LEFT: CONTROLS ================= -->
+            <div class="controls-panel no-print">
+                <div class="header-wrap">
+                    <div>
+                        <p class="eyebrow">Rush ID · Print Sheet Generator</p>
+                        <h1>Auto Layout</h1>
+                        <p>Capture or upload a photo, crop it, add a name and signature, and print a ready-to-cut A4 sheet.</p>
                     </div>
                 </div>
-                <input type="file" id="fileInput" accept="image/*" />
-                <button type="button" id="btnRecrop" class="ghost" disabled>Re-crop current photo</button>
-            </div>
 
-            <div class="field">
-                <label>Signature (optional)</label>
-                <div class="thumb-wrap">
-                    <img id="sigThumb" alt="Signature preview" />
-                    <div class="thumb-placeholder" id="sigPlaceholder">No<br />sig</div>
-                    <button type="button" id="btnUploadSig" class="ghost">Upload signature</button>
+                <div class="toolbar">
+                    <div class="field">
+                        <label>Photo</label>
+                        <div class="thumb-wrap">
+                            <img id="photoThumb" alt="Current photo" />
+                            <div class="thumb-placeholder" id="thumbPlaceholder">No<br />photo</div>
+                            <div class="btnrow" style="flex-direction: column">
+                                <button type="button" id="btnUpload">Upload photo</button>
+                                <button type="button" id="btnCamera" class="ghost">Capture photo</button>
+                            </div>
+                        </div>
+                        <input type="file" id="fileInput" accept="image/*" />
+                        <button type="button" id="btnRecrop" class="ghost" disabled>Re-crop current photo</button>
+                    </div>
+
+                    <div class="field">
+                        <label>Signature (optional)</label>
+                        <div class="thumb-wrap">
+                            <img id="sigThumb" alt="Signature preview" />
+                            <div class="thumb-placeholder" id="sigPlaceholder">No<br />sig</div>
+                            <button type="button" id="btnUploadSig" class="ghost">Upload signature</button>
+                        </div>
+                        <input type="file" id="sigFileInput" accept="image/*" />
+                        <button type="button" id="btnClearSig" class="ghost" disabled>Remove signature</button>
+
+                        <label for="sigHeightSlider" style="margin-top: 6px">Signature height</label>
+                        <input type="range" id="sigHeightSlider" min="5" max="35" value="14" />
+                        <div class="rangeval"><span id="sigHeightVal">14</span>% of photo height</div>
+
+                        <label for="sigGapSlider" style="margin-top: 6px">Signature ↔ name spacing</label>
+                        <input type="range" id="sigGapSlider" min="-40" max="20" value="1" />
+                        <div class="rangeval"><span id="sigGapVal">1</span>px (negative = overlap)</div>
+                    </div>
+
+                    <div class="field">
+                        <label for="nameInput">Name on ID</label>
+                        <input type="text" id="nameInput" placeholder="Juan Dela Cruz" maxlength="40" />
+
+                        <label for="nameFontSelect" style="margin-top: 6px">Name font style</label>
+                        <select id="nameFontSelect">
+                            <option value="sans" selected>Standard (sans-serif)</option>
+                            <option value="serif">Formal (serif)</option>
+                            <option value="script">Script / cursive (e.g. CSC)</option>
+                        </select>
+
+                        <label style="margin-top: 6px" class="checkline">
+                            <input type="checkbox" id="autoFitCheck" checked />
+                            Auto-fit name size
+                        </label>
+                        <div id="manualFontWrap" style="display: none">
+                            <input type="range" id="fontSlider" min="6" max="26" value="14" />
+                            <div class="rangeval">Manual size: <span id="fontSliderVal">14</span>px</div>
+                        </div>
+
+                        <label for="nameVStretchSlider" style="margin-top: 6px">Vertical Stretch</label>
+                        <input type="range" id="nameVStretchSlider" min="0.5" max="5" value="1" step="0.1" />
+                        <div class="rangeval">scaleY(<span id="nameVStretchVal">1</span>)</div>
+                    </div>
+
+                    <div class="field">
+                        <label for="idTypeSelect">ID type</label>
+                        <select id="idTypeSelect">
+                            <option value="combo">2×2 &amp; 1×1 (Set)</option>
+                            <option value="passport">Passport Size (Set)</option>
+                            <option value="visa">Visa (Set)</option>
+                        </select>
+
+                        <label id="countALabel" for="countA" style="margin-top: 6px">Copies — 2in × 2in (left)</label>
+                        <input type="number" id="countA" min="0" max="30" value="4" />
+                        <label id="countBLabel" for="countB" style="margin-top: 6px">Copies — 1in × 1in (right)</label>
+                        <input type="number" id="countB" min="0" max="40" value="12" />
+
+                        <label id="countNamesLabel" for="countNames" style="margin-top: 6px">With names count</label>
+                        <input type="number" id="countNames" min="0" max="12" value="2" />
+                    </div>
+
+                    <div class="field">
+                        <label>Sheet options</label>
+                        <label class="checkline"><input type="checkbox" id="guidesCheck" checked /> Show cut guides</label>
+                        <label class="checkline"><input type="checkbox" id="spacingCheck" /> Add spacing between photos</label>
+                        <label for="backdropSelect" style="margin-top: 6px">Name backdrop</label>
+                        <select id="backdropSelect">
+                            <option value="gradient">Soft gradient</option>
+                            <option value="solid" selected>Solid translucent</option>
+                        </select>
+                        <label for="marginInput" style="margin-top: 6px">Page margin (in)</label>
+                        <input type="number" id="marginInput" min="0" max="0.4" step="0.05" value="0.2" />
+                        <button type="button" id="btnGenerate" class="primary-wide" style="margin-top: 8px">Update layout</button>
+                    </div>
+
+                    <div class="field">
+                        <label>Output</label>
+                        <button type="button" id="btnPrint" class="primary-wide">Print sheet</button>
+                        <button type="button" id="btnReset" class="danger ghost" style="margin-top: 4px">Clear all</button>
+                    </div>
                 </div>
-                <input type="file" id="sigFileInput" accept="image/*" />
-                <button type="button" id="btnClearSig" class="ghost" disabled>Remove signature</button>
-
-                <label for="sigHeightSlider" style="margin-top: 6px">Signature height</label>
-                <input type="range" id="sigHeightSlider" min="5" max="35" value="14" />
-                <div class="rangeval"><span id="sigHeightVal">14</span>% of photo height</div>
-
-                <label for="sigGapSlider" style="margin-top: 6px">Signature ↔ name spacing</label>
-                <input type="range" id="sigGapSlider" min="-40" max="20" value="1" />
-                <div class="rangeval"><span id="sigGapVal">1</span>px (negative = overlap)</div>
             </div>
 
-            <div class="field">
-                <label for="nameInput">Name on ID</label>
-                <input type="text" id="nameInput" placeholder="Juan Dela Cruz" maxlength="40" />
-
-                <label for="nameFontSelect" style="margin-top: 6px">Name font style</label>
-                <select id="nameFontSelect">
-                    <option value="sans" selected>Standard (sans-serif)</option>
-                    <option value="serif">Formal (serif)</option>
-                    <option value="script">Script / cursive (e.g. CSC)</option>
-                </select>
-
-                <label style="margin-top: 6px" class="checkline">
-                    <input type="checkbox" id="autoFitCheck" checked />
-                    Auto-fit name size
-                </label>
-                <div id="manualFontWrap" style="display: none">
-                    <input type="range" id="fontSlider" min="6" max="26" value="14" />
-                    <div class="rangeval">Manual size: <span id="fontSliderVal">14</span>px</div>
+            <!-- ================= RIGHT: CANVAS ================= -->
+            <div class="canvas-panel">
+                <div class="zoom-bar no-print">
+                    <label for="zoomSlider">Zoom</label>
+                    <button type="button" id="btnZoomOut" class="ghost" title="Zoom out">−</button>
+                    <input type="range" id="zoomSlider" min="30" max="150" value="70" />
+                    <button type="button" id="btnZoomIn" class="ghost" title="Zoom in">+</button>
+                    <span class="zoom-val"><span id="zoomVal">70</span>%</span>
+                    <button type="button" id="btnZoomFit" class="ghost">Fit</button>
+                    <button type="button" id="btnZoom100" class="ghost">100%</button>
                 </div>
-
-                <label for="nameVStretchSlider" style="margin-top: 6px">Vertical Stretch</label>
-                <input type="range" id="nameVStretchSlider" min="0.5" max="5" value="1" step="0.1" />
-                <div class="rangeval">scaleY(<span id="nameVStretchVal">1</span>)</div>
-            </div>
-
-            <div class="field">
-                <label for="idTypeSelect">ID type</label>
-                <select id="idTypeSelect">
-                    <option value="combo">2×2 &amp; 1×1 (Set)</option>
-                    <option value="passport">Passport Size (Set)</option>
-                    <option value="visa">Visa (Set)</option>
-                </select>
-
-                <label id="countALabel" for="countA" style="margin-top: 6px">Copies — 2in × 2in (left)</label>
-                <input type="number" id="countA" min="0" max="30" value="4" />
-                <label id="countBLabel" for="countB" style="margin-top: 6px">Copies — 1in × 1in (right)</label>
-                <input type="number" id="countB" min="0" max="40" value="12" />
-
-                <label id="countNamesLabel" for="countNames" style="margin-top: 6px">With names count</label>
-                <input type="number" id="countNames" min="0" max="12" value="2" />
-            </div>
-
-            <div class="field">
-                <label>Sheet options</label>
-                <label class="checkline"><input type="checkbox" id="guidesCheck" checked /> Show cut guides</label>
-                <label class="checkline"><input type="checkbox" id="spacingCheck" /> Add spacing between photos</label>
-                <label for="backdropSelect" style="margin-top: 6px">Name backdrop</label>
-                <select id="backdropSelect">
-                    <option value="gradient">Soft gradient</option>
-                    <option value="solid" selected>Solid translucent</option>
-                </select>
-                <label for="marginInput" style="margin-top: 6px">Page margin (in)</label>
-                <input type="number" id="marginInput" min="0" max="0.4" step="0.05" value="0.2" />
-                <button type="button" id="btnGenerate" class="primary-wide" style="margin-top: 8px">Update layout</button>
-            </div>
-
-            <div class="field">
-                <label>Output</label>
-                <button type="button" id="btnPrint" class="primary-wide">Print sheet</button>
-                <button type="button" id="btnReset" class="danger ghost" style="margin-top: 4px">Clear all</button>
+                <div class="canvas-scroll" id="canvasScroll">
+                    <div class="sheet-scale-wrap" id="sheetScaleWrap">
+                        <div class="sheet-scale-inner" id="sheetScaleInner">
+                            <div class="sheet-wrapper">
+                                <div class="sheet" id="sheet">
+                                    <div class="layout-row">
+                                        <div class="block" id="blockA">
+                                            <div class="section" id="sectionA"></div>
+                                        </div>
+                                        <div class="block" id="blockB">
+                                            <div class="section" id="sectionB"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -605,20 +753,6 @@
                 <div class="modal-actions">
                     <button type="button" class="ghost" id="cameraCancel">Cancel</button>
                     <button type="button" id="cameraCapture">Capture</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ================= PRINT SHEET ================= -->
-        <div class="sheet-wrapper">
-            <div class="sheet" id="sheet">
-                <div class="layout-row">
-                    <div class="block" id="blockA">
-                        <div class="section" id="sectionA"></div>
-                    </div>
-                    <div class="block" id="blockB">
-                        <div class="section" id="sectionB"></div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -1108,6 +1242,10 @@
                     updateNameFontStyle();
                     applyLabelFonts();
                     updateSignatureStyle();
+                    // Keep zoom sizing in sync after layout rebuild
+                    if (typeof applyZoom === "function" && zoomSlider) {
+                        applyZoom(parseFloat(zoomSlider.value) || 70);
+                    }
                 }
 
                 // Shrink-to-fit text sizing using canvas measurement
@@ -1240,8 +1378,76 @@
                     generateLayout();
                 });
 
+                // ---------------- Canvas zoom ----------------
+                const zoomSlider = document.getElementById("zoomSlider");
+                const zoomVal = document.getElementById("zoomVal");
+                const sheetScaleWrap = document.getElementById("sheetScaleWrap");
+                const canvasScroll = document.getElementById("canvasScroll");
+                const btnZoomIn = document.getElementById("btnZoomIn");
+                const btnZoomOut = document.getElementById("btnZoomOut");
+                const btnZoomFit = document.getElementById("btnZoomFit");
+                const btnZoom100 = document.getElementById("btnZoom100");
+
+                const sheetScaleInner = document.getElementById("sheetScaleInner");
+
+                function applyZoom(pct) {
+                    pct = Math.max(30, Math.min(150, pct));
+                    zoomSlider.value = pct;
+                    zoomVal.textContent = Math.round(pct);
+                    const scale = pct / 100;
+                    const sheet = document.getElementById("sheet");
+                    if (!sheet || !sheetScaleInner) return;
+
+                    // Temporarily clear transform to measure natural size
+                    sheetScaleInner.style.transform = "none";
+                    const w = sheet.offsetWidth;
+                    const h = sheet.offsetHeight;
+
+                    // Outer box = visual size after scale (so scrollbars match what you see)
+                    sheetScaleWrap.style.width = w * scale + "px";
+                    sheetScaleWrap.style.height = h * scale + "px";
+                    sheetScaleWrap.style.overflow = "hidden";
+
+                    // Inner keeps original layout size and is visually scaled from top-left
+                    sheetScaleInner.style.width = w + "px";
+                    sheetScaleInner.style.height = h + "px";
+                    sheetScaleInner.style.transformOrigin = "top left";
+                    sheetScaleInner.style.transform = "scale(" + scale + ")";
+                }
+
+                zoomSlider.addEventListener("input", () => applyZoom(parseFloat(zoomSlider.value)));
+                btnZoomIn.addEventListener("click", () => applyZoom(parseFloat(zoomSlider.value) + 10));
+                btnZoomOut.addEventListener("click", () => applyZoom(parseFloat(zoomSlider.value) - 10));
+                btnZoom100.addEventListener("click", () => applyZoom(100));
+                btnZoomFit.addEventListener("click", () => {
+                    const sheet = document.getElementById("sheet");
+                    if (!sheet || !canvasScroll) return;
+                    // Measure natural size
+                    if (sheetScaleInner) sheetScaleInner.style.transform = "none";
+                    const availW = canvasScroll.clientWidth - 40;
+                    const availH = canvasScroll.clientHeight - 40;
+                    const sheetW = sheet.offsetWidth || 794;
+                    const sheetH = sheet.offsetHeight || 1123;
+                    const fit = Math.min(availW / sheetW, availH / sheetH, 1.5) * 100;
+                    applyZoom(Math.max(30, Math.min(150, Math.floor(fit))));
+                });
+
+                // Ctrl/Cmd + wheel to zoom
+                canvasScroll.addEventListener(
+                    "wheel",
+                    (e) => {
+                        if (e.ctrlKey || e.metaKey) {
+                            e.preventDefault();
+                            const delta = e.deltaY > 0 ? -5 : 5;
+                            applyZoom(parseFloat(zoomSlider.value) + delta);
+                        }
+                    },
+                    { passive: false }
+                );
+
                 // ---------------- Init ----------------
                 generateLayout();
+                applyZoom(70);
             })();
         </script>
         <script>
