@@ -43,16 +43,30 @@
             body {
                 margin: 0;
                 padding: 0;
+                height: 100%;
             }
             body {
                 background: var(--paper);
                 color: var(--ink);
                 font-family: var(--sans);
                 line-height: 1.45;
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+                overflow: hidden;
+            }
+
+            body > iframe.promo-banner {
+                flex: 0 0 auto;
+                width: 100%;
+                height: 72px;
+                border: none;
+                display: block;
             }
 
             header.app-head {
-                padding: 22px 28px 18px;
+                flex: 0 0 auto;
+                padding: 16px 28px 14px;
                 border-bottom: 1px solid #dcd7cb;
                 background: var(--paper);
             }
@@ -81,11 +95,14 @@
                 display: grid;
                 grid-template-columns: 320px 1fr;
                 gap: 0;
-                min-height: calc(100vh - 84px);
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow: hidden;
             }
             @media (max-width: 800px) {
                 main.layout {
                     grid-template-columns: 1fr;
+                    grid-template-rows: minmax(0, 42%) minmax(0, 1fr);
                 }
             }
 
@@ -93,6 +110,8 @@
                 background: var(--panel);
                 color: var(--text-hi);
                 padding: 24px 22px 40px;
+                overflow-y: auto;
+                min-height: 0;
             }
             .ctrl-group {
                 background: var(--panel-2);
@@ -351,15 +370,23 @@
                 padding: 28px;
                 display: flex;
                 flex-direction: column;
-                align-items: center;
+                align-items: flex-start;
+                overflow: auto;
+                min-height: 0;
             }
             .preview-toolbar {
                 width: 100%;
-                max-width: 640px;
+                max-width: none;
+                flex: 0 0 auto;
                 display: flex;
                 justify-content: space-between;
                 align-items: baseline;
                 margin-bottom: 14px;
+                position: sticky;
+                top: 0;
+                background: var(--paper);
+                z-index: 2;
+                padding: 4px 0;
             }
             .preview-toolbar h2 {
                 font-family: var(--display);
@@ -379,9 +406,12 @@
                     0 14px 34px rgba(20, 16, 8, 0.16);
                 position: relative;
                 overflow: hidden;
+                flex: 0 0 auto;
+                /* size is set in JS to exact paper dimensions (px) */
             }
             .page-scale-wrap {
                 transform-origin: top left;
+                /* no visual scale — preview is 1:1 with print size */
             }
 
             #printPage {
@@ -633,12 +663,12 @@
         </style>
     </head>
     <body>
-        <header class="app-head" style="display: flex">
+        <iframe class="promo-banner" src="https://chefbarac.github.io/promo-banner/" width="100%" height="72" loading="lazy"></iframe>
+        <header class="app-head">
             <div>
                 <h1><span class="badge-dot"></span>ID Card Scan &amp; Print</h1>
                 <p>Scan front and back, crop if needed, then print. Drag images to reposition.</p>
             </div>
-            <iframe src="https://chefbarac.github.io/promo-banner/" width="100%" height="72" style="border: none; border-radius: 12px; overflow: hidden" loading="lazy"> </iframe>
         </header>
 
         <main class="layout">
@@ -1209,15 +1239,16 @@
             }
 
             function fitPreviewScale(paper) {
+                // Keep the preview at true physical size (1 CSS px ≈ 1/96 in) so
+                // Short / A4 / Long dimensions stay accurate. The preview pane
+                // scrolls when the page is larger than the viewport — no shrink-to-fit.
                 const frame = document.getElementById("pageFrame");
                 const wrap = document.getElementById("pageScaleWrap");
                 const pageWidthPx = paper.w * PX_PER_MM;
                 const pageHeightPx = paper.h * PX_PER_MM;
-                const availableWidth = Math.min(640, frame.parentElement.clientWidth - 4);
-                const scale = Math.min(1, availableWidth / pageWidthPx);
-                wrap.style.transform = `scale(${scale})`;
-                frame.style.width = pageWidthPx * scale + "px";
-                frame.style.height = pageHeightPx * scale + "px";
+                wrap.style.transform = "none";
+                frame.style.width = pageWidthPx + "px";
+                frame.style.height = pageHeightPx + "px";
             }
 
             /* ---------- drag to reposition (size stays fixed) ---------- */

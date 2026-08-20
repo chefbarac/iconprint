@@ -38,35 +38,113 @@
             body {
                 margin: 0;
                 padding: 0;
+                height: 100%;
             }
             body {
                 background: var(--bg);
                 color: var(--text);
                 font-family: "Space Mono", monospace;
-                min-height: 100vh;
+                height: 100vh;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+            }
+            body > iframe.promo-banner {
+                flex: 0 0 auto;
+                width: 100%;
+                height: 72px;
+                border: none;
+                display: block;
             }
             .app {
+                flex: 1 1 auto;
+                min-height: 0;
                 max-width: 1400px;
+                width: 100%;
                 margin: 0 auto;
-                padding: 28px 24px 60px;
+                padding: 20px 24px 16px;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                box-sizing: border-box;
             }
 
             .main-row {
                 display: flex;
                 gap: 10px;
-                align-items: flex-start;
+                align-items: stretch;
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow: hidden;
             }
             .main-row.stacked {
                 flex-direction: column;
+                overflow: auto;
             }
             header.topbar {
-                margin-bottom: 22px;
+                margin-bottom: 0;
                 flex: 0 0 320px;
                 max-width: 320px;
+                overflow-y: auto;
+                min-height: 0;
+                padding-right: 8px;
+                position: relative;
+                transition: flex-basis 0.2s ease, max-width 0.2s ease, opacity 0.15s ease;
             }
             .main-row.stacked header.topbar {
-                flex: 1 1 auto;
+                flex: 0 0 auto;
                 max-width: 100%;
+                max-height: none;
+                overflow: visible;
+            }
+            /* Collapsed controls — full-width page preview for students */
+            .main-row.controls-collapsed header.topbar {
+                display: none;
+            }
+            .main-row.controls-collapsed {
+                gap: 0;
+            }
+            .collapse-toggle {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                margin-top: 12px;
+                padding: 8px 12px;
+                font-size: 11px;
+                letter-spacing: 0.4px;
+                text-transform: uppercase;
+                border-radius: 3px;
+                border: 1px solid var(--panel-border);
+                background: var(--bg);
+                color: var(--text-dim);
+                cursor: pointer;
+                width: 100%;
+                justify-content: center;
+            }
+            .collapse-toggle:hover {
+                border-color: var(--accent);
+                color: var(--accent);
+            }
+            .expand-controls-bar {
+                display: none;
+                flex: 0 0 auto;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                padding: 8px 12px;
+                background: var(--panel);
+                border-bottom: 1px solid var(--panel-border);
+            }
+            .app.controls-collapsed .expand-controls-bar {
+                display: flex;
+            }
+            .app.controls-collapsed .main-row {
+                flex: 1 1 auto;
+                min-height: 0;
+            }
+            .expand-controls-bar button {
+                padding: 7px 14px;
+                font-size: 11px;
             }
             .title-row {
                 display: flex;
@@ -197,9 +275,60 @@
             .stage-wrap {
                 flex: 1 1 auto;
                 min-width: 0;
-                margin-top: 24px;
-                overflow-x: auto;
+                min-height: 0;
+                margin-top: 0;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                padding-bottom: 0;
+            }
+            .stage-zoom-bar {
+                flex: 0 0 auto;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-wrap: wrap;
+                padding: 8px 10px;
+                background: var(--panel);
+                border: 1px solid var(--panel-border);
+                border-radius: 6px;
+                margin-bottom: 10px;
+            }
+            .stage-zoom-bar .zoom-label {
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                color: var(--text-dim);
+            }
+            .stage-zoom-bar button {
+                padding: 6px 10px;
+                font-size: 11px;
+                min-width: 34px;
+            }
+            .stage-zoom-bar input[type="range"] {
+                width: 120px;
+                accent-color: var(--accent);
+            }
+            .stage-zoom-bar .zoom-pct {
+                font-size: 12px;
+                min-width: 44px;
+                color: var(--accent);
+            }
+            .stage-zoom-bar .zoom-hint {
+                font-size: 10px;
+                color: var(--text-dim);
+                margin-left: auto;
+            }
+            .zoom-viewport {
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow: auto;
                 padding-bottom: 6px;
+            }
+            .zoom-scaler {
+                transform-origin: top center;
+                width: max-content;
+                margin: 0 auto;
             }
             .pages {
                 display: flex;
@@ -382,7 +511,8 @@
             }
 
             footer.hint {
-                margin-top: 14px;
+                flex: 0 0 auto;
+                margin-top: 10px;
                 font-size: 11px;
                 color: var(--text-dim);
                 display: flex;
@@ -402,56 +532,110 @@
             }
 
             @media print {
+                /* Reset viewport constraints that clip multi-page output and cause
+                   landscape scrollbars in the print dialog. */
+                html,
                 body {
-                    background: #fff;
+                    background: #fff !important;
+                    height: auto !important;
+                    max-height: none !important;
+                    overflow: visible !important;
+                    display: block !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+                iframe.promo-banner,
+                iframe {
+                    display: none !important;
                 }
                 header.topbar,
                 footer.hint,
                 .page-label,
                 .sprocket,
-                .stage-wrap {
-                    margin: 0;
-                    padding: 0;
-                }
-                header.topbar,
-                footer.hint,
-                .page-label {
+                .collapse-toggle,
+                .expand-controls-bar {
                     display: none !important;
                 }
                 .app {
-                    max-width: none;
-                    padding: 0;
-                    margin: 0;
+                    max-width: none !important;
+                    width: auto !important;
+                    height: auto !important;
+                    max-height: none !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                    display: block !important;
+                    overflow: visible !important;
+                }
+                .main-row,
+                .main-row.stacked {
+                    display: block !important;
+                    height: auto !important;
+                    max-height: none !important;
+                    overflow: visible !important;
+                    gap: 0 !important;
                 }
                 .stage-wrap {
-                    overflow: visible;
-                    padding: 0;
+                    display: block !important;
+                    overflow: visible !important;
+                    height: auto !important;
+                    max-height: none !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+                .stage-zoom-bar {
+                    display: none !important;
+                }
+                .zoom-viewport {
+                    display: block !important;
+                    overflow: visible !important;
+                    height: auto !important;
+                    max-height: none !important;
+                    padding: 0 !important;
+                }
+                .zoom-scaler {
+                    transform: none !important;
+                    width: auto !important;
+                    margin: 0 !important;
                 }
                 .pages {
-                    gap: 0;
+                    display: block !important;
+                    gap: 0 !important;
+                    overflow: visible !important;
+                    transform: none !important;
+                    width: auto !important;
+                    height: auto !important;
                 }
                 .page-shell {
-                    gap: 0;
+                    display: block !important;
+                    gap: 0 !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    page-break-inside: avoid;
+                    break-inside: avoid;
                 }
                 .film-frame {
-                    background: transparent;
-                    border-radius: 0;
-                }
-                .sprocket {
-                    display: none;
+                    display: block !important;
+                    background: transparent !important;
+                    border-radius: 0 !important;
+                    overflow: visible !important;
                 }
                 .page {
                     background: #ffffff !important;
                     background-image: none !important;
+                    overflow: hidden !important;
                     page-break-after: always;
                     break-after: page;
+                    page-break-inside: avoid;
+                    break-inside: avoid;
+                    /* Avoid phantom scrollbars from absolute tiles */
+                    box-shadow: none !important;
                 }
                 .page-shell:last-child .page {
                     page-break-after: auto;
                     break-after: auto;
                 }
                 .tile {
-                    box-shadow: none;
+                    box-shadow: none !important;
                     outline: none !important;
                 }
                 .tile.selected {
@@ -461,9 +645,6 @@
                 .tile .del-btn,
                 .tile .rot90-btn,
                 .handle {
-                    display: none !important;
-                }
-                iframe {
                     display: none !important;
                 }
             }
@@ -476,7 +657,7 @@
         </style>
     </head>
     <body>
-        <iframe src="https://chefbarac.github.io/promo-banner/" width="100%" height="72" style="border: none; border-radius: 12px; overflow: hidden" loading="lazy"> </iframe>
+        <iframe class="promo-banner" src="https://chefbarac.github.io/promo-banner/" width="100%" height="72" loading="lazy"></iframe>
         <div class="app">
             <div class="main-row" id="mainRow">
                 <header class="topbar">
@@ -485,8 +666,8 @@
                         <span class="frame-count-badge" id="frameCountBadge">0 frames</span>
                     </div>
                     <p class="subtitle">
-                        Drop in photos — they're auto-arranged to fill each page edge to edge, shrunk to fit the number of pages you choose. Drag to move (even between pages), corner to resize, top
-                        handle to rotate freely, or use the quick 90° button.
+                        Drop in photos — they're auto-arranged to fill each page edge to edge across the number of pages you choose. Drag to move (even between pages), corner to resize, top handle to
+                        rotate freely, or use the quick 90° button.
                     </p>
 
                     <div class="controls">
@@ -510,7 +691,7 @@
                         </div>
 
                         <div class="ctrl-group">
-                            <label>Shrink to <span id="pageCountVal">1</span> page(s)</label>
+                            <label>Fit to <span id="pageCountVal">1</span> page(s)</label>
                             <input type="number" id="pageCount" min="1" max="50" step="1" value="1" style="width: 56px" />
                         </div>
 
@@ -540,25 +721,48 @@
                         <button class="primary" id="printBtn">🖨 Print</button>
                         <button id="clearBtn">Clear All</button>
                     </div>
+
+                    <button type="button" class="collapse-toggle" id="collapseControlsBtn" title="Hide controls to preview all pages">
+                        ◀ Hide controls
+                    </button>
                 </header>
 
                 <div class="stage-wrap">
-                    <div class="pages" id="pages">
-                        <div class="page-shell">
-                            <div class="page-label">Page 1</div>
-                            <div class="film-frame">
-                                <div class="sprocket"></div>
-                                <div class="page" id="firstPage">
-                                    <div class="empty-state" id="emptyState">
-                                        <div class="big">No frames loaded</div>
-                                        <div class="small">Add images or drag &amp; drop them here. Pages fill automatically and overflow spills onto new pages.</div>
+                    <div class="stage-zoom-bar" id="stageZoomBar">
+                        <span class="zoom-label">View zoom</span>
+                        <button type="button" id="zoomOutBtn" title="Zoom out">−</button>
+                        <input type="range" id="zoomSlider" min="15" max="150" step="1" value="100" />
+                        <button type="button" id="zoomInBtn" title="Zoom in">+</button>
+                        <span class="zoom-pct" id="zoomPct">100%</span>
+                        <button type="button" id="zoomFitBtn" title="Fit all pages on screen">Fit all</button>
+                        <button type="button" id="zoomResetBtn" title="Reset to 100%">100%</button>
+                        <span class="zoom-hint">Ctrl/Cmd + scroll to zoom</span>
+                    </div>
+                    <div class="zoom-viewport" id="zoomViewport">
+                        <div class="zoom-scaler" id="zoomScaler">
+                            <div class="pages" id="pages">
+                                <div class="page-shell">
+                                    <div class="page-label">Page 1</div>
+                                    <div class="film-frame">
+                                        <div class="sprocket"></div>
+                                        <div class="page" id="firstPage">
+                                            <div class="empty-state" id="emptyState">
+                                                <div class="big">No frames loaded</div>
+                                                <div class="small">Add images or drag &amp; drop them here. Pages fill automatically and overflow spills onto new pages.</div>
+                                            </div>
+                                        </div>
+                                        <div class="sprocket"></div>
                                     </div>
                                 </div>
-                                <div class="sprocket"></div>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <div class="expand-controls-bar" id="expandControlsBar">
+                <button type="button" class="primary" id="expandControlsBtn">▶ Show controls</button>
+                <span style="font-size: 11px; color: var(--text-dim)">Controls hidden — scroll to preview every page</span>
             </div>
 
             <footer class="hint">
@@ -598,9 +802,21 @@
                 const statusText = document.getElementById("statusText");
                 const frameCountBadge = document.getElementById("frameCountBadge");
                 const printPageSizeStyle = document.getElementById("printPageSize");
+                const zoomViewport = document.getElementById("zoomViewport");
+                const zoomScaler = document.getElementById("zoomScaler");
+                const zoomSlider = document.getElementById("zoomSlider");
+                const zoomPct = document.getElementById("zoomPct");
+                const zoomInBtn = document.getElementById("zoomInBtn");
+                const zoomOutBtn = document.getElementById("zoomOutBtn");
+                const zoomFitBtn = document.getElementById("zoomFitBtn");
+                const zoomResetBtn = document.getElementById("zoomResetBtn");
 
                 const MM_PER_PX = 25.4 / 96;
                 const PX_PER_MM = 96 / 25.4;
+                const ZOOM_MIN = 0.15;
+                const ZOOM_MAX = 1.5;
+                let viewZoom = 1;
+                let savedZoomBeforePrint = null;
                 const IN_PER_PX = 1 / 96;
                 const PX_PER_IN = 96;
 
@@ -731,10 +947,13 @@
                     return pages;
                 }
 
-                // Binary-search the row-height target T so ALL images justify-pack onto exactly
-                // (at most) targetPages pages, maximizing tile size without exceeding that count.
+                // Fit images onto targetPages pages: binary-search row height so they pack into
+                // at most N pages (maximizing tile size). Callers pad to exactly N pages so empty
+                // sheets still appear when there aren't enough images to fill them.
                 // maxDimIn: if > 0, cap each image so its larger side ≤ maxDimIn inches (0 = expand to fill).
                 function fitAllToNPages(list, contentW, gapPx, availH, maxDimIn, targetPages) {
+                    if (!list.length) return [];
+
                     const maxDimPx = maxDimIn > 0 ? maxDimIn * PX_PER_IN : 0;
 
                     function pagesAtT(T) {
@@ -754,8 +973,7 @@
                         hi = Math.min(hi, Math.max(maxAllowedH, 4));
                     }
 
-                    // If images already fit within the target page count at max allowed size,
-                    // use that (when maxDim is set we do not expand further).
+                    // Prefer larger tiles when content already fits in fewer than N pages.
                     let hiPages = pagesAtT(hi);
                     if (hiPages.length <= targetPages) return hiPages;
 
@@ -809,13 +1027,6 @@
                 function layoutAll() {
                     updatePrintPageSize();
                     pagesEl.innerHTML = "";
-                    if (!images.length) {
-                        const shell = makePageShell(1);
-                        pagesEl.appendChild(shell.shell);
-                        toggleEmptyStateInto(shell.page);
-                        statusText.textContent = "0 images · 0 pages · sheet fill 0%";
-                        return;
-                    }
 
                     const { w: pageW, h: pageH } = currentPagePx();
                     const gapPx = parseInt(gapInput.value, 10);
@@ -824,13 +1035,20 @@
                     const maxDimIn = parseFloat(maxDimInput.value) || 0;
                     const targetPages = Math.max(1, parseInt(pageCountInput.value, 10) || 1);
 
-                    const ordered = currentOrder();
-                    const pageDefs = fitAllToNPages(ordered, contentW, gapPx, availH, maxDimIn, targetPages);
+                    // Always show exactly targetPages sheets, even when empty or under-filled.
+                    const ordered = images.length ? currentOrder() : [];
+                    const packed = fitAllToNPages(ordered, contentW, gapPx, availH, maxDimIn, targetPages);
+                    const pageDefs = packed.slice();
+                    while (pageDefs.length < targetPages) pageDefs.push([]);
 
                     let totalImgArea = 0;
                     pageDefs.forEach((rows, pIdx) => {
                         const shell = makePageShell(pIdx + 1);
                         pagesEl.appendChild(shell.shell);
+                        if (!rows.length) {
+                            if (!images.length && pIdx === 0) toggleEmptyStateInto(shell.page);
+                            return;
+                        }
                         commitRows(rows, gapPx);
                         rows.forEach((row) => {
                             row.items.forEach((rec) => {
@@ -842,9 +1060,61 @@
 
                     updateBadges();
                     renumber();
-                    const totalArea = pageDefs.length * pageW * pageH;
-                    const fillPct = Math.min(100, Math.round((totalImgArea / totalArea) * 100));
-                    statusText.textContent = images.length + " images · " + pageDefs.length + (pageDefs.length === 1 ? " page" : " pages") + " · sheet fill " + fillPct + "%";
+                    const totalArea = targetPages * pageW * pageH;
+                    const fillPct = totalArea ? Math.min(100, Math.round((totalImgArea / totalArea) * 100)) : 0;
+                    statusText.textContent =
+                        images.length +
+                        " images · " +
+                        targetPages +
+                        (targetPages === 1 ? " page" : " pages") +
+                        " · sheet fill " +
+                        fillPct +
+                        "%";
+
+                    // Keep current view zoom; re-measure scaler after DOM rebuild
+                    requestAnimationFrame(() => applyViewZoom(viewZoom));
+                }
+
+                // ---------- preview zoom (screen only; print stays 100%) ----------
+                function clampZoom(z) {
+                    return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z));
+                }
+
+                function measurePagesNatural() {
+                    // Temporarily clear scale to read true layout size
+                    const prev = pagesEl.style.transform;
+                    pagesEl.style.transform = "none";
+                    const w = Math.max(1, pagesEl.scrollWidth || pagesEl.offsetWidth);
+                    const h = Math.max(1, pagesEl.scrollHeight || pagesEl.offsetHeight);
+                    pagesEl.style.transform = prev;
+                    return { w, h };
+                }
+
+                function applyViewZoom(z) {
+                    viewZoom = clampZoom(z);
+                    const { w: naturalW, h: naturalH } = measurePagesNatural();
+                    // Scale the pages; outer scaler reserves the visual (scaled) footprint for scroll.
+                    pagesEl.style.transformOrigin = "top left";
+                    pagesEl.style.transform = "scale(" + viewZoom + ")";
+                    zoomScaler.style.transform = "none";
+                    zoomScaler.style.width = Math.ceil(naturalW * viewZoom) + "px";
+                    zoomScaler.style.height = Math.ceil(naturalH * viewZoom) + "px";
+
+                    const pct = Math.round(viewZoom * 100);
+                    zoomPct.textContent = pct + "%";
+                    zoomSlider.value = String(pct);
+                }
+
+                function fitZoomToView() {
+                    pagesEl.style.transform = "none";
+                    zoomScaler.style.width = "max-content";
+                    zoomScaler.style.height = "auto";
+                    const naturalW = Math.max(1, pagesEl.scrollWidth || pagesEl.offsetWidth);
+                    const naturalH = Math.max(1, pagesEl.scrollHeight || pagesEl.offsetHeight);
+                    const availW = Math.max(40, zoomViewport.clientWidth - 12);
+                    const availH = Math.max(40, zoomViewport.clientHeight - 12);
+                    const fit = Math.min(ZOOM_MAX, availW / naturalW, availH / naturalH);
+                    applyViewZoom(fit);
                 }
 
                 function makePageShell(num) {
@@ -988,36 +1258,61 @@
                 }
 
                 // ---------- drag / resize / rotate ----------
-                // Dragging tracks the tile's offset from the pointer in viewport space, and on every
-                // move looks up which .page element is under the pointer. If that page differs from
-                // the tile's current parent, the tile is reparented so it can move between pages.
+                // Drag in unrotated page-local space (accounts for viewZoom). pointer-events:none on
+                // the tile so elementFromPoint can see the page underneath; rAF batches layout work.
                 function startDrag(e, rec) {
                     e.preventDefault();
-                    const tileRect = rec.el.getBoundingClientRect();
-                    const offsetX = e.clientX - tileRect.left;
-                    const offsetY = e.clientY - tileRect.top;
+                    const startPage = rec.el.parentElement;
+                    const startPageRect = startPage.getBoundingClientRect();
+                    // Offset of pointer from the tile's layout top-left (rec.x/rec.y), in page px.
+                    // getBoundingClientRect is scaled by viewZoom, so divide to stay in layout space.
+                    const offsetX = (e.clientX - startPageRect.left) / viewZoom - rec.x;
+                    const offsetY = (e.clientY - startPageRect.top) / viewZoom - rec.y;
+
                     rec.el.classList.add("dragging");
                     rec.el.style.zIndex = zTop++;
+                    rec.el.style.pointerEvents = "none";
                     rec.el.setPointerCapture(e.pointerId);
-                    function move(ev) {
-                        const desiredLeft = ev.clientX - offsetX;
-                        const desiredTop = ev.clientY - offsetY;
+
+                    let raf = 0;
+                    let lastEv = null;
+
+                    function applyMove(ev) {
                         const targetPage = pageElementAtPoint(ev.clientX, ev.clientY) || rec.el.parentElement;
                         if (targetPage !== rec.el.parentElement) {
                             targetPage.appendChild(rec.el);
                         }
                         const pageRect = targetPage.getBoundingClientRect();
-                        rec.x = desiredLeft - pageRect.left;
-                        rec.y = desiredTop - pageRect.top;
+                        rec.x = (ev.clientX - pageRect.left) / viewZoom - offsetX;
+                        rec.y = (ev.clientY - pageRect.top) / viewZoom - offsetY;
                         renderTile(rec);
                     }
+
+                    function move(ev) {
+                        lastEv = ev;
+                        if (raf) return;
+                        raf = requestAnimationFrame(() => {
+                            raf = 0;
+                            if (lastEv) applyMove(lastEv);
+                        });
+                    }
+
                     function up() {
+                        if (raf) {
+                            cancelAnimationFrame(raf);
+                            raf = 0;
+                        }
+                        if (lastEv) applyMove(lastEv);
                         rec.el.classList.remove("dragging");
+                        rec.el.style.pointerEvents = "";
                         rec.el.removeEventListener("pointermove", move);
                         rec.el.removeEventListener("pointerup", up);
+                        rec.el.removeEventListener("pointercancel", up);
                     }
+
                     rec.el.addEventListener("pointermove", move);
                     rec.el.addEventListener("pointerup", up);
+                    rec.el.addEventListener("pointercancel", up);
                 }
 
                 function startResize(e, rec) {
@@ -1128,6 +1423,32 @@
                     mainRow.classList.toggle("stacked", orientation === "landscape");
                 }
 
+                function setControlsCollapsed(collapsed) {
+                    mainRow.classList.toggle("controls-collapsed", collapsed);
+                    document.querySelector(".app").classList.toggle("controls-collapsed", collapsed);
+                    // After collapse, refit if user was using fit-all, or re-apply zoom for space
+                    requestAnimationFrame(() => applyViewZoom(viewZoom));
+                }
+                document.getElementById("collapseControlsBtn").addEventListener("click", () => setControlsCollapsed(true));
+                document.getElementById("expandControlsBtn").addEventListener("click", () => setControlsCollapsed(false));
+
+                zoomInBtn.addEventListener("click", () => applyViewZoom(viewZoom + 0.1));
+                zoomOutBtn.addEventListener("click", () => applyViewZoom(viewZoom - 0.1));
+                zoomResetBtn.addEventListener("click", () => applyViewZoom(1));
+                zoomFitBtn.addEventListener("click", () => fitZoomToView());
+                zoomSlider.addEventListener("input", () => applyViewZoom(parseInt(zoomSlider.value, 10) / 100));
+
+                zoomViewport.addEventListener(
+                    "wheel",
+                    (e) => {
+                        if (!(e.ctrlKey || e.metaKey)) return;
+                        e.preventDefault();
+                        const step = e.deltaY < 0 ? 0.08 : -0.08;
+                        applyViewZoom(viewZoom + step);
+                    },
+                    { passive: false },
+                );
+
                 orientSeg.querySelectorAll("button").forEach((b) => {
                     b.addEventListener("click", () => {
                         orientation = b.dataset.v;
@@ -1160,7 +1481,9 @@
                 exportBtn.addEventListener("click", exportPNG);
                 printBtn.addEventListener("click", () => {
                     deselectAll();
-                    window.print();
+                    // Defer print so layout reflow (deselect outlines removed) settles first;
+                    // helps multi-page jobs avoid a blank first sheet in some browsers.
+                    requestAnimationFrame(() => window.print());
                 });
                 clearBtn.addEventListener("click", () => {
                     images = [];
@@ -1169,7 +1492,20 @@
                 });
 
                 // Also unselect if the browser print dialog is triggered any other way (Ctrl+P, etc.)
-                window.addEventListener("beforeprint", () => deselectAll());
+                window.addEventListener("beforeprint", () => {
+                    deselectAll();
+                    // Force 100% for accurate multi-page print (CSS also clears transform)
+                    savedZoomBeforePrint = viewZoom;
+                    pagesEl.style.transform = "none";
+                    zoomScaler.style.width = "auto";
+                    zoomScaler.style.height = "auto";
+                });
+                window.addEventListener("afterprint", () => {
+                    if (savedZoomBeforePrint != null) {
+                        applyViewZoom(savedZoomBeforePrint);
+                        savedZoomBeforePrint = null;
+                    }
+                });
 
                 document.addEventListener("keydown", (e) => {
                     const active = document.activeElement;
@@ -1193,6 +1529,7 @@
 
                 updateMainRowLayout();
                 layoutAll();
+                applyViewZoom(1);
             })();
         </script>
         <script>
