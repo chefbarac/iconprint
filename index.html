@@ -285,7 +285,6 @@
 
             .page-scaler {
                 position: relative;
-                overflow: visible;
             }
             .page {
                 position: relative;
@@ -294,17 +293,45 @@
                     0 18px 40px var(--paper-edge),
                     0 2px 6px rgba(0, 0, 0, 0.08);
                 overflow: hidden;
-                transition: transform 0.12s ease-out;
-                will-change: transform;
             }
-            .page.inspecting {
+
+            /* Circular magnifier loupe (inspect on hover) */
+            .loupe {
+                position: fixed;
+                width: 168px;
+                height: 168px;
+                border-radius: 50%;
+                border: 2.5px solid var(--cyan);
                 box-shadow:
-                    0 28px 60px rgba(0, 0, 0, 0.22),
-                    0 4px 12px rgba(0, 0, 0, 0.1);
-                z-index: 20;
+                    0 0 0 1px rgba(255, 255, 255, 0.85),
+                    0 10px 28px rgba(0, 0, 0, 0.28);
+                overflow: hidden;
+                pointer-events: none;
+                z-index: 950;
+                display: none;
+                background: #fff;
             }
-            .page-scaler.inspecting {
-                z-index: 20;
+            .loupe.visible {
+                display: block;
+            }
+            .loupe canvas {
+                display: block;
+                width: 100%;
+                height: 100%;
+            }
+            .loupe .loupe-label {
+                position: absolute;
+                bottom: 8px;
+                left: 50%;
+                transform: translateX(-50%);
+                font-family: var(--font-mono);
+                font-size: 9px;
+                color: #fff;
+                background: rgba(23, 123, 134, 0.85);
+                padding: 1px 6px;
+                border-radius: 2px;
+                white-space: nowrap;
+                pointer-events: none;
             }
             .page.no-image {
                 display: flex;
@@ -943,6 +970,10 @@
                         </div>
                     </div>
                 </section>
+                <div class="loupe" id="loupe" aria-hidden="true">
+                    <canvas id="loupeCanvas" width="168" height="168"></canvas>
+                    <span class="loupe-label">2.5×</span>
+                </div>
             </main>
 
             <!-- ============ INSPECTOR ============ -->
@@ -992,7 +1023,7 @@
 
                 <div class="divider"></div>
                 <p class="hint">Nudge selected layer with arrow keys (<kbd>Shift</kbd> = 10px). Press <kbd>Delete</kbd> to remove it.</p>
-                <p class="hint" style="margin-top: 10px">Hover the page to zoom-inspect (~2×). Move the cursor to focus different areas; drag is unchanged.</p>
+                <p class="hint" style="margin-top: 10px">Hover the page for a 2.5× circular magnifier — useful for checking the seam.</p>
             </aside>
         </div>
 
@@ -1345,6 +1376,8 @@
                     historyGrid: document.getElementById("historyGrid"),
                     printBtn: document.getElementById("printBtn"),
                     printArea: document.getElementById("printArea"),
+                    loupe: document.getElementById("loupe"),
+                    loupeCanvas: document.getElementById("loupeCanvas"),
                     // Sync UI
                     syncBtn: document.getElementById("syncBtn"),
                     syncDot: document.getElementById("syncDot"),
@@ -1368,9 +1401,6 @@
                     selectedId: null,
                     nextId: 1,
                     brightness: 1, // 1 = 100%, applied to the whole stitched page (preview + export)
-                    inspectZoom: 1, // 1 = normal fit; >1 when hovering to inspect
-                    inspectOrigin: "top left",
-                    isPointerDown: false, // disable inspect zoom while dragging/resizing
                 };
 
                 // Cached scan payload so we don't rebuild options on every scan.
@@ -1418,52 +1448,99 @@
                     const availW = avail.width - 80;
                     const availH = avail.height - 80;
                     state.scale = Math.min(availW / state.pageW, availH / state.pageH, 1);
-
-                    const zoom = state.inspectZoom > 1 && state.layers.length > 0 ? state.inspectZoom : 1;
-                    const effectiveScale = state.scale * zoom;
-
-                    // Keep the scaler box at the fitted size so layout stays stable;
-                    // the page transform may overflow (pageScaler + workspace allow it).
                     els.pageScaler.style.width = state.pageW * state.scale + "px";
                     els.pageScaler.style.height = state.pageH * state.scale + "px";
-                    els.page.style.transform = "scale(" + effectiveScale + ")";
-                    els.page.style.transformOrigin = zoom > 1 ? state.inspectOrigin : "top left";
-                    els.page.classList.toggle("inspecting", zoom > 1);
-                    els.pageScaler.classList.toggle("inspecting", zoom > 1);
+                    els.page.style.transform = "scale(" + state.scale + ")";
+                    els.page.style.transformOrigin = "top left";
 
                     els.emptyHint.style.display = state.layers.length === 0 ? "block" : "none";
                 }
 
-                // ---------- Hover zoom (inspect canvas) ----------
-                const INSPECT_ZOOM = 2.15;
+                // ---------- Circular loupe (hover inspect) ----------
+                const LOUPE_SIZE = 168;
+                const LOUPE_ZOOM = 2.5;
+                let loupeSource = null; // full-page canvas cache for loupe sampling
+                let loupeDirty = true;
 
-                function setInspectFromEvent(e) {
-                    if (state.layers.length === 0 || state.isPointerDown) {
-                        if (state.inspectZoom !== 1) {
-                            state.inspectZoom = 1;
-                            layoutPage();
-                        }
+                function invalidateLoupeSource() {
+                    loupeDirty = true;
+                }
+
+                function ensureLoupeSource() {
+                    if (!loupeDirty && loupeSource) return loupeSource;
+                    if (state.layers.length === 0) {
+                        loupeSource = null;
+                        loupeDirty = false;
+                        return null;
+                    }
+                    // Sample at a moderate resolution for speed; still sharp in the loupe
+                    const sampleScale = Math.min(1, 1200 / Math.max(state.pageW, state.pageH));
+                    loupeSource = buildStitchedCanvas(sampleScale);
+                    loupeDirty = false;
+                    return loupeSource;
+                }
+
+                function hideLoupe() {
+                    if (els.loupe) els.loupe.classList.remove("visible");
+                }
+
+                function updateLoupe(e) {
+                    if (!els.loupe || !els.loupeCanvas || state.layers.length === 0) {
+                        hideLoupe();
                         return;
                     }
-                    const rect = els.pageScaler.getBoundingClientRect();
-                    if (rect.width <= 0 || rect.height <= 0) return;
-                    const xPct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
-                    const yPct = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
-                    state.inspectOrigin = xPct + "% " + yPct + "%";
-                    state.inspectZoom = INSPECT_ZOOM;
-                    layoutPage();
+                    const scalerRect = els.pageScaler.getBoundingClientRect();
+                    // Only show when pointer is over the page area
+                    if (
+                        e.clientX < scalerRect.left ||
+                        e.clientX > scalerRect.right ||
+                        e.clientY < scalerRect.top ||
+                        e.clientY > scalerRect.bottom
+                    ) {
+                        hideLoupe();
+                        return;
+                    }
+
+                    const pageX = (e.clientX - scalerRect.left) / state.scale;
+                    const pageY = (e.clientY - scalerRect.top) / state.scale;
+
+                    const src = ensureLoupeSource();
+                    if (!src) {
+                        hideLoupe();
+                        return;
+                    }
+
+                    const srcScale = src.width / state.pageW;
+                    const halfSrc = LOUPE_SIZE / 2 / LOUPE_ZOOM;
+                    const sx = pageX * srcScale - halfSrc * srcScale;
+                    const sy = pageY * srcScale - halfSrc * srcScale;
+                    const sw = halfSrc * 2 * srcScale;
+
+                    const ctx = els.loupeCanvas.getContext("2d");
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = "high";
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(0, 0, LOUPE_SIZE, LOUPE_SIZE);
+                    ctx.drawImage(src, sx, sy, sw, sw, 0, 0, LOUPE_SIZE, LOUPE_SIZE);
+
+                    // Keep loupe near the cursor but offset so it doesn't cover the point
+                    const offset = 20;
+                    let left = e.clientX + offset;
+                    let top = e.clientY + offset;
+                    if (left + LOUPE_SIZE > window.innerWidth - 8) left = e.clientX - LOUPE_SIZE - offset;
+                    if (top + LOUPE_SIZE > window.innerHeight - 8) top = e.clientY - LOUPE_SIZE - offset;
+                    if (left < 8) left = 8;
+                    if (top < 8) top = 8;
+
+                    els.loupe.style.left = left + "px";
+                    els.loupe.style.top = top + "px";
+                    els.loupe.classList.add("visible");
                 }
 
-                function clearInspect() {
-                    if (state.inspectZoom === 1) return;
-                    state.inspectZoom = 1;
-                    state.inspectOrigin = "top left";
-                    layoutPage();
-                }
-
-                els.pageScaler.addEventListener("mousemove", setInspectFromEvent);
-                els.pageScaler.addEventListener("mouseenter", setInspectFromEvent);
-                els.pageScaler.addEventListener("mouseleave", clearInspect);
+                els.pageScaler.addEventListener("mousemove", updateLoupe);
+                els.pageScaler.addEventListener("mouseleave", hideLoupe);
+                // Hide while interacting so drag/resize stay clear
+                els.pageScaler.addEventListener("pointerdown", hideLoupe);
 
                 // ---------- File loading ----------
                 function loadFile(file, slotName) {
@@ -1587,6 +1664,8 @@
                     updateSeamGuide();
                     renderLayerList();
                     renderSelectedControls();
+                    invalidateLoupeSource();
+                    if (state.layers.length === 0) hideLoupe();
                 }
 
                 function updateSeamGuide() {
@@ -1695,8 +1774,6 @@
                 function startDrag(e, layer, el) {
                     if (e.target.classList.contains("handle")) return;
                     e.stopPropagation();
-                    state.isPointerDown = true;
-                    clearInspect();
                     state.selectedId = layer.id;
                     renderAll();
                     const startX = e.clientX,
@@ -1716,12 +1793,12 @@
                         updateSeamGuide();
                     }
                     function onUp(ev) {
-                        state.isPointerDown = false;
                         el.releasePointerCapture(ev.pointerId);
                         el.removeEventListener("pointermove", onMove);
                         el.removeEventListener("pointerup", onUp);
                         el.style.cursor = "grab";
                         renderLayerList();
+                        invalidateLoupeSource();
                     }
                     el.addEventListener("pointermove", onMove);
                     el.addEventListener("pointerup", onUp);
@@ -1729,8 +1806,6 @@
 
                 function startResize(e, layer, el) {
                     e.stopPropagation();
-                    state.isPointerDown = true;
-                    clearInspect();
                     state.selectedId = layer.id;
                     const startX = e.clientX;
                     const origW = layer.w,
@@ -1747,7 +1822,6 @@
                         renderAll();
                     }
                     function onUp(ev) {
-                        state.isPointerDown = false;
                         e.target.releasePointerCapture(ev.pointerId);
                         e.target.removeEventListener("pointermove", onMove);
                         e.target.removeEventListener("pointerup", onUp);
