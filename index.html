@@ -782,6 +782,38 @@
                     height: 100%;
                 }
             }
+
+            .stitch-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(250, 250, 247, 0.72);
+    backdrop-filter: blur(1px);
+    align-items: center;
+    justify-content: center;
+    z-index: 900;
+}
+.stitch-overlay.visible { display: flex; }
+.stitch-overlay-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 22px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+}
+.stitch-spinner {
+    width: 26px; height: 26px;
+    border: 3px solid var(--line);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.stitch-overlay-text { font-size: 13px; font-weight: 600; color: var(--ink); }
         </style>
     </head>
     <body>
@@ -997,6 +1029,14 @@
                     <canvas id="loupeCanvas" width="320" height="200"></canvas>
                     <span class="loupe-label">2×</span>
                 </div>
+                <!-- add near .loupe in the HTML, inside <main> -->
+<div class="stitch-overlay" id="stitchOverlay">
+    <div class="stitch-overlay-card">
+        <div class="stitch-spinner"></div>
+        <div class="stitch-overlay-text" id="stitchOverlayText">Analyzing scan overlap…</div>
+        <button class="btn accent small" id="stitchCancelBtn">Cancel</button>
+    </div>
+</div>
             </main>
 
             <!-- ============ INSPECTOR ============ -->
@@ -1360,6 +1400,16 @@
                         console.error(err);
                     }
                 }
+
+                function showStitchOverlay() {
+    document.getElementById("stitchOverlay").classList.add("visible");
+}
+function hideStitchOverlay() {
+    document.getElementById("stitchOverlay").classList.remove("visible");
+}
+document.getElementById("stitchCancelBtn").addEventListener("click", () => {
+    stitchAbortToken.cancelled = true;
+});
 
                 // ---------- Paper definitions (inches) ----------
                 const PAPER_SIZES = {
@@ -1742,10 +1792,13 @@ function computeGlobalOverlapEstimate(topLayer, bottomLayer) {
                 }
 
                 function setStitchStatus(msg, warn) {
-                    if (!els.stitchStatus) return;
-                    els.stitchStatus.textContent = msg || "";
-                    els.stitchStatus.classList.toggle("warn", !!warn);
-                }
+    if (els.stitchStatus) {
+        els.stitchStatus.textContent = msg || "";
+        els.stitchStatus.classList.toggle("warn", !!warn);
+    }
+    const overlayText = document.getElementById("stitchOverlayText");
+    if (overlayText && msg) overlayText.textContent = msg;
+}
 
                 async function performAutoStitch() {
                     if (stitchInProgress) return;
@@ -1775,7 +1828,7 @@ function computeGlobalOverlapEstimate(topLayer, bottomLayer) {
                         // Let the status message paint before the heavier pixel-analysis work.
                         await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
 
-                        const result = await computeSmartAlignment(top, bottom);
+                        const result = await computeSmartAlignment(top, bottom, stitchAbortToken);
 
                         if (result && result.confidence > 0.12) {
     const shorterH = Math.min(top.h, bottom.h);
@@ -1806,11 +1859,99 @@ function computeGlobalOverlapEstimate(topLayer, bottomLayer) {
                     }
                 }
 
+                async function performAutoStitch() {
+    if (stitchInProgress) return;
+    stitchInProgress = true;
+    stitchAbortToken = { cancelled: false }; // fresh token each run
+    els.autoFit.disabled = true;
+    showStitchOverlay(); // see below
+
+    try {
+        const { top, bottom } = basicAutoFit();
+        if (!top || !bottom) { setStitchStatus(""); return; }
+        if (!els.smartStitchToggle.checked) {
+            setStitchStatus("Auto-fit complete. Enable smart stitch for pixel-perfect alignment.");
+            return;
+        }
+        const canSmart = top.rot % 180 === 0 && bottom.rot % 180 === 0;
+        if (!canSmart) {
+            setStitchStatus("Smart alignment skipped (a scan is rotated 90°).", true);
+            return;
+        }
+
+        setStitchStatus("Analyzing scan overlap (multi-scale)…");
+        await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
+
+        const result = await computeSmartAlignment(top, bottom, stitchAbortToken);
+        
+        if (result && result.confidence > 0.12) {
+    const shorterH = Math.min(top.h, bottom.h);
+    const maxOverlap = Math.round(shorterH * 0.9);
+    const minOverlap = Math.max(Math.round(0.15 * state.dpi), Math.round(shorterH * 0.03));
+    const overlapPx = Math.max(minOverlap, Math.min(maxOverlap, result.overlapPx));
+
+    bottom.y = top.h - overlapPx;
+    bottom.x = -result.dxPx;   // FIX: was `result.dxPx` — sign was inverted
+    bottom.fineRot = 0;
+
+    state.seamAnchorY = bottom.y;
+    els.overlapSlider.value = 0;
+    els.overlapVal.textContent = "0 px";
+
+    renderAll();
+    setStitchStatus(
+        "Smart-aligned — overlap " + Math.round(overlapPx) + "px, shift " +
+        Math.round(result.dxPx) + "px (confidence " + Math.round(result.confidence * 100) + "%)."
+    );
+}
+    } catch (err) {
+        if (err instanceof StitchCancelled) {
+            setStitchStatus("Alignment cancelled.", true);
+        } else {
+            console.error("Smart stitch failed:", err);
+            setStitchStatus("Smart alignment failed — using basic auto-fit instead.", true);
+        }
+    } finally {
+        stitchInProgress = false;
+        els.autoFit.disabled = false;
+        hideStitchOverlay();
+    }
+} 
+
                 // ---------- Smart stitch: multi-scale edge + intensity alignment (position only) ----------
                 // Matches the bottom edge of the top scan against the top edge of the bottom
                 // scan using hierarchical (coarse → fine) search over vertical overlap (dy)
                 // and horizontal shift (dx). No rotation. Uses gradient (edge) maps plus
                 // grayscale intensity; takes longer but aims for a stronger, more reliable peak.
+                // ---------- Cancellation ----------
+let stitchAbortToken = { cancelled: false };
+
+class StitchCancelled extends Error {}
+
+function checkAbort(token) {
+    if (token.cancelled) throw new StitchCancelled();
+}
+
+// Runs work in chunks, yielding to the UI thread between them and
+// checking for cancellation. `evaluate` gets called once per (dy,dx) pair.
+async function runChunked(dyRange, dxRange, step, evaluate, token, chunkBudgetMs = 12) {
+    let count = 0;
+    for (let dy = dyRange[0]; dy <= dyRange[1]; dy += step) {
+        for (let dx = dxRange[0]; dx <= dxRange[1]; dx += step) {
+            evaluate(dy, dx);
+            count++;
+            if (count % 40 === 0) {
+                checkAbort(token);
+                // Yield on a real animation-frame boundary so it actually
+                // paints, not just a microtask flush.
+                await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
+            }
+        }
+    }
+    checkAbort(token);
+}
+
+
                 function drawLayerToSmallCanvas(layer, workScale) {
                     const w = Math.max(1, Math.round(layer.w * workScale));
                     const h = Math.max(1, Math.round(layer.h * workScale));
@@ -1867,9 +2008,54 @@ function computeGlobalOverlapEstimate(topLayer, bottomLayer) {
                     return { data: out, width: w, height };
                 }
 
+                function buildIntegralImages(strip) {
+    const { data, width, height } = strip;
+    const W = width + 1, H = height + 1;
+    const sum = new Float64Array(W * H);
+    const sumSq = new Float64Array(W * H);
+    const count = new Int32Array(W * H);
+
+    for (let y = 0; y < height; y++) {
+        let rowSum = 0, rowSumSq = 0, rowCount = 0;
+        const rowBase = y * width;
+        const outRow = (y + 1) * W, outRowPrev = y * W;
+        for (let x = 0; x < width; x++) {
+            const v = data[rowBase + x];
+            const valid = v === v; // NaN check
+            const vv = valid ? v : 0;
+            rowSum += vv;
+            rowSumSq += vv * vv;
+            rowCount += valid ? 1 : 0;
+            sum[outRow + x + 1] = sum[outRowPrev + x + 1] + rowSum;
+            sumSq[outRow + x + 1] = sumSq[outRowPrev + x + 1] + rowSumSq;
+            count[outRow + x + 1] = count[outRowPrev + x + 1] + rowCount;
+        }
+    }
+    return { sum, sumSq, count, W, H };
+}
+
+function satRectSum(sat, y0, y1, x0, x1) {
+    const { sum, W } = sat;
+    return sum[y1 * W + x1] - sum[y0 * W + x1] - sum[y1 * W + x0] + sum[y0 * W + x0];
+}
+function satRectSumSq(sat, y0, y1, x0, x1) {
+    const { sumSq, W } = sat;
+    return sumSq[y1 * W + x1] - sumSq[y0 * W + x1] - sumSq[y1 * W + x0] + sumSq[y0 * W + x0];
+}
+function satRectCount(sat, y0, y1, x0, x1) {
+    const { count, W } = sat;
+    return count[y1 * W + x1] - count[y0 * W + x1] - count[y1 * W + x0] + count[y0 * W + x0];
+}
+function windowFullyValid(topSAT, botSAT, topStartRow, dy, xStart, xEnd, dx) {
+    const windowSize = dy * (xEnd - xStart);
+    if (windowSize <= 0) return false;
+    if (satRectCount(topSAT, topStartRow, topStartRow + dy, xStart, xEnd) !== windowSize) return false;
+    return satRectCount(botSAT, 0, dy, xStart + dx, xEnd + dx) === windowSize;
+}
+
                 // Zero-mean normalized cross-correlation on a rectangular window.
                 // Works on either intensity or gradient strips.
-                function correlateOverlap(topStrip, bottomStrip, w, stripH, dy, dx) {
+                function correlateOverlapSlow(topStrip, bottomStrip, w, stripH, dy, dx) {
                     const topStartRow = stripH - dy;
                     const xStart = Math.max(0, -dx);
                     const xEnd = Math.min(w, w - dx);
@@ -1910,15 +2096,64 @@ function computeGlobalOverlapEstimate(topLayer, bottomLayer) {
                     return covAB / Math.sqrt(varA * varB);
                 }
 
+              
+              function correlateOverlapFast(topStrip, topSAT, bottomStrip, botSAT, w, stripH, dy, dx, topStartRow, xStart, xEnd) {
+    const n = dy * (xEnd - xStart);
+    const sumA = satRectSum(topSAT, topStartRow, topStartRow + dy, xStart, xEnd);
+    const sumA2 = satRectSumSq(topSAT, topStartRow, topStartRow + dy, xStart, xEnd);
+    const sumB = satRectSum(botSAT, 0, dy, xStart + dx, xEnd + dx);
+    const sumB2 = satRectSumSq(botSAT, 0, dy, xStart + dx, xEnd + dx);
+
+    // Only the cross term still needs the pixel loop — and it's now a
+    // single multiply-add per pixel, no branches, since validity is
+    // already guaranteed by the caller.
+    let sumAB = 0;
+    for (let y = 0; y < dy; y++) {
+        const rowA = (topStartRow + y) * w;
+        const rowB = y * w;
+        for (let x = xStart; x < xEnd; x++) {
+            sumAB += topStrip.data[rowA + x] * bottomStrip.data[rowB + x + dx];
+        }
+    }
+
+    const meanA = sumA / n, meanB = sumB / n;
+    const covAB = sumAB / n - meanA * meanB;
+    const varA = sumA2 / n - meanA * meanA;
+    const varB = sumB2 / n - meanB * meanB;
+    if (varA <= 1e-8 || varB <= 1e-8) return null;
+    return covAB / Math.sqrt(varA * varB);
+}
+
+function correlateOverlap(topStrip, topSAT, bottomStrip, botSAT, w, stripH, dy, dx) {
+    const topStartRow = stripH - dy;
+    const xStart = Math.max(0, -dx);
+    const xEnd = Math.min(w, w - dx);
+    if (xEnd <= xStart || dy < 2) return null;
+
+    if (windowFullyValid(topSAT, botSAT, topStartRow, dy, xStart, xEnd, dx)) {
+        return correlateOverlapFast(topStrip, topSAT, bottomStrip, botSAT, w, stripH, dy, dx, topStartRow, xStart, xEnd);
+    }
+    // Rare boundary case — identical results to before, just slower.
+    return correlateOverlapSlow(topStrip, bottomStrip, w, stripH, dy, dx);
+}
+              
                 // Combined score: primarily edges (structure), with a smaller intensity term
                 // so solid regions still contribute when edges are sparse.
-                function scoreAt(topEdge, botEdge, topGray, botGray, w, stripH, dy, dx) {
-                    const se = correlateOverlap(topEdge, botEdge, w, stripH, dy, dx);
-                    if (se === null) return null;
-                    const si = correlateOverlap(topGray, botGray, w, stripH, dy, dx);
-                    if (si === null) return se;
-                    return 0.72 * se + 0.28 * si;
-                }
+                // function scoreAt(topEdge, botEdge, topGray, botGray, w, stripH, dy, dx) {
+                //     const se = correlateOverlap(topEdge, botEdge, w, stripH, dy, dx);
+                //     if (se === null) return null;
+                //     const si = correlateOverlap(topGray, botGray, w, stripH, dy, dx);
+                //     if (si === null) return se;
+                //     return 0.72 * se + 0.28 * si;
+                // }
+
+                function scoreAt(topEdge, topEdgeSAT, botEdge, botEdgeSAT, topGray, topGraySAT, botGray, botGraySAT, w, stripH, dy, dx) {
+    const se = correlateOverlap(topEdge, topEdgeSAT, botEdge, botEdgeSAT, w, stripH, dy, dx);
+    if (se === null) return null;
+    const si = correlateOverlap(topGray, topGraySAT, botGray, botGraySAT, w, stripH, dy, dx);
+    if (si === null) return se;
+    return 0.72 * se + 0.28 * si;
+}
 
                 // Parabolic sub-pixel peak around integer (dy, dx).
                 function subPixelPeak(scores, bestDy, bestDx, dyMin, dyMax, dxMin, dxMax) {
@@ -1954,10 +2189,11 @@ function computeGlobalOverlapEstimate(topLayer, bottomLayer) {
                     return { dy, dx };
                 }
 
-              async function computeSmartAlignment(topLayer, bottomLayer) {
+              async function computeSmartAlignment(topLayer, bottomLayer, token) {
     // NEW: run the cheap global pass first — no fixed ceiling, so it works
     // whether the real overlap is a thin seam or (like your sample) most
     // of the page.
+     checkAbort(token);
     const globalEst = computeGlobalOverlapEstimate(topLayer, bottomLayer);
 
     const shorterH = Math.min(topLayer.h, bottomLayer.h);
@@ -1965,7 +2201,7 @@ function computeGlobalOverlapEstimate(topLayer, bottomLayer) {
     const maxOverlapFull = Math.round(shorterH * 0.9); // was capped at ~2in / 22-28%
 
     const scales = [
-        { workW: 180, maxDxFrac: 0.06, step: 2 },
+        { workW: 110, maxDxFrac: 0.06, step: 2 },
         { workW: 400, maxDxFrac: 0.04, step: 1 },
         { workW: 700, maxDxFrac: 0.028, step: 1 },
     ];
@@ -1976,6 +2212,7 @@ function computeGlobalOverlapEstimate(topLayer, bottomLayer) {
     let prevDxPx = 0;
 
     for (let si = 0; si < scales.length; si++) {
+        checkAbort(token);
         const cfg = scales[si];
         const workScale = cfg.workW / state.pageW;
         const topCanvas = drawLayerToSmallCanvas(topLayer, workScale);
@@ -1999,6 +2236,12 @@ function computeGlobalOverlapEstimate(topLayer, bottomLayer) {
         const topGray = getStrip(topGrayFull, topGrayFull.height - stripH, stripH);
         const botGray = getStrip(botGrayFull, 0, stripH);
 
+// NEW — one-time cost per scale, amortized across every (dy,dx) candidate
+const topEdgeSAT = buildIntegralImages(topEdge);
+const botEdgeSAT = buildIntegralImages(botEdge);
+const topGraySAT = buildIntegralImages(topGray);
+const botGraySAT = buildIntegralImages(botGray);
+
         let dyLo = minOverlapRows, dyHi = maxOverlapRows, dxLo = -maxDx, dxHi = maxDx;
         if (prevDyPx != null) {
             const centerDy = Math.round(prevDyPx * workScale);
@@ -2006,7 +2249,7 @@ function computeGlobalOverlapEstimate(topLayer, bottomLayer) {
             // Wider radius on the first (coarsest) scale since the global
             // pass is on a downsampled 140px-wide profile and can be a
             // little off; fine scales narrow around the refined result.
-            const radiusFrac = si === 0 ? 0.35 : 0.15;
+            const radiusFrac = si === 0 ? 0.12 : 0.06; // was 0.35 / 0.15
             const radiusDy = Math.max(6, Math.round((maxOverlapRows - minOverlapRows) * radiusFrac));
             const radiusDx = Math.max(4, Math.round(maxDx * 0.4));
             dyLo = Math.max(minOverlapRows, centerDy - radiusDy);
@@ -2032,23 +2275,13 @@ function computeGlobalOverlapEstimate(topLayer, bottomLayer) {
             }
         }
 
-        for (let dy = dyLo; dy <= dyHi; dy += step)
-            for (let dx = dxLo; dx <= dxHi; dx += step)
-                consider(dy, dx, scoreAt(topEdge, botEdge, topGray, botGray, w, stripH, dy, dx));
-
-        if (step > 1) {
-            for (let dy = Math.max(dyLo, best.dy - 1); dy <= Math.min(dyHi, best.dy + 1); dy++)
-                for (let dx = Math.max(dxLo, best.dx - 1); dx <= Math.min(dxHi, best.dx + 1); dx++) {
-                    if (scores.has(dy + "," + dx)) continue;
-                    consider(dy, dx, scoreAt(topEdge, botEdge, topGray, botGray, w, stripH, dy, dx));
-                }
-        }
-        for (let dy = Math.max(dyLo, best.dy - 2); dy <= Math.min(dyHi, best.dy + 2); dy++)
-            for (let dx = Math.max(dxLo, best.dx - 2); dx <= Math.min(dxHi, best.dx + 2); dx++) {
-                if (scores.has(dy + "," + dx)) continue;
-                consider(dy, dx, scoreAt(topEdge, botEdge, topGray, botGray, w, stripH, dy, dx));
-            }
-
+        await runChunked([dyLo, dyHi], [dxLo, dxHi], step, (dy, dx) => {
+    consider(dy, dx, scoreAt(
+        topEdge, topEdgeSAT, botEdge, botEdgeSAT,
+        topGray, topGraySAT, botGray, botGraySAT,
+        w, stripH, dy, dx
+    ));
+}, stitchAbortToken);
         const sub = subPixelPeak(scores, best.dy, best.dx, dyLo, dyHi, dxLo, dxHi);
         let overlapPx = sub.dy / workScale;
         let dxPx = sub.dx / workScale;
@@ -2064,6 +2297,7 @@ function computeGlobalOverlapEstimate(topLayer, bottomLayer) {
         prevDyPx = overlapPx;
         prevDxPx = dxPx;
 
+        checkAbort(token);
         await new Promise((r) => setTimeout(r, 0));
     }
 
