@@ -814,6 +814,80 @@
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 .stitch-overlay-text { font-size: 13px; font-weight: 600; color: var(--ink); }
+
+            /* ---------- Local agent / device selectors ---------- */
+            .agent-controls {
+                display: none;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+            .agent-controls.visible {
+                display: flex;
+            }
+            .agent-badge {
+                font-family: var(--font-mono);
+                font-size: 10px;
+                padding: 3px 8px;
+                border-radius: 3px;
+                background: #e8f5e9;
+                color: #2e7d32;
+                border: 1px solid #a5d6a7;
+                white-space: nowrap;
+            }
+            .agent-badge.offline {
+                background: #f5f5f5;
+                color: #757575;
+                border-color: var(--line);
+            }
+            .print-modal .field-row {
+                margin-bottom: 12px;
+            }
+            .print-modal .field-row label {
+                display: block;
+                font-size: 11.5px;
+                color: var(--muted);
+                font-weight: 500;
+                margin-bottom: 5px;
+            }
+            .print-modal .field-row select,
+            .print-modal .field-row input[type="number"] {
+                width: 100%;
+                border: 1px solid var(--line);
+                border-radius: var(--radius);
+                padding: 8px 10px;
+                font-size: 13px;
+                font-family: var(--font-mono);
+                background: #fff;
+                color: var(--ink);
+            }
+            .print-modal .radio-row {
+                display: flex;
+                gap: 16px;
+                font-size: 13px;
+            }
+            .print-modal .radio-row label {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                cursor: pointer;
+                color: var(--ink);
+                font-weight: 500;
+            }
+            .print-status {
+                font-family: var(--font-mono);
+                font-size: 12px;
+                margin-top: 10px;
+                min-height: 18px;
+            }
+            .print-status.error { color: var(--accent); }
+            .print-status.ok { color: #2e7d32; }
+            .print-actions {
+                display: flex;
+                gap: 8px;
+                margin-top: 18px;
+                justify-content: flex-end;
+            }
         </style>
     </head>
     <body>
@@ -916,6 +990,24 @@
                         </label>
                     </div>
 
+
+                    <div class="toolbar-group agent-controls" id="agentControls">
+                        <span class="agent-badge" id="agentBadge">Agent online</span>
+                        <label>Scanner
+                            <select id="scannerSelect">
+                                <option value="">—</option>
+                            </select>
+                        </label>
+                        <label>Printer
+                            <select id="printerSelect">
+                                <option value="">—</option>
+                            </select>
+                        </label>
+                        <label title="Only show printers whose name contains any of these (comma-separated). Leave empty to show all."
+                            >Show only
+                            <input type="text" id="printerFilterInput" placeholder="L5290, L3210" style="width:140px;border:1px solid var(--line);border-radius:var(--radius);padding:6px 8px;font-size:12px;font-family:var(--font-mono);background:#fff;color:var(--ink)" />
+                        </label>
+                    </div>
                     <div class="toolbar-group">
                         <button class="btn" id="upload1">
                             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
@@ -934,7 +1026,7 @@
                         <input type="file" id="file1" accept="image/*" hidden />
                         <input type="file" id="file2" accept="image/*" hidden />
 
-                        or
+                        |
 
                         <button class="btn" id="scanTop" title="Only works if the scan file is running locally.">
                             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
@@ -1141,6 +1233,85 @@
                         ><br />
                         Then enter the Host + a shared Sync Key. Layouts (including images) sync across devices on the same key.
                     </p>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="modal-overlay" id="printOverlay">
+            <div class="modal sync-modal print-modal">
+                <div class="modal-header">
+                    <h2>Print</h2>
+                    <div class="icon-btn" id="closePrint" title="Close">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 3l10 10M13 3 3 13" /></svg>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <div class="field-row">
+                        <label for="printPrinter">Printer</label>
+                        <select id="printPrinter"></select>
+                    </div>
+                    <div class="field-row">
+                        <label for="printPaper">Paper</label>
+                        <select id="printPaper">
+                            <option value="a4">A4 — 8.27 × 11.69"</option>
+                            <option value="short">Short / Letter — 8.5 × 11"</option>
+                            <option value="long">Long — 8.5 × 13"</option>
+                            <option value="legal">Legal — 8.5 × 14"</option>
+                        </select>
+                    </div>
+                    <div class="field-row">
+                        <label for="printMedia">Paper type</label>
+                        <select id="printMedia">
+                            <option value="plain" selected>Plain Paper</option>
+                            <option value="photo">Photo Quality Inkjet Paper</option>
+                            <option value="glossy">Glossy Photo Paper</option>
+                            <option value="matte">Matte Photo Paper</option>
+                        </select>
+                    </div>
+                    <div class="field-row">
+                        <label>Orientation</label>
+                        <div class="radio-row">
+                            <label><input type="radio" name="printOrient" value="portrait" checked /> Portrait</label>
+                            <label><input type="radio" name="printOrient" value="landscape" /> Landscape</label>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <label>Color</label>
+                        <div class="radio-row">
+                            <label><input type="radio" name="printColor" value="color" checked /> Color</label>
+                            <label><input type="radio" name="printColor" value="grayscale" /> Grayscale</label>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <label for="printCopies">Copies</label>
+                        <input type="number" id="printCopies" min="1" max="99" value="1" />
+                    </div>
+                    <div class="field-row">
+                        <label class="check-row" style="margin:0">
+                            <input type="checkbox" id="printCollate" checked />
+                            Collate
+                        </label>
+                    </div>
+                    <div class="field-row">
+                        <label for="printScaling">Scaling</label>
+                        <select id="printScaling">
+                            <option value="actual" selected>Actual Size</option>
+                            <option value="fit">Fit to Page</option>
+                        </select>
+                    </div>
+                    <div class="field-row">
+                        <label for="printMargins">Margins</label>
+                        <select id="printMargins">
+                            <option value="none" selected>None</option>
+                            <option value="default">Default</option>
+                        </select>
+                    </div>
+                    <div class="print-status" id="printStatus"></div>
+                    <div class="print-actions">
+                        <button class="btn" id="printCancelBtn">Close</button>
+                        <button class="btn accent" id="printSubmitBtn">Print</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1356,6 +1527,123 @@
         <script>
             (function () {
                 "use strict";
+
+                
+                // ---------- Local Icon Print Agent ----------
+                const LOCAL_AGENT = "http://localhost:5001";
+                let agentOnline = false;
+                let agentDevices = { scanners: [], printers: [] };
+                let selectedScannerId = null;
+                let selectedPrinterId = null;
+                let healthTimer = null;
+
+                function setAgentUI(online) {
+                    agentOnline = online;
+                    const controls = document.getElementById("agentControls");
+                    const badge = document.getElementById("agentBadge");
+                    const scanTop = document.getElementById("scanTop");
+                    const scanBottom = document.getElementById("scanBottom");
+                    if (controls) {
+                        if (online) controls.classList.add("visible");
+                        else controls.classList.remove("visible");
+                    }
+                    if (badge) {
+                        badge.textContent = online ? "Agent online" : "Agent offline";
+                        badge.classList.toggle("offline", !online);
+                    }
+                    // Hide scan buttons that require the agent when offline
+                    [scanTop, scanBottom].forEach((btn) => {
+                        if (!btn) return;
+                        btn.style.display = online ? "" : "none";
+                    });
+                    // Print button stays visible; modal will require agent
+                }
+
+                function getPrinterFilterPatterns() {
+                    const raw = (localStorage.getItem("iconprint_printer_filter") || "").trim();
+                    if (!raw) return [];
+                    return raw.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+                }
+
+                function filterPrinters(printers) {
+                    const patterns = getPrinterFilterPatterns();
+                    if (!patterns.length) return printers || [];
+                    return (printers || []).filter((p) => {
+                        const name = (p.name || p.id || "").toLowerCase();
+                        return patterns.some((pat) => name.includes(pat));
+                    });
+                }
+
+                function fillSelect(sel, items, selectedId) {
+                    if (!sel) return;
+                    const prev = selectedId || sel.value;
+                    sel.innerHTML = "";
+                    if (!items.length) {
+                        const o = document.createElement("option");
+                        o.value = "";
+                        o.textContent = "None found";
+                        sel.appendChild(o);
+                        return;
+                    }
+                    items.forEach((d) => {
+                        const o = document.createElement("option");
+                        o.value = d.id;
+                        o.textContent = d.name;
+                        if (d.id === prev) o.selected = true;
+                        sel.appendChild(o);
+                    });
+                    if (!sel.value && items[0]) sel.value = items[0].id;
+                }
+
+                async function refreshDevices() {
+                    try {
+                        const res = await fetch(LOCAL_AGENT + "/devices", { cache: "no-store" });
+                        if (!res.ok) throw new Error("devices " + res.status);
+                        const data = await res.json();
+                        agentDevices = {
+                            scanners: data.scanners || [],
+                            printers: data.printers || [],
+                        };
+                        const visiblePrinters = filterPrinters(agentDevices.printers);
+                        fillSelect(document.getElementById("scannerSelect"), agentDevices.scanners, selectedScannerId);
+                        fillSelect(document.getElementById("printerSelect"), visiblePrinters, selectedPrinterId);
+                        fillSelect(document.getElementById("printPrinter"), visiblePrinters, selectedPrinterId);
+                        const sc = document.getElementById("scannerSelect");
+                        const pr = document.getElementById("printerSelect");
+                        if (sc) selectedScannerId = sc.value || null;
+                        if (pr) selectedPrinterId = pr.value || null;
+                    } catch (e) {
+                        agentDevices = { scanners: [], printers: [] };
+                    }
+                }
+
+                async function checkAgentHealth() {
+                    try {
+                        const res = await fetch(LOCAL_AGENT + "/health", { cache: "no-store", signal: AbortSignal.timeout(2500) });
+                        if (!res.ok) throw new Error("health " + res.status);
+                        const data = await res.json();
+                        const online = !!(data && data.online);
+                        if (online && !agentOnline) {
+                            setAgentUI(true);
+                            await refreshDevices();
+                        } else if (!online && agentOnline) {
+                            setAgentUI(false);
+                        } else if (online) {
+                            // still online — refresh devices occasionally
+                        }
+                        if (online) setAgentUI(true);
+                    } catch (e) {
+                        if (agentOnline) setAgentUI(false);
+                        else setAgentUI(false);
+                    }
+                }
+
+                function startAgentPolling() {
+                    checkAgentHealth();
+                    if (healthTimer) clearInterval(healthTimer);
+                    healthTimer = setInterval(checkAgentHealth, 4000);
+                }
+
 
                 let audioCtx;
 
@@ -2702,12 +2990,24 @@ const botGraySAT = buildIntegralImages(botGray);
                     // (the scanner backend only knows "letter"/"a4"/"id" presets, not the
                     // long/short/legal bond-paper sizes, which are stitched from a
                     // letter-size scan anyway).
+                    if (!agentOnline) {
+                        throw new Error("Local print agent is offline");
+                    }
                     const options = getScanOptions();
-                    const res = await fetch("http://localhost:5001/scan", {
+                    if (selectedScannerId) options.scanner_id = selectedScannerId;
+                    const res = await fetch(LOCAL_AGENT + "/scan", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(options),
                     });
+                    if (!res.ok) {
+                        let msg = "Scan failed (" + res.status + ")";
+                        try {
+                            const err = await res.json();
+                            if (err.error) msg = err.error;
+                        } catch (_) {}
+                        throw new Error(msg);
+                    }
                     const blob = await res.blob();
                     const file = new File([blob], `${section}.png`, { type: "image/png" });
                     loadFile(file, section);
@@ -3193,10 +3493,224 @@ const botGraySAT = buildIntegralImages(botGray);
 
                 window.addEventListener("resize", () => renderAll());
 
+                // Agent device selectors
+                const scannerSelectEl = document.getElementById("scannerSelect");
+                const printerSelectEl = document.getElementById("printerSelect");
+                const printerFilterInput = document.getElementById("printerFilterInput");
+                // Default filter for this shop if never set
+                if (localStorage.getItem("iconprint_printer_filter") === null) {
+                    localStorage.setItem("iconprint_printer_filter", "L5290, L3210");
+                }
+                if (printerFilterInput) {
+                    printerFilterInput.value = localStorage.getItem("iconprint_printer_filter") || "";
+                    const applyPrinterFilter = () => {
+                        localStorage.setItem("iconprint_printer_filter", printerFilterInput.value.trim());
+                        const visible = filterPrinters(agentDevices.printers);
+                        fillSelect(printerSelectEl, visible, selectedPrinterId);
+                        fillSelect(document.getElementById("printPrinter"), visible, selectedPrinterId);
+                        if (printerSelectEl) selectedPrinterId = printerSelectEl.value || null;
+                    };
+                    printerFilterInput.addEventListener("change", applyPrinterFilter);
+                    printerFilterInput.addEventListener("keydown", (e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            applyPrinterFilter();
+                        }
+                    });
+                }
+                if (scannerSelectEl) {
+                    scannerSelectEl.addEventListener("change", () => {
+                        selectedScannerId = scannerSelectEl.value || null;
+                    });
+                }
+                if (printerSelectEl) {
+                    printerSelectEl.addEventListener("change", () => {
+                        selectedPrinterId = printerSelectEl.value || null;
+                        const pp = document.getElementById("printPrinter");
+                        if (pp) pp.value = selectedPrinterId || "";
+                    });
+                }
+
+                // ---------- Custom Print Dialog ----------
+                const printOverlay = document.getElementById("printOverlay");
+                const printStatus = document.getElementById("printStatus");
+                const printSubmitBtn = document.getElementById("printSubmitBtn");
+
+                function openPrintModal() {
+                    if (state.layers.length === 0) {
+                        alert("Upload and stitch your scans first.");
+                        return;
+                    }
+                    // Agent offline → fall back to browser print dialog
+                    if (!agentOnline) {
+                        printLayout();
+                        return;
+                    }
+                    // Defaults from current layout
+                    const paperSel = document.getElementById("printPaper");
+                    if (paperSel) {
+                        const key = state.paperKey || "long";
+                        // Map frontend paper keys
+                        if (["a4", "short", "long", "legal"].includes(key)) paperSel.value = key;
+                        else if (key === "letter") paperSel.value = "short";
+                        else paperSel.value = key;
+                    }
+                    // Image type → print color default
+                    const imgType = (els.imageType && els.imageType.value) || "grayscale";
+                    const wantGray = imgType === "grayscale";
+                    const colorRadio = document.querySelector('input[name="printColor"][value="color"]');
+                    const grayRadio = document.querySelector('input[name="printColor"][value="grayscale"]');
+                    if (colorRadio && grayRadio) {
+                        grayRadio.checked = wantGray;
+                        colorRadio.checked = !wantGray;
+                    }
+                    fillSelect(document.getElementById("printPrinter"), filterPrinters(agentDevices.printers), selectedPrinterId);
+                    if (printStatus) {
+                        printStatus.textContent = "";
+                        printStatus.className = "print-status";
+                    }
+                    if (printSubmitBtn) printSubmitBtn.disabled = false;
+                    if (printOverlay) printOverlay.classList.add("open");
+                }
+                function closePrintModal() {
+                    if (printOverlay) printOverlay.classList.remove("open");
+                }
+                document.getElementById("closePrint")?.addEventListener("click", closePrintModal);
+                document.getElementById("printCancelBtn")?.addEventListener("click", closePrintModal);
+                printOverlay?.addEventListener("click", (e) => {
+                    if (e.target === printOverlay) closePrintModal();
+                });
+                document.addEventListener("keydown", (e) => {
+                    if (e.key === "Escape" && printOverlay?.classList.contains("open")) closePrintModal();
+                });
+
+                async function submitDirectPrint() {
+                    if (!agentOnline) {
+                        if (printStatus) {
+                            printStatus.textContent = "Local print agent is offline.";
+                            printStatus.className = "print-status error";
+                        }
+                        return;
+                    }
+                    const printerId = document.getElementById("printPrinter")?.value;
+                    if (!printerId) {
+                        if (printStatus) {
+                            printStatus.textContent = "Select a printer.";
+                            printStatus.className = "print-status error";
+                        }
+                        return;
+                    }
+                    const paperSize = document.getElementById("printPaper")?.value || "a4";
+                    const orientation = document.querySelector('input[name="printOrient"]:checked')?.value || "portrait";
+                    const colorMode = document.querySelector('input[name="printColor"]:checked')?.value || "color";
+                    let copies = parseInt(document.getElementById("printCopies")?.value || "1", 10);
+                    if (!(copies >= 1 && copies <= 99)) copies = 1;
+                    const collate = !!document.getElementById("printCollate")?.checked;
+                    const scaling = document.getElementById("printScaling")?.value || "actual";
+                    const margins = document.getElementById("printMargins")?.value || "none";
+                    const mediaType = document.getElementById("printMedia")?.value || "plain";
+
+                    const paper = PAPER_SIZES[paperSize] || PAPER_SIZES[state.paperKey] || PAPER_SIZES.a4;
+                    let pageW = paper.w;
+                    let pageH = paper.h;
+                    if (orientation === "landscape") {
+                        pageW = paper.h;
+                        pageH = paper.w;
+                    }
+
+                    if (printStatus) {
+                        printStatus.textContent = "Building page…";
+                        printStatus.className = "print-status";
+                    }
+                    if (printSubmitBtn) printSubmitBtn.disabled = true;
+
+                    try {
+                        const canvas = buildStitchedCanvas(1);
+                        const blob = await new Promise((resolve, reject) => {
+                            canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/png");
+                        });
+
+                        const fd = new FormData();
+                        fd.append("image", blob, "page.png");
+                        fd.append("printer_id", printerId);
+                        fd.append("paper_size", paperSize);
+                        fd.append("orientation", orientation);
+                        fd.append("color_mode", colorMode);
+                        fd.append("copies", String(copies));
+                        fd.append("collate", collate ? "true" : "false");
+                        fd.append("scaling", scaling);
+                        fd.append("margins", margins);
+                        fd.append("media_type", mediaType);
+                        fd.append("page_width_inches", String(pageW));
+                        fd.append("page_height_inches", String(pageH));
+
+                        if (printStatus) printStatus.textContent = "Submitting to printer…";
+
+                        const res = await fetch(LOCAL_AGENT + "/print", { method: "POST", body: fd });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok || !data.success) {
+                            throw new Error(data.error || ("Print failed (" + res.status + ")"));
+                        }
+                        const jobId = data.job_id;
+                        if (printStatus) printStatus.textContent = "Queued — job " + jobId.slice(0, 8) + "…";
+
+                        // Poll status
+                        let tries = 0;
+                        const poll = async () => {
+                            tries++;
+                            try {
+                                const sr = await fetch(LOCAL_AGENT + "/print/jobs/" + jobId, { cache: "no-store" });
+                                const st = await sr.json();
+                                const status = st.status || "unknown";
+                                if (printStatus) {
+                                    printStatus.textContent = status.charAt(0).toUpperCase() + status.slice(1) +
+                                        (st.warnings && st.warnings.length ? " — " + st.warnings[0] : "");
+                                    if (status === "completed") printStatus.className = "print-status ok";
+                                    else if (status === "failed") printStatus.className = "print-status error";
+                                    else printStatus.className = "print-status";
+                                }
+                                if (status === "completed" || status === "failed") {
+                                    if (printSubmitBtn) printSubmitBtn.disabled = false;
+                                    if (status === "failed") {
+                                        const msg = st.error || "Print job failed";
+                                        if (printStatus) {
+                                            printStatus.textContent = "Failed: " + msg;
+                                            printStatus.className = "print-status error";
+                                        }
+                                        // Hard-stop: do not leave UI in a state that looks successful
+                                        alert("Print aborted:\n\n" + msg);
+                                    }
+                                    return;
+                                }
+                            } catch (err) {
+                                if (printStatus) {
+                                    printStatus.textContent = "Status check error: " + err.message;
+                                    printStatus.className = "print-status error";
+                                }
+                            }
+                            if (tries < 120) setTimeout(poll, 1000);
+                            else if (printSubmitBtn) printSubmitBtn.disabled = false;
+                        };
+                        setTimeout(poll, 600);
+                    } catch (err) {
+                        if (printStatus) {
+                            printStatus.textContent = err.message || String(err);
+                            printStatus.className = "print-status error";
+                        }
+                        if (printSubmitBtn) printSubmitBtn.disabled = false;
+                    }
+                }
+                printSubmitBtn?.addEventListener("click", submitDirectPrint);
+
+                // Replace browser print with custom dialog
+                els.printBtn.removeEventListener("click", printLayout);
+                els.printBtn.addEventListener("click", openPrintModal);
+
                 // init
                 layoutPage();
                 renderAll();
-                renderAll();
+                setAgentUI(false);
+                startAgentPolling();
             })();
         </script>
         <script>
