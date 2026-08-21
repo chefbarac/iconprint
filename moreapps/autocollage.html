@@ -410,7 +410,7 @@
                 width: 100%;
                 height: 100%;
                 display: block;
-                object-fit: cover;
+                object-fit: fill;
                 pointer-events: none;
                 -webkit-user-drag: none;
             }
@@ -769,7 +769,7 @@
                 <span id="statusText">0 images · 0 pages · sheet fill 0%</span>
                 <span
                     >Select a tile · drag <span class="accent">●</span> corner to resize · drag <span class="accent">◯</span> top handle to rotate · <kbd>R</kbd> or the 90° button for a quick turn ·
-                    drag a tile onto another page to move it there · <kbd>Del</kbd> to remove · <kbd>Shift</kbd> while resizing = free aspect · <kbd>Shift</kbd> while rotating = snap 15° ·
+                    drag a tile onto another page to move it there · <kbd>Del</kbd> to remove · <kbd>Shift</kbd> while resizing = lock aspect · <kbd>Shift</kbd> while rotating = snap 15° ·
                     <kbd>Ctrl/Cmd+P</kbd> or the Print button prints every page in one job</span
                 >
             </footer>
@@ -1338,7 +1338,7 @@
                         const dy = -dxScreen * sin + dyScreen * cos;
                         let nw = Math.max(30, ow + dx),
                             nh = Math.max(30, oh + dy);
-                        if (!ev.shiftKey) {
+                        if (ev.shiftKey) {
                             if (Math.abs(dx) > Math.abs(dy)) nh = nw / aspect;
                             else nw = nh * aspect;
                         }
