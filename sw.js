@@ -1,10 +1,43 @@
-const PREFIX = 'iconprint-cache';
-const CACHE_NAME = PREFIX + '-v2.0.14';
-const PRECACHE_URLS = [
-    './',
-];
+const PREFIX = "iconprint-cache";
+const CACHE_NAME = PREFIX + "-v2.0.16";
+const PRECACHE_URLS = ["./"];
 
-self.addEventListener('install', (event) => {
+// Local print/scan agent — never intercept or cache these.
+function isAgentRequest(request) {
+    try {
+        const url = new URL(request.url);
+        // Direct agent host
+        if (
+            (url.hostname === "localhost" || url.hostname === "127.0.0.1") &&
+            (url.port === "5001" || url.port === "")
+        ) {
+            // Port 5001 is the agent; empty port only if path looks like agent API on same host
+            if (url.port === "5001") return true;
+        }
+        if (url.port === "5001") return true;
+
+        // Agent API paths (same-origin proxy or agent served under these routes)
+        const path = url.pathname || "";
+        if (
+            path === "/health" ||
+            path.startsWith("/health?") ||
+            path === "/devices" ||
+            path.startsWith("/devices?") ||
+            path === "/scan" ||
+            path.startsWith("/scan?") ||
+            path === "/print" ||
+            path.startsWith("/print/") ||
+            path.startsWith("/api/")
+        ) {
+            return true;
+        }
+    } catch (e) {
+        /* ignore */
+    }
+    return false;
+}
+
+self.addEventListener("install", (event) => {
     self.skipWaiting();
     if (PRECACHE_URLS.length) {
         event.waitUntil(
@@ -13,21 +46,29 @@ self.addEventListener('install', (event) => {
     }
 });
 
-self.addEventListener('activate', (event) => {
+self.addEventListener("activate", (event) => {
     event.waitUntil(
-        caches.keys().then((keys) =>
-            Promise.all(
-                keys
-                    .filter((key) => key.startsWith(PREFIX) && key !== CACHE_NAME)
-                    .map((key) => caches.delete(key))
+        caches
+            .keys()
+            .then((keys) =>
+                Promise.all(
+                    keys
+                        .filter((key) => key.startsWith(PREFIX) && key !== CACHE_NAME)
+                        .map((key) => caches.delete(key))
+                )
             )
-        ).then(() => self.clients.claim())
+            .then(() => self.clients.claim())
     );
 });
 
-self.addEventListener('fetch', (event) => {
+self.addEventListener("fetch", (event) => {
     const { request } = event;
-    if (request.method !== 'GET') return;
+    if (request.method !== "GET") return;
+
+    // Agent / local backend: do not call respondWith — browser goes straight to network.
+    // Never cache these responses.
+    if (isAgentRequest(request)) return;
+
     event.respondWith(cacheFirst(request));
 });
 
