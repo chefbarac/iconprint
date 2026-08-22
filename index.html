@@ -1051,17 +1051,19 @@
                     </div>
 
 
-                    <div class="toolbar-group agent-controls" id="agentControls">
+                    <div class="toolbar-group" id="agentToggleGroup">
                         <span class="agent-toggle-wrap">
-                        <label class="agent-toggle-label" title="Connect to local print agent">
-                            <span class="agent-toggle">
-                                <input type="checkbox" id="agentToggle" checked />
-                                <span class="slider"></span>
-                            </span>
-                            Agent
-                        </label>
-                        <span class="agent-badge offline" id="agentBadge"><span class="dot"></span><span id="agentBadgeText">Agent offline</span></span>
-                    </span>
+                            <label class="agent-toggle-label" title="Connect to local print agent">
+                                <span class="agent-toggle">
+                                    <input type="checkbox" id="agentToggle" checked />
+                                    <span class="slider"></span>
+                                </span>
+                                Agent
+                            </label>
+                            <span class="agent-badge offline" id="agentBadge"><span class="dot"></span><span id="agentBadgeText">Agent offline</span></span>
+                        </span>
+                    </div>
+                    <div class="toolbar-group agent-controls" id="agentControls">
                         <label>Scanner
                             <select id="scannerSelect">
                                 <option value="">—</option>
@@ -1095,7 +1097,7 @@
                         <input type="file" id="file1" accept="image/*" hidden />
                         <input type="file" id="file2" accept="image/*" hidden />
 
-                        |
+                        or
 
                         <button class="btn" id="scanTop" title="Only works if the scan file is running locally.">
                             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
@@ -1636,22 +1638,43 @@
                     agentOnline = online;
                     const controls = document.getElementById("agentControls");
                     const badge = document.getElementById("agentBadge");
+                    const badgeText = document.getElementById("agentBadgeText");
                     const scanTop = document.getElementById("scanTop");
                     const scanBottom = document.getElementById("scanBottom");
+                    // Device selects only — toggle stays always visible in agentToggleGroup
                     if (controls) {
                         if (online) controls.classList.add("visible");
                         else controls.classList.remove("visible");
                     }
-                    if (badge) {
-                        badge.textContent = online ? "Agent online" : (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled ? "Agent off" : "Agent offline");
-                        badge.classList.toggle("offline", !online);
+                    const label = online
+                        ? "Agent online"
+                        : (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled
+                            ? "Agent off"
+                            : "Agent offline");
+                    if (badgeText) {
+                        badgeText.textContent = label;
+                    } else if (badge) {
+                        // fallback if badge has no nested text span
+                        const dot = badge.querySelector(".dot");
+                        if (dot) {
+                            // keep structure: only update text node after dot
+                            let textNode = null;
+                            badge.childNodes.forEach((n) => {
+                                if (n.nodeType === 3 && n.textContent.trim()) textNode = n;
+                            });
+                            if (textNode) textNode.textContent = " " + label;
+                            else badge.appendChild(document.createTextNode(" " + label));
+                        } else {
+                            badge.textContent = label;
+                        }
                     }
+                    if (badge) badge.classList.toggle("offline", !online);
                     // Hide scan buttons that require the agent when offline
                     [scanTop, scanBottom].forEach((btn) => {
                         if (!btn) return;
                         btn.style.display = online ? "" : "none";
                     });
-                    // Print button stays visible; modal will require agent
+                    // Print / upload / stitch controls stay visible
                 }
 
                 function getPrinterFilterPatterns() {
