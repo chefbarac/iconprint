@@ -391,6 +391,77 @@
                             margin-top: 8px;
                         }
 
+
+                        .agent-badge {
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 6px;
+                            font-family: "IBM Plex Mono", monospace;
+                            font-size: 10.5px;
+                            padding: 4px 8px;
+                            border-radius: 6px;
+                            background: var(--laminate-soft);
+                            color: var(--laminate);
+                            border: 1px solid #b8d0dc;
+                            margin-bottom: 14px;
+                        }
+                        .agent-badge.offline {
+                            background: #f4f2ec;
+                            color: var(--ink-soft);
+                            border-color: var(--line-soft);
+                        }
+                        .agent-badge .dot {
+                            width: 7px; height: 7px; border-radius: 50%;
+                            background: var(--laminate);
+                        }
+                        .agent-badge.offline .dot { background: var(--ink-soft); }
+                        .agent-only { display: none !important; }
+                        .agent-only.visible { display: block !important; }
+
+                        .print-modal-backdrop {
+                            position: fixed; inset: 0;
+                            background: rgba(30, 42, 51, 0.55);
+                            display: none; align-items: center; justify-content: center;
+                            z-index: 100; padding: 16px;
+                        }
+                        .print-modal-backdrop.open { display: flex; }
+                        .print-modal {
+                            background: #fff; color: var(--ink);
+                            border: 1px solid var(--line-soft); border-radius: 10px;
+                            padding: 20px; width: 100%; max-width: 420px;
+                            max-height: 92vh; overflow-y: auto;
+                        }
+                        .print-modal h2 {
+                            margin: 0 0 14px; font-size: 16px; font-weight: 700;
+                        }
+                        .print-modal .field-row { margin-bottom: 12px; }
+                        .print-modal .field-row > label {
+                            display: block; font-size: 12px; color: var(--ink-soft);
+                            margin-bottom: 5px; font-weight: 500;
+                        }
+                        .print-modal .field-row select,
+                        .print-modal .field-row input[type="number"],
+                        .print-modal .field-row input[type="text"] {
+                            width: 100%; padding: 8px 9px; border: 1px solid var(--line);
+                            border-radius: 6px; background: #fff;
+                            font-family: "IBM Plex Mono", monospace; font-size: 13px;
+                        }
+                        .print-modal .radio-row {
+                            display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px;
+                        }
+                        .print-modal .radio-row label {
+                            display: flex; align-items: center; gap: 6px; cursor: pointer;
+                            margin: 0; color: var(--ink); font-weight: 500;
+                        }
+                        .print-status {
+                            font-size: 12px; min-height: 1.2em; margin-top: 6px; color: var(--ink-soft);
+                        }
+                        .print-status.ok { color: var(--laminate); }
+                        .print-status.error { color: var(--danger); }
+                        .print-actions {
+                            display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px;
+                        }
+
                         /* ---------- Print button ---------- */
                         .print-cta {
                             position: sticky;
@@ -544,7 +615,7 @@
                         .img-wrap img {
                             position: absolute;
                             left: 50%;
-                            top: 50%;`
+                            top: 50%;
                             max-width: none;
                             max-height: none;
                             user-select: none;
@@ -732,6 +803,7 @@
                     <h1>Back to Back Lamination</h1>
                 </div>
                 <div class="tagline">side-by-side print layout · fold &amp; laminate</div>
+                <div class="agent-badge offline" id="agentBadge"><span class="dot"></span><span id="agentBadgeText">Agent offline</span></div>
 
                 <!-- Paper -->
                 <div class="section">
@@ -1026,11 +1098,181 @@
             </main>
         </div>
 
+
+        <div class="print-modal-backdrop" id="printBackdrop">
+            <div class="print-modal">
+                <h2>Print layout</h2>
+                <div class="field-row agent-only">
+                    <label for="printPrinter">Printer</label>
+                    <select id="printPrinter"></select>
+                </div>
+                <div class="field-row agent-only">
+                    <label for="printFilter">Show only (name contains)</label>
+                    <input type="text" id="printFilter" placeholder="L5290, L3210" />
+                </div>
+                <div class="field-row">
+                    <label for="printPaper">Paper</label>
+                    <select id="printPaper">
+                        <option value="long">Long — 8.5 × 13"</option>
+                        <option value="short">Short / Letter — 8.5 × 11"</option>
+                        <option value="legal">Legal — 8.5 × 14"</option>
+                        <option value="a4">A4</option>
+                    </select>
+                </div>
+                <div class="field-row agent-only">
+                    <label for="printMedia">Paper type</label>
+                    <select id="printMedia">
+                        <option value="plain" selected>Plain Paper</option>
+                        <option value="photo">Photo Quality Inkjet Paper</option>
+                        <option value="glossy">Glossy Photo Paper</option>
+                        <option value="matte">Matte Photo Paper</option>
+                    </select>
+                </div>
+                <div class="field-row">
+                    <label>Orientation</label>
+                    <div class="radio-row">
+                        <label><input type="radio" name="printOrient" value="portrait" checked /> Portrait</label>
+                        <label><input type="radio" name="printOrient" value="landscape" /> Landscape</label>
+                    </div>
+                </div>
+                <div class="field-row agent-only">
+                    <label>Color</label>
+                    <div class="radio-row">
+                        <label><input type="radio" name="printColor" value="color" checked /> Color</label>
+                        <label><input type="radio" name="printColor" value="grayscale" /> Grayscale</label>
+                    </div>
+                </div>
+                <div class="field-row agent-only">
+                    <label for="printCopies">Copies</label>
+                    <input type="number" id="printCopies" min="1" max="99" value="1" />
+                </div>
+                <div class="field-row agent-only">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0">
+                        <input type="checkbox" id="printCollate" checked /> Collate
+                    </label>
+                </div>
+                <div class="field-row agent-only">
+                    <label for="printScaling">Scaling</label>
+                    <select id="printScaling">
+                        <option value="actual" selected>Actual Size</option>
+                        <option value="fit">Fit to Page</option>
+                    </select>
+                </div>
+                <div class="field-row agent-only">
+                    <label for="printMargins">Margins</label>
+                    <select id="printMargins">
+                        <option value="none" selected>None</option>
+                        <option value="default">Default</option>
+                    </select>
+                </div>
+                <div class="print-status" id="printStatus"></div>
+                <div class="print-actions">
+                    <button type="button" class="btn" id="printCancelBtn">Cancel</button>
+                    <button type="button" class="print-btn" id="printSubmitBtn" style="width:auto;padding:10px 16px;box-shadow:none">Print</button>
+                </div>
+            </div>
+        </div>
+
         <style id="pageSizeStyle"></style>
 
         <script>
             (function () {
                 "use strict";
+
+                const LOCAL_AGENT = "http://localhost:5001";
+                let agentOnline = false;
+                let agentDevices = { scanners: [], printers: [] };
+                let healthTimer = null;
+
+                function getPrinterFilterPatterns() {
+                    const raw = (localStorage.getItem("iconprint_printer_filter") || "").trim();
+                    if (!raw) return [];
+                    return raw.split(",").map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean);
+                }
+                function filterPrinters(printers) {
+                    const patterns = getPrinterFilterPatterns();
+                    if (!patterns.length) return printers || [];
+                    return (printers || []).filter(function (p) {
+                        const name = (p.name || p.id || "").toLowerCase();
+                        return patterns.some(function (pat) { return name.indexOf(pat) !== -1; });
+                    });
+                }
+                function fillSelect(sel, items, selectedId) {
+                    if (!sel) return;
+                    const prev = selectedId || sel.value;
+                    sel.innerHTML = "";
+                    if (!items.length) {
+                        const o = document.createElement("option");
+                        o.value = "";
+                        o.textContent = "None found";
+                        sel.appendChild(o);
+                        return;
+                    }
+                    items.forEach(function (d) {
+                        const o = document.createElement("option");
+                        o.value = d.id;
+                        o.textContent = d.name;
+                        if (d.id === prev) o.selected = true;
+                        sel.appendChild(o);
+                    });
+                    if (!sel.value && items[0]) sel.value = items[0].id;
+                }
+                function setAgentUI(online) {
+                    agentOnline = online;
+                    const badge = document.getElementById("agentBadge");
+                    const badgeText = document.getElementById("agentBadgeText");
+                    if (badge) {
+                        if (online) badge.classList.remove("offline");
+                        else badge.classList.add("offline");
+                    }
+                    if (badgeText) badgeText.textContent = online ? "Agent online" : "Agent offline";
+                    document.querySelectorAll(".agent-only").forEach(function (el) {
+                        if (online) el.classList.add("visible");
+                        else el.classList.remove("visible");
+                    });
+                }
+                function refreshDevices() {
+                    return fetch(LOCAL_AGENT + "/devices", { cache: "no-store" })
+                        .then(function (res) {
+                            if (!res.ok) throw new Error("devices");
+                            return res.json();
+                        })
+                        .then(function (data) {
+                            agentDevices = { scanners: data.scanners || [], printers: data.printers || [] };
+                            fillSelect(document.getElementById("printPrinter"), filterPrinters(agentDevices.printers), null);
+                        })
+                        .catch(function () {
+                            agentDevices = { scanners: [], printers: [] };
+                        });
+                }
+                function checkAgentHealth() {
+                    const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+                    const t = setTimeout(function () { if (ctrl) ctrl.abort(); }, 2500);
+                    fetch(LOCAL_AGENT + "/health", { cache: "no-store", signal: ctrl ? ctrl.signal : undefined })
+                        .then(function (res) {
+                            clearTimeout(t);
+                            if (!res.ok) throw new Error("health");
+                            return res.json();
+                        })
+                        .then(function (data) {
+                            const online = !!(data && data.online);
+                            if (online !== agentOnline) {
+                                setAgentUI(online);
+                                if (online) refreshDevices();
+                            } else if (online) setAgentUI(true);
+                        })
+                        .catch(function () {
+                            clearTimeout(t);
+                            setAgentUI(false);
+                        });
+                }
+                function startAgentPolling() {
+                    setAgentUI(false);
+                    checkAgentHealth();
+                    if (healthTimer) clearInterval(healthTimer);
+                    healthTimer = setInterval(checkAgentHealth, 4000);
+                }
+
 
                 const root = document.documentElement;
                 const paperEl = document.getElementById("paper");
@@ -1429,7 +1671,140 @@
                 });
 
                 /* ---------------- print ---------------- */
-                document.getElementById("printBtn").addEventListener("click", function () {
+                function printLayoutBrowser() {
+                    pageSizeStyle.textContent = "@page{ size: " + paperW + "in " + paperH + "in; margin:0; }";
+                    window.print();
+                }
+
+                function mapPaperToAgent() {
+                    // Prefer explicit sizes from current paperW/H
+                    const eps = 0.05;
+                    if (Math.abs(paperW - 8.27) < eps && Math.abs(paperH - 11.69) < eps) return "a4";
+                    if (Math.abs(paperW - 8.5) < eps && Math.abs(paperH - 11) < eps) return "short";
+                    if (Math.abs(paperW - 8.5) < eps && Math.abs(paperH - 14) < eps) return "legal";
+                    if (Math.abs(paperW - 8.5) < eps && Math.abs(paperH - 13) < eps) return "long";
+                    return "long";
+                }
+
+                function drawCardToCtx(ctx, card, slotX, slotY, slotW, slotH, dpiScale) {
+                    return new Promise(function (resolve) {
+                        if (!card.hasImage || !card.img.src) {
+                            resolve();
+                            return;
+                        }
+                        const im = new Image();
+                        im.onload = function () {
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.rect(slotX, slotY, slotW, slotH);
+                            ctx.clip();
+                            // Match on-screen transform: center of wrap + tx/ty + rot + scale
+                            const cx = slotX + slotW / 2;
+                            const cy = slotY + slotH / 2;
+                            if (card.mode === "crop") {
+                                const totalRot = card.baseRot + (card.fineRot || 0);
+                                const sc = card.scale * dpiScale;
+                                ctx.translate(cx + card.tx * dpiScale, cy + card.ty * dpiScale);
+                                ctx.rotate((totalRot * Math.PI) / 180);
+                                ctx.scale(sc, sc);
+                                ctx.drawImage(im, -card.natW / 2, -card.natH / 2, card.natW, card.natH);
+                            } else {
+                                // stretch mode
+                                let w = slotW,
+                                    h = slotH;
+                                if (isSwapped(card)) {
+                                    w = slotH;
+                                    h = slotW;
+                                }
+                                ctx.translate(cx, cy);
+                                ctx.rotate((card.baseRot * Math.PI) / 180);
+                                ctx.drawImage(im, -w / 2, -h / 2, w, h);
+                            }
+                            ctx.restore();
+                            resolve();
+                        };
+                        im.onerror = function () {
+                            resolve();
+                        };
+                        im.src = card.img.src;
+                    });
+                }
+
+                function rasterizePaperPng() {
+                    const dpi = 300;
+                    const outW = Math.round(paperW * dpi);
+                    const outH = Math.round(paperH * dpi);
+                    const canvas = document.createElement("canvas");
+                    canvas.width = outW;
+                    canvas.height = outH;
+                    const ctx = canvas.getContext("2d");
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(0, 0, outW, outH);
+
+                    // Layout: paper uses flex column center; cards stacked with gap
+                    const cardWIn = clamp(Number(cardWInput.value) || 6, 0.5, 20);
+                    const cardHIn = clamp(Number(cardHInput.value) || 4, 0.5, 20);
+                    const gapIn = clamp(Number(gapInput.value) || 0, 0, 2);
+                    const totalStackH = cardHIn * 2 + gapIn;
+                    const startY = (paperH - totalStackH) / 2;
+                    const startX = (paperW - cardWIn) / 2;
+
+                    const slots = [
+                        { card: cards.front, x: startX, y: startY },
+                        { card: cards.back, x: startX, y: startY + cardHIn + gapIn },
+                    ];
+
+                    const s = dpi; // px per inch
+                    let chain = Promise.resolve();
+                    slots.forEach(function (sl) {
+                        const sx = sl.x * s;
+                        const sy = sl.y * s;
+                        const sw = cardWIn * s;
+                        const sh = cardHIn * s;
+                        // light card bg
+                        ctx.fillStyle = "#f4f2ec";
+                        ctx.fillRect(sx, sy, sw, sh);
+                        chain = chain.then(function () {
+                            return drawCardToCtx(ctx, sl.card, sx, sy, sw, sh, s / 96);
+                        });
+                        // cut guides
+                        if (paperEl.classList.contains("show-cuts")) {
+                            chain = chain.then(function () {
+                                ctx.save();
+                                ctx.strokeStyle = "rgba(92, 107, 116, 0.7)";
+                                ctx.setLineDash([6, 4]);
+                                ctx.lineWidth = 1;
+                                ctx.strokeRect(sx + 0.5, sy + 0.5, sw - 1, sh - 1);
+                                ctx.restore();
+                            });
+                        }
+                    });
+                    // fold line
+                    if (paperEl.classList.contains("show-fold") && gapIn > 0) {
+                        chain = chain.then(function () {
+                            const fy = (startY + cardHIn + gapIn / 2) * s;
+                            ctx.save();
+                            ctx.strokeStyle = "rgba(46, 110, 142, 0.5)";
+                            ctx.setLineDash([8, 6]);
+                            ctx.beginPath();
+                            ctx.moveTo(0.25 * s, fy);
+                            ctx.lineTo((paperW - 0.25) * s, fy);
+                            ctx.stroke();
+                            ctx.restore();
+                        });
+                    }
+
+                    return chain.then(function () {
+                        return new Promise(function (resolve, reject) {
+                            canvas.toBlob(function (b) {
+                                if (b) resolve(b);
+                                else reject(new Error("toBlob failed"));
+                            }, "image/png");
+                        });
+                    });
+                }
+
+                function openPrintModal() {
                     const missing = [];
                     if (!cards.front.hasImage) missing.push("DOC 1");
                     if (!cards.back.hasImage) missing.push("DOC 2");
@@ -1437,13 +1812,180 @@
                         const ok = confirm(missing.join(" and ") + " still empty. Print anyway?");
                         if (!ok) return;
                     }
-                    pageSizeStyle.textContent = "@page{ size: " + paperW + "in " + paperH + "in; margin:0; }";
-                    window.print();
+                    if (!agentOnline) {
+                        printLayoutBrowser();
+                        return;
+                    }
+                    const paperSel = document.getElementById("printPaper");
+                    if (paperSel) paperSel.value = mapPaperToAgent();
+                    const filterInput = document.getElementById("printFilter");
+                    if (filterInput) {
+                        if (localStorage.getItem("iconprint_printer_filter") === null) {
+                            localStorage.setItem("iconprint_printer_filter", "L5290, L3210");
+                        }
+                        filterInput.value = localStorage.getItem("iconprint_printer_filter") || "";
+                    }
+                    fillSelect(document.getElementById("printPrinter"), filterPrinters(agentDevices.printers), null);
+                    const st = document.getElementById("printStatus");
+                    if (st) {
+                        st.textContent = "";
+                        st.className = "print-status";
+                    }
+                    document.getElementById("printSubmitBtn").disabled = false;
+                    document.getElementById("printBackdrop").classList.add("open");
+                }
+
+                function closePrintModal() {
+                    document.getElementById("printBackdrop").classList.remove("open");
+                }
+
+                function submitAgentPrint() {
+                    if (!agentOnline) {
+                        closePrintModal();
+                        printLayoutBrowser();
+                        return;
+                    }
+                    const printerId = document.getElementById("printPrinter").value;
+                    if (!printerId) {
+                        const st0 = document.getElementById("printStatus");
+                        if (st0) {
+                            st0.textContent = "Select a printer.";
+                            st0.className = "print-status error";
+                        }
+                        return;
+                    }
+                    const paperSize = document.getElementById("printPaper").value || "long";
+                    const orient =
+                        (document.querySelector('input[name="printOrient"]:checked') || {}).value || "portrait";
+                    const colorMode =
+                        (document.querySelector('input[name="printColor"]:checked') || {}).value || "color";
+                    let copies = parseInt(document.getElementById("printCopies").value || "1", 10);
+                    if (!(copies >= 1 && copies <= 99)) copies = 1;
+                    const collate = !!document.getElementById("printCollate").checked;
+                    const scaling = document.getElementById("printScaling").value || "actual";
+                    const margins = document.getElementById("printMargins").value || "none";
+                    const mediaType = document.getElementById("printMedia").value || "plain";
+
+                    let pageW = paperW;
+                    let pageH = paperH;
+                    if (orient === "landscape" && pageW < pageH) {
+                        const t = pageW;
+                        pageW = pageH;
+                        pageH = t;
+                    } else if (orient === "portrait" && pageW > pageH) {
+                        const t = pageW;
+                        pageW = pageH;
+                        pageH = t;
+                    }
+
+                    const st = document.getElementById("printStatus");
+                    const submitBtn = document.getElementById("printSubmitBtn");
+                    submitBtn.disabled = true;
+                    if (st) {
+                        st.textContent = "Building page…";
+                        st.className = "print-status";
+                    }
+
+                    rasterizePaperPng()
+                        .then(function (blob) {
+                            if (st) st.textContent = "Submitting to printer…";
+                            const fd = new FormData();
+                            fd.append("image", blob, "laminate-layout.png");
+                            fd.append("printer_id", printerId);
+                            fd.append("paper_size", paperSize);
+                            fd.append("orientation", orient);
+                            fd.append("color_mode", colorMode);
+                            fd.append("copies", String(copies));
+                            fd.append("collate", collate ? "true" : "false");
+                            fd.append("scaling", scaling);
+                            fd.append("margins", margins);
+                            fd.append("media_type", mediaType);
+                            fd.append("page_width_inches", String(pageW));
+                            fd.append("page_height_inches", String(pageH));
+                            return fetch(LOCAL_AGENT + "/print", { method: "POST", body: fd });
+                        })
+                        .then(function (res) {
+                            return res.json().then(function (data) {
+                                return { res: res, data: data };
+                            });
+                        })
+                        .then(function (r) {
+                            if (!r.res.ok || !r.data.success) {
+                                throw new Error((r.data && r.data.error) || "Print failed (" + r.res.status + ")");
+                            }
+                            const jobId = r.data.job_id;
+                            if (st) st.textContent = "Queued — job " + jobId.slice(0, 8) + "…";
+                            let tries = 0;
+                            function poll() {
+                                tries++;
+                                fetch(LOCAL_AGENT + "/print/jobs/" + jobId, { cache: "no-store" })
+                                    .then(function (sr) {
+                                        return sr.json();
+                                    })
+                                    .then(function (job) {
+                                        const status = job.status || "unknown";
+                                        if (st) {
+                                            st.textContent =
+                                                status.charAt(0).toUpperCase() +
+                                                status.slice(1) +
+                                                (job.warnings && job.warnings.length ? " — " + job.warnings[0] : "");
+                                            st.className =
+                                                "print-status" +
+                                                (status === "completed" ? " ok" : status === "failed" ? " error" : "");
+                                        }
+                                        if (status === "completed" || status === "failed") {
+                                            submitBtn.disabled = false;
+                                            if (status === "failed") {
+                                                alert("Print aborted:\n\n" + (job.error || "Print job failed"));
+                                            }
+                                            return;
+                                        }
+                                        if (tries < 120) setTimeout(poll, 1000);
+                                        else submitBtn.disabled = false;
+                                    })
+                                    .catch(function (err) {
+                                        if (st) {
+                                            st.textContent = "Status error: " + err.message;
+                                            st.className = "print-status error";
+                                        }
+                                        if (tries < 120) setTimeout(poll, 1000);
+                                        else submitBtn.disabled = false;
+                                    });
+                            }
+                            setTimeout(poll, 600);
+                        })
+                        .catch(function (err) {
+                            if (st) {
+                                st.textContent = "Failed: " + (err.message || err);
+                                st.className = "print-status error";
+                            }
+                            submitBtn.disabled = false;
+                            alert("Print aborted:\n\n" + (err.message || err));
+                        });
+                }
+
+                document.getElementById("printBtn").addEventListener("click", openPrintModal);
+                document.getElementById("printCancelBtn").addEventListener("click", closePrintModal);
+                document.getElementById("printSubmitBtn").addEventListener("click", submitAgentPrint);
+                document.getElementById("printBackdrop").addEventListener("click", function (e) {
+                    if (e.target.id === "printBackdrop") closePrintModal();
+                });
+                document.getElementById("printFilter").addEventListener("change", function () {
+                    const v = document.getElementById("printFilter").value.trim();
+                    localStorage.setItem("iconprint_printer_filter", v);
+                    fillSelect(document.getElementById("printPrinter"), filterPrinters(agentDevices.printers), null);
+                });
+                document.getElementById("printFilter").addEventListener("keydown", function (e) {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        document.getElementById("printFilter").dispatchEvent(new Event("change"));
+                    }
                 });
 
                 /* ---------------- init ---------------- */
                 buildRulers();
                 requestAnimationFrame(fitPaperToStage);
+                startAgentPolling();
             })();
         </script>
         <script>

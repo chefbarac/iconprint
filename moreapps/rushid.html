@@ -552,6 +552,76 @@
                 }
             }
 
+
+            .agent-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 11px;
+                font-weight: 600;
+                padding: 4px 8px;
+                border-radius: 6px;
+                background: #eaf3f0;
+                color: var(--accent);
+                border: 1px solid #c5ddd6;
+                margin-top: 8px;
+            }
+            .agent-badge.offline {
+                background: #f0f2f3;
+                color: #8a95a0;
+                border-color: var(--line);
+            }
+            .agent-badge .dot {
+                width: 7px; height: 7px; border-radius: 50%;
+                background: var(--accent);
+            }
+            .agent-badge.offline .dot { background: #8a95a0; }
+            .agent-only { display: none !important; }
+            .agent-only.visible { display: block !important; }
+
+            .print-modal-backdrop {
+                position: fixed; inset: 0;
+                background: rgba(20, 25, 30, 0.6);
+                display: none; align-items: center; justify-content: center;
+                z-index: 60; padding: 16px;
+            }
+            .print-modal-backdrop.open { display: flex; }
+            .print-modal {
+                background: #fff; color: var(--ink);
+                border-radius: 10px; padding: 20px;
+                max-width: 420px; width: 100%; max-height: 92vh; overflow: auto;
+                border: 1px solid var(--line);
+            }
+            .print-modal h2 { margin: 0 0 14px; font-size: 16px; }
+            .print-modal .field-row { margin-bottom: 12px; }
+            .print-modal .field-row > label {
+                display: block; font-size: 11px; font-weight: 700;
+                text-transform: uppercase; letter-spacing: 0.06em;
+                color: #5a6672; margin-bottom: 6px;
+            }
+            .print-modal .field-row select,
+            .print-modal .field-row input[type="number"],
+            .print-modal .field-row input[type="text"] {
+                width: 100%; border: 1px solid var(--line); border-radius: 6px;
+                padding: 8px 10px; font-size: 14px; font-family: inherit; background: #fff;
+            }
+            .print-modal .radio-row {
+                display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px;
+            }
+            .print-modal .radio-row label {
+                display: flex; align-items: center; gap: 6px; cursor: pointer;
+                text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--ink);
+            }
+            .print-status {
+                font-size: 12px; min-height: 1.2em; margin-top: 6px; color: #5a6672;
+            }
+            .print-status.ok { color: var(--accent); }
+            .print-status.error { color: var(--danger); }
+            .print-actions {
+                display: flex; justify-content: flex-end; gap: 8px;
+                margin-top: 16px;
+            }
+
             /* ---------- Print ---------- */
             @page {
                 size: A4;
@@ -615,6 +685,7 @@
                     <p class="eyebrow">Rush ID · Print Sheet Generator</p>
                     <h1>Auto Layout</h1>
                     <p>Capture or upload a photo, crop it, add a name and signature, and print a ready-to-cut A4 sheet.</p>
+                    <div class="agent-badge offline" id="agentBadge"><span class="dot"></span><span id="agentBadgeText">Agent offline</span></div>
                 </div>
 
                 <div class="toolbar">
@@ -710,6 +781,7 @@
                     <div class="field">
                         <label>Output</label>
                         <button type="button" id="btnPrint" class="primary-wide">Print sheet</button>
+                        <button type="button" id="btnExportPng" class="ghost primary-wide" style="margin-top: 8px">Export PNG</button>
                         <button type="button" id="btnReset" class="danger ghost" style="margin-top: 4px">Clear all</button>
                     </div>
                 </div>
@@ -778,8 +850,167 @@
             </div>
         </div>
 
+
+        <div class="print-modal-backdrop no-print" id="printBackdrop">
+            <div class="print-modal">
+                <h2>Print</h2>
+                <div class="field-row agent-only">
+                    <label for="printPrinter">Printer</label>
+                    <select id="printPrinter"></select>
+                </div>
+                <div class="field-row agent-only">
+                    <label for="printFilter">Show only (name contains)</label>
+                    <input type="text" id="printFilter" placeholder="L5290, L3210" />
+                </div>
+                <div class="field-row">
+                    <label for="printPaper">Paper</label>
+                    <select id="printPaper">
+                        <option value="a4" selected>A4</option>
+                        <option value="short">Short / Letter</option>
+                        <option value="long">Long — 8.5 × 13"</option>
+                    </select>
+                </div>
+                <div class="field-row agent-only">
+                    <label for="printMedia">Paper type</label>
+                    <select id="printMedia">
+                        <option value="plain" selected>Plain Paper</option>
+                        <option value="photo">Photo Quality Inkjet Paper</option>
+                        <option value="glossy">Glossy Photo Paper</option>
+                        <option value="matte">Matte Photo Paper</option>
+                    </select>
+                </div>
+                <div class="field-row">
+                    <label>Orientation</label>
+                    <div class="radio-row">
+                        <label><input type="radio" name="printOrient" value="portrait" checked /> Portrait</label>
+                        <label><input type="radio" name="printOrient" value="landscape" /> Landscape</label>
+                    </div>
+                </div>
+                <div class="field-row agent-only">
+                    <label>Color</label>
+                    <div class="radio-row">
+                        <label><input type="radio" name="printColor" value="color" checked /> Color</label>
+                        <label><input type="radio" name="printColor" value="grayscale" /> Grayscale</label>
+                    </div>
+                </div>
+                <div class="field-row agent-only">
+                    <label for="printCopies">Copies</label>
+                    <input type="number" id="printCopies" min="1" max="99" value="1" />
+                </div>
+                <div class="field-row agent-only">
+                    <label class="checkline" style="text-transform:none;letter-spacing:0;font-weight:500;color:var(--ink)">
+                        <input type="checkbox" id="printCollate" checked /> Collate
+                    </label>
+                </div>
+                <div class="field-row agent-only">
+                    <label for="printScaling">Scaling</label>
+                    <select id="printScaling">
+                        <option value="actual" selected>Actual Size</option>
+                        <option value="fit">Fit to Page</option>
+                    </select>
+                </div>
+                <div class="field-row agent-only">
+                    <label for="printMargins">Margins</label>
+                    <select id="printMargins">
+                        <option value="none" selected>None</option>
+                        <option value="default">Default</option>
+                    </select>
+                </div>
+                <div class="print-status" id="printStatus"></div>
+                <div class="print-actions">
+                    <button type="button" class="ghost" id="printCancelBtn">Cancel</button>
+                    <button type="button" id="printSubmitBtn">Print</button>
+                </div>
+            </div>
+        </div>
+
         <script>
             (function () {
+                const LOCAL_AGENT = "http://localhost:5001";
+                let agentOnline = false;
+                let agentDevices = { scanners: [], printers: [] };
+                let healthTimer = null;
+
+                function getPrinterFilterPatterns() {
+                    const raw = (localStorage.getItem("iconprint_printer_filter") || "").trim();
+                    if (!raw) return [];
+                    return raw.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+                }
+                function filterPrinters(printers) {
+                    const patterns = getPrinterFilterPatterns();
+                    if (!patterns.length) return printers || [];
+                    return (printers || []).filter((p) => {
+                        const name = (p.name || p.id || "").toLowerCase();
+                        return patterns.some((pat) => name.includes(pat));
+                    });
+                }
+                function fillSelect(sel, items, selectedId) {
+                    if (!sel) return;
+                    const prev = selectedId || sel.value;
+                    sel.innerHTML = "";
+                    if (!items.length) {
+                        const o = document.createElement("option");
+                        o.value = "";
+                        o.textContent = "None found";
+                        sel.appendChild(o);
+                        return;
+                    }
+                    items.forEach((d) => {
+                        const o = document.createElement("option");
+                        o.value = d.id;
+                        o.textContent = d.name;
+                        if (d.id === prev) o.selected = true;
+                        sel.appendChild(o);
+                    });
+                    if (!sel.value && items[0]) sel.value = items[0].id;
+                }
+                function setAgentUI(online) {
+                    agentOnline = online;
+                    const badge = document.getElementById("agentBadge");
+                    const badgeText = document.getElementById("agentBadgeText");
+                    if (badge) badge.classList.toggle("offline", !online);
+                    if (badgeText) badgeText.textContent = online ? "Agent online" : "Agent offline";
+                    document.querySelectorAll(".agent-only").forEach((el) => {
+                        if (online) el.classList.add("visible");
+                        else el.classList.remove("visible");
+                    });
+                }
+                async function refreshDevices() {
+                    try {
+                        const res = await fetch(LOCAL_AGENT + "/devices", { cache: "no-store" });
+                        if (!res.ok) throw new Error("devices");
+                        const data = await res.json();
+                        agentDevices = { scanners: data.scanners || [], printers: data.printers || [] };
+                        fillSelect(document.getElementById("printPrinter"), filterPrinters(agentDevices.printers), null);
+                    } catch (e) {
+                        agentDevices = { scanners: [], printers: [] };
+                    }
+                }
+                async function checkAgentHealth() {
+                    try {
+                        const res = await fetch(LOCAL_AGENT + "/health", {
+                            cache: "no-store",
+                            signal: AbortSignal.timeout(2500),
+                        });
+                        if (!res.ok) throw new Error("health");
+                        const data = await res.json();
+                        const online = !!(data && data.online);
+                        if (online !== agentOnline) {
+                            setAgentUI(online);
+                            if (online) await refreshDevices();
+                        } else if (online) setAgentUI(true);
+                    } catch (e) {
+                        setAgentUI(false);
+                    }
+                }
+                function startAgentPolling() {
+                    setAgentUI(false);
+                    checkAgentHealth();
+                    if (healthTimer) clearInterval(healthTimer);
+                    healthTimer = setInterval(checkAgentHealth, 4000);
+                }
+
+
                 "use strict";
 
                 // ---------------- ID type presets ----------------
@@ -1445,7 +1676,342 @@
                 });
 
                 // ---------------- Print / reset ----------------
-                btnPrint.addEventListener("click", () => window.print());
+                function printLayoutBrowser() {
+                    window.print();
+                }
+
+                async function rasterizeSheetPng() {
+                    const sheetEl = document.getElementById("sheet");
+                    if (!sheetEl) throw new Error("Sheet not found");
+                    // Physical A4 (or selected) at 300 DPI
+                    const paperSel = document.getElementById("printPaper");
+                    const paper = (paperSel && paperSel.value) || "a4";
+                    const orient =
+                        (document.querySelector('input[name="printOrient"]:checked') || {}).value || "portrait";
+                    const sizesIn = {
+                        a4: { w: 8.27, h: 11.69 },
+                        short: { w: 8.5, h: 11 },
+                        long: { w: 8.5, h: 13 },
+                    };
+                    let pageW = (sizesIn[paper] || sizesIn.a4).w;
+                    let pageH = (sizesIn[paper] || sizesIn.a4).h;
+                    if (orient === "landscape") {
+                        const t = pageW;
+                        pageW = pageH;
+                        pageH = t;
+                    }
+                    const dpi = 300;
+                    const outW = Math.round(pageW * dpi);
+                    const outH = Math.round(pageH * dpi);
+
+                    // Prefer html2canvas-free approach: draw from DOM measurements
+                    // Scale from current CSS inch layout to target DPI.
+                    const rect = sheetEl.getBoundingClientRect();
+                    // Temporarily reset zoom for accurate measure
+                    const prevZoom = zoomStage.style.zoom;
+                    zoomStage.style.zoom = "1";
+                    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+                    const layoutW = sheetEl.offsetWidth;
+                    const layoutH = sheetEl.offsetHeight;
+                    const scale = outW / Math.max(1, layoutW);
+
+                    const canvas = document.createElement("canvas");
+                    canvas.width = outW;
+                    canvas.height = outH;
+                    const ctx = canvas.getContext("2d");
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(0, 0, outW, outH);
+
+                    // Draw each cell photo + overlays by walking DOM
+                    const cells = sheetEl.querySelectorAll(".cell");
+                    const sheetRect = sheetEl.getBoundingClientRect();
+                    const drawJobs = [];
+
+                    cells.forEach((cell) => {
+                        const cr = cell.getBoundingClientRect();
+                        const x = (cr.left - sheetRect.left) * scale;
+                        const y = (cr.top - sheetRect.top) * scale;
+                        const w = cr.width * scale;
+                        const h = cr.height * scale;
+
+                        // cell background
+                        ctx.fillStyle = "#eef1f2";
+                        ctx.fillRect(x, y, w, h);
+
+                        const photo = cell.querySelector("img.photo-img");
+                        if (photo && photo.src) {
+                            drawJobs.push(
+                                new Promise((res) => {
+                                    const im = new Image();
+                                    im.onload = () => {
+                                        // cover fit
+                                        const ir = im.naturalWidth / Math.max(1, im.naturalHeight);
+                                        const fr = w / Math.max(1e-6, h);
+                                        let dw, dh, dx, dy;
+                                        if (ir > fr) {
+                                            dh = h;
+                                            dw = h * ir;
+                                            dx = x - (dw - w) / 2;
+                                            dy = y;
+                                        } else {
+                                            dw = w;
+                                            dh = w / ir;
+                                            dx = x;
+                                            dy = y - (dh - h) / 2;
+                                        }
+                                        ctx.save();
+                                        ctx.beginPath();
+                                        ctx.rect(x, y, w, h);
+                                        ctx.clip();
+                                        ctx.drawImage(im, dx, dy, dw, dh);
+
+                                        const footer = cell.querySelector(".id-footer");
+                                        if (footer) {
+                                            // approximate footer strip
+                                            const fr2 = footer.getBoundingClientRect();
+                                            const fy = (fr2.top - sheetRect.top) * scale;
+                                            const fh = fr2.height * scale;
+                                            const solid = footer.classList.contains("solid");
+                                            if (solid) {
+                                                ctx.fillStyle = "rgba(255,255,255,0.9)";
+                                                ctx.fillRect(x, fy, w, fh);
+                                            } else {
+                                                const g = ctx.createLinearGradient(x, fy, x, fy + fh);
+                                                g.addColorStop(0, "rgba(255,255,255,0)");
+                                                g.addColorStop(0.25, "rgba(255,255,255,0.25)");
+                                                g.addColorStop(0.55, "rgba(255,255,255,0.78)");
+                                                g.addColorStop(1, "rgba(255,255,255,0.95)");
+                                                ctx.fillStyle = g;
+                                                ctx.fillRect(x, fy, w, fh);
+                                            }
+                                            const sig = footer.querySelector(".signature-img");
+                                            if (sig && sig.src) {
+                                                const sr = sig.getBoundingClientRect();
+                                                const sx = (sr.left - sheetRect.left) * scale;
+                                                const sy = (sr.top - sheetRect.top) * scale;
+                                                const sw = sr.width * scale;
+                                                const sh = sr.height * scale;
+                                                const sim = new Image();
+                                                sim.onload = () => {
+                                                    ctx.drawImage(sim, sx, sy, sw, sh);
+                                                    res();
+                                                };
+                                                sim.onerror = () => res();
+                                                sim.src = sig.src;
+                                            } else {
+                                                res();
+                                            }
+                                            const label = footer.querySelector(".name-label");
+                                            if (label && label.textContent) {
+                                                const lr = label.getBoundingClientRect();
+                                                const lx = (lr.left - sheetRect.left) * scale;
+                                                const ly = (lr.top - sheetRect.top) * scale;
+                                                const lw = lr.width * scale;
+                                                const lh = lr.height * scale;
+                                                const cs = window.getComputedStyle(label);
+                                                const fontSize = parseFloat(cs.fontSize) * scale;
+                                                const fontFamily = cs.fontFamily;
+                                                const stretch = parseFloat(nameVStretchSlider.value) || 1;
+                                                ctx.save();
+                                                ctx.fillStyle = "#111";
+                                                ctx.font = "700 " + fontSize + "px " + fontFamily;
+                                                ctx.textAlign = "center";
+                                                ctx.textBaseline = "middle";
+                                                ctx.translate(lx + lw / 2, ly + lh / 2);
+                                                if (stretch !== 1) ctx.scale(1, stretch);
+                                                ctx.fillText(label.textContent, 0, 0, lw);
+                                                ctx.restore();
+                                            }
+                                        } else {
+                                            res();
+                                        }
+                                        ctx.restore();
+                                    };
+                                    im.onerror = () => res();
+                                    im.src = photo.src;
+                                })
+                            );
+                        }
+
+                        // cut guides
+                        if (!cell.classList.contains("no-guides")) {
+                            ctx.save();
+                            ctx.strokeStyle = "rgba(30, 40, 50, 0.186)";
+                            ctx.setLineDash([4, 3]);
+                            ctx.lineWidth = 1;
+                            ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+                            ctx.restore();
+                        }
+                    });
+
+                    await Promise.all(drawJobs);
+                    zoomStage.style.zoom = prevZoom;
+
+                    return new Promise((resolve, reject) => {
+                        canvas.toBlob((b) => (b ? resolve({ blob: b, pageW, pageH, paper }) : reject(new Error("toBlob failed"))), "image/png");
+                    });
+                }
+
+                function openPrintModal() {
+                    if (!agentOnline) {
+                        printLayoutBrowser();
+                        return;
+                    }
+                    const filterInput = document.getElementById("printFilter");
+                    if (filterInput) {
+                        if (localStorage.getItem("iconprint_printer_filter") === null) {
+                            localStorage.setItem("iconprint_printer_filter", "L5290, L3210");
+                        }
+                        filterInput.value = localStorage.getItem("iconprint_printer_filter") || "";
+                    }
+                    fillSelect(document.getElementById("printPrinter"), filterPrinters(agentDevices.printers), null);
+                    // Default photo paper for Rush ID is common — leave plain; user can pick Photo
+                    const st = document.getElementById("printStatus");
+                    if (st) {
+                        st.textContent = "";
+                        st.className = "print-status";
+                    }
+                    document.getElementById("printSubmitBtn").disabled = false;
+                    document.getElementById("printBackdrop").classList.add("open");
+                }
+
+                function closePrintModal() {
+                    document.getElementById("printBackdrop").classList.remove("open");
+                }
+
+                async function submitAgentPrint() {
+                    if (!agentOnline) {
+                        closePrintModal();
+                        printLayoutBrowser();
+                        return;
+                    }
+                    const printerId = document.getElementById("printPrinter").value;
+                    if (!printerId) {
+                        const st0 = document.getElementById("printStatus");
+                        if (st0) {
+                            st0.textContent = "Select a printer.";
+                            st0.className = "print-status error";
+                        }
+                        return;
+                    }
+                    const paperSize = document.getElementById("printPaper").value || "a4";
+                    const orient =
+                        (document.querySelector('input[name="printOrient"]:checked') || {}).value || "portrait";
+                    const colorMode =
+                        (document.querySelector('input[name="printColor"]:checked') || {}).value || "color";
+                    let copies = parseInt(document.getElementById("printCopies").value || "1", 10);
+                    if (!(copies >= 1 && copies <= 99)) copies = 1;
+                    const collate = !!document.getElementById("printCollate").checked;
+                    const scaling = document.getElementById("printScaling").value || "actual";
+                    const margins = document.getElementById("printMargins").value || "none";
+                    const mediaType = document.getElementById("printMedia").value || "plain";
+
+                    const st = document.getElementById("printStatus");
+                    const submitBtn = document.getElementById("printSubmitBtn");
+                    submitBtn.disabled = true;
+                    try {
+                        if (st) {
+                            st.textContent = "Building sheet…";
+                            st.className = "print-status";
+                        }
+                        const { blob, pageW, pageH } = await rasterizeSheetPng();
+                        if (st) st.textContent = "Submitting to printer…";
+                        const fd = new FormData();
+                        fd.append("image", blob, "rush-id-sheet.png");
+                        fd.append("printer_id", printerId);
+                        fd.append("paper_size", paperSize);
+                        fd.append("orientation", orient);
+                        fd.append("color_mode", colorMode);
+                        fd.append("copies", String(copies));
+                        fd.append("collate", collate ? "true" : "false");
+                        fd.append("scaling", scaling);
+                        fd.append("margins", margins);
+                        fd.append("media_type", mediaType);
+                        fd.append("page_width_inches", String(pageW));
+                        fd.append("page_height_inches", String(pageH));
+                        const res = await fetch(LOCAL_AGENT + "/print", { method: "POST", body: fd });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok || !data.success) {
+                            throw new Error(data.error || "Print failed (" + res.status + ")");
+                        }
+                        const jobId = data.job_id;
+                        if (st) st.textContent = "Queued — job " + jobId.slice(0, 8) + "…";
+                        for (let tries = 0; tries < 120; tries++) {
+                            await new Promise((r) => setTimeout(r, tries === 0 ? 600 : 1000));
+                            const sr = await fetch(LOCAL_AGENT + "/print/jobs/" + jobId, { cache: "no-store" });
+                            const job = await sr.json();
+                            const status = job.status || "unknown";
+                            if (st) {
+                                st.textContent =
+                                    status.charAt(0).toUpperCase() +
+                                    status.slice(1) +
+                                    (job.warnings && job.warnings.length ? " — " + job.warnings[0] : "");
+                                st.className =
+                                    "print-status" +
+                                    (status === "completed" ? " ok" : status === "failed" ? " error" : "");
+                            }
+                            if (status === "completed") break;
+                            if (status === "failed") {
+                                throw new Error(job.error || "Print job failed");
+                            }
+                            if (tries === 119) throw new Error("Print timed out");
+                        }
+                    } catch (err) {
+                        if (st) {
+                            st.textContent = "Failed: " + (err.message || err);
+                            st.className = "print-status error";
+                        }
+                        alert("Print aborted:\n\n" + (err.message || err));
+                    } finally {
+                        submitBtn.disabled = false;
+                    }
+                }
+
+                btnPrint.addEventListener("click", openPrintModal);
+
+                document.getElementById("btnExportPng").addEventListener("click", async () => {
+                    const btn = document.getElementById("btnExportPng");
+                    const prev = btn.textContent;
+                    btn.disabled = true;
+                    btn.textContent = "Exporting…";
+                    try {
+                        // Prefer A4 portrait at 300 DPI for export (sheet design size)
+                        const paperSel = document.getElementById("printPaper");
+                        const savedPaper = paperSel ? paperSel.value : null;
+                        if (paperSel) paperSel.value = "a4";
+                        const portrait = document.querySelector('input[name="printOrient"][value="portrait"]');
+                        if (portrait) portrait.checked = true;
+                        const { blob } = await rasterizeSheetPng();
+                        if (paperSel && savedPaper != null) paperSel.value = savedPaper;
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = "rush-id-sheet-" + Date.now() + ".png";
+                        a.click();
+                        setTimeout(() => URL.revokeObjectURL(url), 2000);
+                    } catch (err) {
+                        alert("Export failed: " + (err.message || err));
+                    } finally {
+                        btn.disabled = false;
+                        btn.textContent = prev;
+                    }
+                });
+                document.getElementById("printCancelBtn").addEventListener("click", closePrintModal);
+                document.getElementById("printSubmitBtn").addEventListener("click", submitAgentPrint);
+                document.getElementById("printBackdrop").addEventListener("click", (e) => {
+                    if (e.target.id === "printBackdrop") closePrintModal();
+                });
+                document.getElementById("printFilter").addEventListener("change", () => {
+                    const v = document.getElementById("printFilter").value.trim();
+                    localStorage.setItem("iconprint_printer_filter", v);
+                    fillSelect(document.getElementById("printPrinter"), filterPrinters(agentDevices.printers), null);
+                });
+                document.getElementById("printFilter").addEventListener("keydown", (e) => {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        document.getElementById("printFilter").dispatchEvent(new Event("change"));
+                    }
+                });
 
                 btnReset.addEventListener("click", () => {
                     if (!confirm("Clear the photo, signature, name, and layout?")) return;
@@ -1465,6 +2031,7 @@
                 // ---------------- Init ----------------
                 generateLayout();
                 fitZoomToWidth();
+                startAgentPolling();
             })();
         </script>
         <script>
