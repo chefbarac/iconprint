@@ -1100,19 +1100,42 @@
                     });
                     if (!res.ok) throw new Error("health " + res.status);
                     try { await res.json(); } catch (e) {}
-                    const online = true; // HTTP 200 from agent
-                    if (online !== agentOnline) {
-                        setAgentUI(online);
-                        if (online) await refreshDevicesScannersOnly();
-                    } else if (online) {
-                        setAgentUI(true);
+                    // Health succeeded — mark online first so a devices refresh failure
+                    // does not flip the badge back to offline.
+                    const wasOffline = !agentOnline;
+                    setAgentUI(true);
+                    if (wasOffline) {
+                        try {
+                            await refreshDevicesScannersOnly();
+                        } catch (devErr) {
+                            console.warn("Scanner list refresh failed (agent still online):", devErr);
+                        }
                     }
                 } catch (e) {
                     setAgentUI(false);
                 }
             }
 
-            
+            function refreshDevicesScannersOnly() {
+                return fetch(LOCAL_AGENT + "/devices?printers=0", { cache: "no-store" })
+                    .then(function (res) {
+                        if (!res.ok) throw new Error("devices " + res.status);
+                        return res.json();
+                    })
+                    .then(function (data) {
+                        if (typeof agentDevices === "undefined") {
+                            agentDevices = { scanners: [], printers: [] };
+                        }
+                        agentDevices.scanners = data.scanners || [];
+                        if (typeof fillSelect === "function") {
+                            fillSelect(document.getElementById("scannerSelect"), agentDevices.scanners, selectedScannerId);
+                            var sc = document.getElementById("scannerSelect");
+                            if (sc) selectedScannerId = sc.value || null;
+                        }
+                        return agentDevices.scanners;
+                    });
+            }
+
             function refreshDevicesPrintersOnly() {
                 return fetch(LOCAL_AGENT + "/devices?scanners=0", { cache: "no-store" })
                     .then(function (res) {

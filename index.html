@@ -1629,20 +1629,20 @@
                     try {
                         const res = await fetch(LOCAL_AGENT + "/health", { cache: "no-store", signal: (typeof AbortSignal !== "undefined" && AbortSignal.timeout ? AbortSignal.timeout(2500) : undefined) });
                         if (!res.ok) throw new Error("health " + res.status);
-                        const data = await res.json();
-                        const online = true; // HTTP 200 from agent
-                        if (online && !agentOnline) {
-                            setAgentUI(true);
-                            await refreshDevicesScannersOnly();
-                        } else if (!online && agentOnline) {
-                            setAgentUI(false);
-                        } else if (online) {
-                            // still online — refresh devices occasionally
+                        try { await res.json(); } catch (e) {}
+                        // Health succeeded — mark online first so a devices refresh failure
+                        // does not flip the badge back to offline.
+                        const wasOffline = !agentOnline;
+                        setAgentUI(true);
+                        if (wasOffline) {
+                            try {
+                                await refreshDevicesScannersOnly();
+                            } catch (devErr) {
+                                console.warn("Scanner list refresh failed (agent still online):", devErr);
+                            }
                         }
-                        if (online) setAgentUI(true);
                     } catch (e) {
-                        if (agentOnline) setAgentUI(false);
-                        else setAgentUI(false);
+                        setAgentUI(false);
                     }
                 }
 
