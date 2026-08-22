@@ -882,6 +882,14 @@
                         <option value="matte">Matte Photo Paper</option>
                     </select>
                 </div>
+
+                <div class="field-row agent-only">
+                    <label for="printQuality">Quality</label>
+                    <select id="printQuality">
+                        <option value="standard" selected>Standard</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
                 <div class="field-row">
                     <label>Orientation</label>
                     <div class="radio-row">
@@ -921,7 +929,7 @@
                 </div>
                 <div class="print-status" id="printStatus"></div>
                 <div class="print-actions">
-                    <button type="button" class="btn-secondary" id="printCancelBtn">Close</button>
+                    <button type="button" class="btn-secondary" id="printCancelBtn">Cancel</button>
                     <button type="button" class="btn-primary" id="printSubmitBtn" style="width:auto">Print</button>
                 </div>
             </div>
@@ -1095,13 +1103,38 @@
                     const online = !!(data && data.online);
                     if (online !== agentOnline) {
                         setAgentUI(online);
-                        if (online) await refreshDevices();
+                        if (online) await refreshDevicesScannersOnly();
                     } else if (online) {
                         setAgentUI(true);
                     }
                 } catch (e) {
                     setAgentUI(false);
                 }
+            }
+
+            
+            function refreshDevicesPrintersOnly() {
+                return fetch(LOCAL_AGENT + "/devices?scanners=0", { cache: "no-store" })
+                    .then(function (res) {
+                        if (!res.ok) throw new Error("devices");
+                        return res.json();
+                    })
+                    .then(function (data) {
+                        if (typeof agentDevices === "undefined") {
+                            agentDevices = { scanners: [], printers: [] };
+                        }
+                        agentDevices.printers = data.printers || [];
+                        var list =
+                            typeof filterPrinters === "function"
+                                ? filterPrinters(agentDevices.printers)
+                                : agentDevices.printers;
+                        if (typeof fillSelect === "function") {
+                            fillSelect(document.getElementById("printPrinter"), list, null);
+                            var tb = document.getElementById("printerSelect");
+                            if (tb) fillSelect(tb, list, null);
+                        }
+                        return agentDevices.printers;
+                    });
             }
 
             function startAgentPolling() {
@@ -2131,6 +2164,12 @@
                     printLayoutBrowser();
                     return;
                 }
+                /* printers-on-print */
+                try {
+                    if (typeof refreshDevicesPrintersOnly === "function") {
+                        refreshDevicesPrintersOnly();
+                    }
+                } catch (e) {}
                 // Sync paper from layout
                 const paperSel = document.getElementById("printPaper");
                 const layoutPaper = document.getElementById("paperSize").value;
@@ -2191,6 +2230,7 @@
                 const scaling = document.getElementById("printScaling").value || "actual";
                 const margins = document.getElementById("printMargins").value || "none";
                 const mediaType = document.getElementById("printMedia").value || "plain";
+                    const quality = (document.getElementById("printQuality") && document.getElementById("printQuality").value) || "standard";
 
                 const paper = PAPER_SIZES_MM[paperSize] || currentPaper();
                 let pageW = mmToInches(paper.w);
@@ -2222,6 +2262,7 @@
                     fd.append("scaling", scaling);
                     fd.append("margins", margins);
                     fd.append("media_type", mediaType);
+                    fd.append("quality", (document.getElementById("printQuality") && document.getElementById("printQuality").value) || "standard");
                     fd.append("page_width_inches", String(pageW));
                     fd.append("page_height_inches", String(pageH));
 

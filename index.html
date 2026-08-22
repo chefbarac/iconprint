@@ -1026,7 +1026,7 @@
                         <input type="file" id="file1" accept="image/*" hidden />
                         <input type="file" id="file2" accept="image/*" hidden />
 
-                        |
+                        or
 
                         <button class="btn" id="scanTop" title="Only works if the scan file is running locally.">
                             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
@@ -1269,6 +1269,14 @@
                             <option value="matte">Matte Photo Paper</option>
                         </select>
                     </div>
+
+                <div class="field-row agent-only">
+                    <label for="printQuality">Quality</label>
+                    <select id="printQuality">
+                        <option value="standard" selected>Standard</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
                     <div class="field-row">
                         <label>Orientation</label>
                         <div class="radio-row">
@@ -1309,7 +1317,7 @@
                     </div>
                     <div class="print-status" id="printStatus"></div>
                     <div class="print-actions">
-                        <button class="btn" id="printCancelBtn">Close</button>
+                        <button class="btn" id="printCancelBtn">Cancel</button>
                         <button class="btn accent" id="printSubmitBtn">Print</button>
                     </div>
                 </div>
@@ -1625,7 +1633,7 @@
                         const online = !!(data && data.online);
                         if (online && !agentOnline) {
                             setAgentUI(true);
-                            await refreshDevices();
+                            await refreshDevicesScannersOnly();
                         } else if (!online && agentOnline) {
                             setAgentUI(false);
                         } else if (online) {
@@ -1638,7 +1646,38 @@
                     }
                 }
 
-                function startAgentPolling() {
+                
+            function refreshDevicesScannersOnly() {
+                // Scanners only — do not EnumPrinters (avoids waking network printers).
+                return fetch(LOCAL_AGENT + "/devices?printers=0", { cache: "no-store" })
+                    .then(function (res) { if (!res.ok) throw new Error("devices"); return res.json(); })
+                    .then(function (data) {
+                        if (typeof agentDevices === "undefined") return;
+                        agentDevices.scanners = data.scanners || [];
+                        if (typeof fillSelect === "function" && document.getElementById("scannerSelect")) {
+                            fillSelect(document.getElementById("scannerSelect"), agentDevices.scanners, typeof selectedScannerId !== "undefined" ? selectedScannerId : null);
+                        }
+                    })
+                    .catch(function () {});
+            }
+            function refreshDevicesPrintersOnly() {
+                return fetch(LOCAL_AGENT + "/devices?scanners=0", { cache: "no-store" })
+                    .then(function (res) { if (!res.ok) throw new Error("devices"); return res.json(); })
+                    .then(function (data) {
+                        if (typeof agentDevices === "undefined") agentDevices = { scanners: [], printers: [] };
+                        agentDevices.printers = data.printers || [];
+                        var list = typeof filterPrinters === "function" ? filterPrinters(agentDevices.printers) : agentDevices.printers;
+                        if (typeof fillSelect === "function") {
+                            fillSelect(document.getElementById("printPrinter"), list, null);
+                            if (document.getElementById("printerSelect")) {
+                                fillSelect(document.getElementById("printerSelect"), list, typeof selectedPrinterId !== "undefined" ? selectedPrinterId : null);
+                            }
+                        }
+                        return agentDevices.printers;
+                    });
+            }
+
+            function startAgentPolling() {
                     checkAgentHealth();
                     if (healthTimer) clearInterval(healthTimer);
                     healthTimer = setInterval(checkAgentHealth, 4000);
@@ -3546,6 +3585,12 @@ const botGraySAT = buildIntegralImages(botGray);
                         printLayout();
                         return;
                     }
+                    /* printers-on-print */
+                    try {
+                        if (typeof refreshDevicesPrintersOnly === "function") {
+                            refreshDevicesPrintersOnly();
+                        }
+                    } catch (e) {}
                     // Defaults from current layout
                     const paperSel = document.getElementById("printPaper");
                     if (paperSel) {
@@ -3641,6 +3686,7 @@ const botGraySAT = buildIntegralImages(botGray);
                         fd.append("scaling", scaling);
                         fd.append("margins", margins);
                         fd.append("media_type", mediaType);
+                    fd.append("quality", (document.getElementById("printQuality") && document.getElementById("printQuality").value) || "standard");
                         fd.append("page_width_inches", String(pageW));
                         fd.append("page_height_inches", String(pageH));
 
