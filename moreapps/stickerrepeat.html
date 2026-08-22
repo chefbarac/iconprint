@@ -785,11 +785,11 @@
                 try {
                     const res = await fetch(LOCAL_AGENT + "/health", {
                         cache: "no-store",
-                        signal: AbortSignal.timeout(2500),
+                        signal: (typeof AbortSignal !== "undefined" && AbortSignal.timeout ? AbortSignal.timeout(2500) : undefined),
                     });
                     if (!res.ok) throw new Error("health");
-                    const data = await res.json();
-                    const online = !!(data && data.online);
+                    try { await res.json(); } catch (e) {}
+                    const online = true; // HTTP 200 from agent
                     if (online !== agentOnline) {
                         setAgentUI(online);
                         if (online) await refreshDevicesScannersOnly();

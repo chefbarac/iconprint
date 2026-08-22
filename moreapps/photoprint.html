@@ -991,10 +991,10 @@
                         .then(function (res) {
                             clearTimeout(timer);
                             if (!res.ok) throw new Error("health " + res.status);
-                            return res.json();
+                            return res.json().catch(function () { return {}; });
                         })
                         .then(function (data) {
-                            var online = !!(data && data.online);
+                            var online = true; // HTTP 200 from agent
                             if (online !== agentOnline) {
                                 setAgentUI(online);
                                 if (online) refreshDevicesScannersOnly();
