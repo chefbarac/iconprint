@@ -723,6 +723,9 @@
         <script>
             const LOCAL_AGENT = "http://localhost:5001";
             let agentOnline = false;
+            // Photo paper not supported via local agent — always use browser print dialog.
+            // Agent UI/code kept intact; set true to re-enable direct agent printing.
+            const USE_PRINT_AGENT = false;
             let agentDevices = { scanners: [], printers: [] };
             let healthTimer = null;
 
@@ -854,6 +857,7 @@ function refreshDevicesPrintersOnly() {
 
             function startAgentPolling() {
                 setAgentUI(false);
+                if (!USE_PRINT_AGENT) return; // agent print disabled — stay on browser dialog
                 checkAgentHealth();
                 if (healthTimer) clearInterval(healthTimer);
                 healthTimer = setInterval(checkAgentHealth, 4000);
@@ -1231,7 +1235,7 @@ function refreshDevicesPrintersOnly() {
 
             function openPrintModal() {
                 if (!hasAnyDesign()) return;
-                if (!agentOnline) {
+                if (!USE_PRINT_AGENT || !agentOnline) {
                     printLayoutBrowser();
                     return;
                 }
