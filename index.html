@@ -888,7 +888,67 @@
                 margin-top: 18px;
                 justify-content: flex-end;
             }
-        </style>
+        
+            .agent-toggle-wrap {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                user-select: none;
+            }
+            .agent-toggle-wrap label.agent-toggle-label {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                cursor: pointer;
+                font-size: 12px;
+                font-weight: 600;
+                color: inherit;
+                margin: 0;
+            }
+            .agent-toggle {
+                position: relative;
+                width: 36px;
+                height: 20px;
+                flex-shrink: 0;
+            }
+            .agent-toggle input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+                position: absolute;
+            }
+            .agent-toggle .slider {
+                position: absolute;
+                inset: 0;
+                background: #94a3b8;
+                border-radius: 999px;
+                transition: background 0.2s;
+                cursor: pointer;
+            }
+            .agent-toggle .slider::before {
+                content: "";
+                position: absolute;
+                width: 16px;
+                height: 16px;
+                left: 2px;
+                top: 2px;
+                background: #fff;
+                border-radius: 50%;
+                transition: transform 0.2s;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+            }
+            .agent-toggle input:checked + .slider {
+                background: #22c55e;
+            }
+            .agent-toggle input:checked + .slider::before {
+                transform: translateX(16px);
+            }
+            .agent-toggle input:focus-visible + .slider {
+                outline: 2px solid #2563eb;
+                outline-offset: 2px;
+            }
+
+</style>
     </head>
     <body>
         <iframe class="promo-banner" src="https://chefbarac.github.io/promo-banner/" width="100%" height="72" loading="lazy"></iframe>
@@ -992,7 +1052,16 @@
 
 
                     <div class="toolbar-group agent-controls" id="agentControls">
-                        <span class="agent-badge" id="agentBadge">Agent online</span>
+                        <span class="agent-toggle-wrap">
+                        <label class="agent-toggle-label" title="Connect to local print agent">
+                            <span class="agent-toggle">
+                                <input type="checkbox" id="agentToggle" checked />
+                                <span class="slider"></span>
+                            </span>
+                            Agent
+                        </label>
+                        <span class="agent-badge offline" id="agentBadge"><span class="dot"></span><span id="agentBadgeText">Agent offline</span></span>
+                    </span>
                         <label>Scanner
                             <select id="scannerSelect">
                                 <option value="">—</option>
@@ -1317,7 +1386,7 @@
                     </div>
                     <div class="print-status" id="printStatus"></div>
                     <div class="print-actions">
-                        <button class="btn" id="printCancelBtn">Close</button>
+                        <button class="btn" id="printCancelBtn">Cancel</button>
                         <button class="btn accent" id="printSubmitBtn">Print</button>
                     </div>
                 </div>
@@ -1539,6 +1608,24 @@
                 
                 // ---------- Local Icon Print Agent ----------
                 const LOCAL_AGENT = "http://localhost:5001";
+
+            const AGENT_PREF_KEY = "iconprint_agent_enabled_stitch";
+            function getAgentEnabledPref() {
+                try {
+                    const v = localStorage.getItem(AGENT_PREF_KEY);
+                    if (v === null || v === undefined) return true; // first visit: on (apps can override below)
+                    return v === "1" || v === "true";
+                } catch (e) {
+                    return true;
+                }
+            }
+            function setAgentEnabledPref(on) {
+                try {
+                    localStorage.setItem(AGENT_PREF_KEY, on ? "1" : "0");
+                } catch (e) {}
+            }
+            let agentConnectionEnabled = getAgentEnabledPref();
+
                 let agentOnline = false;
                 let agentDevices = { scanners: [], printers: [] };
                 let selectedScannerId = null;
@@ -1556,7 +1643,7 @@
                         else controls.classList.remove("visible");
                     }
                     if (badge) {
-                        badge.textContent = online ? "Agent online" : "Agent offline";
+                        badge.textContent = online ? "Agent online" : (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled ? "Agent off" : "Agent offline");
                         badge.classList.toggle("offline", !online);
                     }
                     // Hide scan buttons that require the agent when offline
@@ -1626,6 +1713,11 @@
                 }
 
                 async function checkAgentHealth() {
+
+                    if (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled) {
+                        setAgentUI(false);
+                        return;
+                    }
                     try {
                         const res = await fetch(LOCAL_AGENT + "/health", { cache: "no-store", signal: (typeof AbortSignal !== "undefined" && AbortSignal.timeout ? AbortSignal.timeout(2500) : undefined) });
                         if (!res.ok) throw new Error("health " + res.status);
@@ -1678,6 +1770,12 @@
             }
 
             function startAgentPolling() {
+                    if (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled) {
+                        if (healthTimer) { clearInterval(healthTimer); healthTimer = null; }
+                        setAgentUI(false);
+                        return;
+                    }
+                    setAgentUI(false);
                     checkAgentHealth();
                     if (healthTimer) clearInterval(healthTimer);
                     healthTimer = setInterval(checkAgentHealth, 4000);
@@ -3757,6 +3855,34 @@ const botGraySAT = buildIntegralImages(botGray);
                 renderAll();
                 setAgentUI(false);
                 startAgentPolling();
+
+            (function initAgentToggle() {
+                const toggle = document.getElementById("agentToggle");
+                if (!toggle) return;
+                toggle.checked = !!agentConnectionEnabled;
+                toggle.addEventListener("change", function () {
+                    agentConnectionEnabled = !!toggle.checked;
+                    setAgentEnabledPref(agentConnectionEnabled);
+                    if (agentConnectionEnabled) {
+                        startAgentPolling();
+                    } else {
+                        if (typeof healthTimer !== "undefined" && healthTimer) {
+                            clearInterval(healthTimer);
+                            healthTimer = null;
+                        }
+                        setAgentUI(false);
+                    }
+                });
+                // Apply saved preference (may disable polling started below)
+                if (!agentConnectionEnabled) {
+                    if (typeof healthTimer !== "undefined" && healthTimer) {
+                        clearInterval(healthTimer);
+                        healthTimer = null;
+                    }
+                    setAgentUI(false);
+                }
+            })();
+
             })();
         </script>
         <script>

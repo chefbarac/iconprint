@@ -673,7 +673,67 @@
                     display: none !important;
                 }
             }
-        </style>
+        
+            .agent-toggle-wrap {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                user-select: none;
+            }
+            .agent-toggle-wrap label.agent-toggle-label {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                cursor: pointer;
+                font-size: 12px;
+                font-weight: 600;
+                color: inherit;
+                margin: 0;
+            }
+            .agent-toggle {
+                position: relative;
+                width: 36px;
+                height: 20px;
+                flex-shrink: 0;
+            }
+            .agent-toggle input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+                position: absolute;
+            }
+            .agent-toggle .slider {
+                position: absolute;
+                inset: 0;
+                background: #94a3b8;
+                border-radius: 999px;
+                transition: background 0.2s;
+                cursor: pointer;
+            }
+            .agent-toggle .slider::before {
+                content: "";
+                position: absolute;
+                width: 16px;
+                height: 16px;
+                left: 2px;
+                top: 2px;
+                background: #fff;
+                border-radius: 50%;
+                transition: transform 0.2s;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+            }
+            .agent-toggle input:checked + .slider {
+                background: #22c55e;
+            }
+            .agent-toggle input:checked + .slider::before {
+                transform: translateX(16px);
+            }
+            .agent-toggle input:focus-visible + .slider {
+                outline: 2px solid #2563eb;
+                outline-offset: 2px;
+            }
+
+</style>
     </head>
     <body>
         <iframe class="promo-frame no-print" src="https://chefbarac.github.io/promo-banner/" width="100%" height="72" style="border: none; border-radius: 0" loading="lazy"> </iframe>
@@ -685,7 +745,16 @@
                     <p class="eyebrow">Rush ID · Print Sheet Generator</p>
                     <h1>Auto Layout</h1>
                     <p>Capture or upload a photo, crop it, add a name and signature, and print a ready-to-cut A4 sheet.</p>
+                    <span class="agent-toggle-wrap">
+                    <label class="agent-toggle-label" title="Connect to local print agent">
+                        <span class="agent-toggle">
+                            <input type="checkbox" id="agentToggle" checked />
+                            <span class="slider"></span>
+                        </span>
+                        Agent
+                    </label>
                     <div class="agent-badge offline" id="agentBadge"><span class="dot"></span><span id="agentBadgeText">Agent offline</span></div>
+                </span>
                 </div>
 
                 <div class="toolbar">
@@ -926,7 +995,7 @@
                 </div>
                 <div class="print-status" id="printStatus"></div>
                 <div class="print-actions">
-                    <button type="button" class="ghost" id="printCancelBtn">Close</button>
+                    <button type="button" class="ghost" id="printCancelBtn">Cancel</button>
                     <button type="button" id="printSubmitBtn">Print</button>
                 </div>
             </div>
@@ -935,10 +1004,36 @@
         <script>
             (function () {
                 const LOCAL_AGENT = "http://localhost:5001";
+
+            const AGENT_PREF_KEY = "iconprint_agent_enabled_rushid";
+            function getAgentEnabledPref() {
+                try {
+                    const v = localStorage.getItem(AGENT_PREF_KEY);
+                    if (v === null || v === undefined) return true; // first visit: on (apps can override below)
+                    return v === "1" || v === "true";
+                } catch (e) {
+                    return true;
+                }
+            }
+            function setAgentEnabledPref(on) {
+                try {
+                    localStorage.setItem(AGENT_PREF_KEY, on ? "1" : "0");
+                } catch (e) {}
+            }
+            let agentConnectionEnabled = getAgentEnabledPref();
+
                 let agentOnline = false;
                 // Photo paper not supported via local agent — always use browser print dialog.
                 // Agent UI/code kept intact; set true to re-enable direct agent printing.
                 const USE_PRINT_AGENT = false;
+                // First visit only: default agent connection off for photo-paper apps
+                try {
+                    if (localStorage.getItem(AGENT_PREF_KEY) === null) {
+                        agentConnectionEnabled = false;
+                        setAgentEnabledPref(false);
+                    }
+                } catch (e) {}
+
                 let agentDevices = { scanners: [], printers: [] };
                 let healthTimer = null;
 
@@ -980,7 +1075,7 @@
                     const badge = document.getElementById("agentBadge");
                     const badgeText = document.getElementById("agentBadgeText");
                     if (badge) badge.classList.toggle("offline", !online);
-                    if (badgeText) badgeText.textContent = online ? "Agent online" : "Agent offline";
+                    if (badgeText) badgeText.textContent = online ? "Agent online" : (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled ? "Agent off" : "Agent offline");
                     document.querySelectorAll(".agent-only").forEach((el) => {
                         if (online) el.classList.add("visible");
                         else el.classList.remove("visible");
@@ -998,6 +1093,11 @@
                     }
                 }
                 async function checkAgentHealth() {
+
+                    if (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled) {
+                        setAgentUI(false);
+                        return;
+                    }
                     try {
                         const res = await fetch(LOCAL_AGENT + "/health", {
                             cache: "no-store",
@@ -1069,8 +1169,12 @@ function refreshDevicesPrintersOnly() {
             }
 
             function startAgentPolling() {
+                    if (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled) {
+                        if (healthTimer) { clearInterval(healthTimer); healthTimer = null; }
+                        setAgentUI(false);
+                        return;
+                    }
                     setAgentUI(false);
-                    if (!USE_PRINT_AGENT) return; // agent print disabled — stay on browser dialog
                     checkAgentHealth();
                     if (healthTimer) clearInterval(healthTimer);
                     healthTimer = setInterval(checkAgentHealth, 4000);
@@ -1919,7 +2023,7 @@ function refreshDevicesPrintersOnly() {
                 }
 
                 function openPrintModal() {
-                    if (!USE_PRINT_AGENT || !agentOnline) {
+                    if (!agentConnectionEnabled || !agentOnline) {
                         printLayoutBrowser();
                         return;
                     }
@@ -2106,6 +2210,34 @@ function refreshDevicesPrintersOnly() {
                 generateLayout();
                 fitZoomToWidth();
                 startAgentPolling();
+
+            (function initAgentToggle() {
+                const toggle = document.getElementById("agentToggle");
+                if (!toggle) return;
+                toggle.checked = !!agentConnectionEnabled;
+                toggle.addEventListener("change", function () {
+                    agentConnectionEnabled = !!toggle.checked;
+                    setAgentEnabledPref(agentConnectionEnabled);
+                    if (agentConnectionEnabled) {
+                        startAgentPolling();
+                    } else {
+                        if (typeof healthTimer !== "undefined" && healthTimer) {
+                            clearInterval(healthTimer);
+                            healthTimer = null;
+                        }
+                        setAgentUI(false);
+                    }
+                });
+                // Apply saved preference (may disable polling started below)
+                if (!agentConnectionEnabled) {
+                    if (typeof healthTimer !== "undefined" && healthTimer) {
+                        clearInterval(healthTimer);
+                        healthTimer = null;
+                    }
+                    setAgentUI(false);
+                }
+            })();
+
             })();
         </script>
         <script>
