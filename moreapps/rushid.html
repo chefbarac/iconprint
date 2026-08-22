@@ -1003,9 +1003,80 @@
 
         <script>
             (function () {
-                const LOCAL_AGENT = "http://localhost:5001";
+                // ---------- Local print agent (configurable host) ----------
 
-            const AGENT_PREF_KEY = "iconprint_agent_enabled_rushid";
+                const AGENT_HOST_KEY = "iconprint_agent_host";
+
+                const DEFAULT_AGENT_HOST = "http://localhost:5001";
+
+                function getAgentHost() {
+
+                    try {
+
+                        const v = (localStorage.getItem(AGENT_HOST_KEY) || "").trim();
+
+                        if (v) return v.replace(/\/+$/, "");
+
+                    } catch (e) {}
+
+                    return DEFAULT_AGENT_HOST;
+
+                }
+
+                function setAgentHost(url) {
+
+                    try {
+
+                        const cleaned = (url || "").trim().replace(/\/+$/, "");
+
+                        if (cleaned) localStorage.setItem(AGENT_HOST_KEY, cleaned);
+
+                        else localStorage.removeItem(AGENT_HOST_KEY);
+
+                    } catch (e) {}
+
+                }
+
+                let LOCAL_AGENT = getAgentHost();
+
+                function promptAgentHost() {
+
+                    const current = getAgentHost();
+
+                    const next = window.prompt(
+
+                        "Print agent URL\n\nUse this PC: http://localhost:5001\nOther PC on LAN: http://<agent-ip>:5001",
+
+                        current
+
+                    );
+
+                    if (next === null) return;
+
+                    setAgentHost(next || DEFAULT_AGENT_HOST);
+
+                    LOCAL_AGENT = getAgentHost();
+
+                    if (typeof agentConnectionEnabled !== "undefined" && agentConnectionEnabled && typeof startAgentPolling === "function") {
+
+                        startAgentPolling();
+
+                    } else if (typeof checkAgentHealth === "function") {
+
+                        checkAgentHealth();
+
+                    }
+
+                    const badgeText = document.getElementById("agentBadgeText");
+
+                    if (badgeText && typeof agentOnline !== "undefined" && !agentOnline) {
+
+                        badgeText.title = "Agent host: " + LOCAL_AGENT + " (click to change)";
+
+                    }
+
+                }
+const AGENT_PREF_KEY = "iconprint_agent_enabled_rushid";
             function getAgentEnabledPref() {
                 try {
                     const v = localStorage.getItem(AGENT_PREF_KEY);
@@ -1075,7 +1146,10 @@
                     const badge = document.getElementById("agentBadge");
                     const badgeText = document.getElementById("agentBadgeText");
                     if (badge) badge.classList.toggle("offline", !online);
-                    if (badgeText) badgeText.textContent = online ? "Agent online" : (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled ? "Agent off" : "Agent offline");
+                    if (badgeText) {
+                    badgeText.textContent = online ? "Agent online" : (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled ? "Agent off" : "Agent offline");
+                    if (badge) badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
+                }
                     document.querySelectorAll(".agent-only").forEach((el) => {
                         if (online) el.classList.add("visible");
                         else el.classList.remove("visible");
@@ -2238,7 +2312,22 @@ function refreshDevicesPrintersOnly() {
                 }
             })();
 
+            
+
+            (function initAgentHostUi() {
+                const badge = document.getElementById("agentBadge");
+                if (!badge) return;
+                badge.style.cursor = "pointer";
+                badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
+                badge.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    promptAgentHost();
+                    badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
+                });
             })();
+
+})();
         </script>
         <script>
             if ("serviceWorker" in navigator) {

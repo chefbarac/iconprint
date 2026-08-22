@@ -974,10 +974,46 @@
         <script>
             (function () {
                 "use strict";
+                // ---------- Local print agent (configurable host) ----------
+                var AGENT_HOST_KEY = "iconprint_agent_host";
+                var DEFAULT_AGENT_HOST = "http://localhost:5001";
+                function getAgentHost() {
+                    try {
+                        var v = (localStorage.getItem(AGENT_HOST_KEY) || "").trim();
+                        if (v) return v.replace(/\/+$/, "");
+                    } catch (e) {}
+                    return DEFAULT_AGENT_HOST;
+                }
+                function setAgentHost(url) {
+                    try {
+                        var cleaned = (url || "").trim().replace(/\/+$/, "");
+                        if (cleaned) localStorage.setItem(AGENT_HOST_KEY, cleaned);
+                        else localStorage.removeItem(AGENT_HOST_KEY);
+                    } catch (e) {}
+                }
+                var LOCAL_AGENT = getAgentHost();
+                function promptAgentHost() {
+                    var current = getAgentHost();
+                    var next = window.prompt(
+                        "Print agent URL
 
-                var LOCAL_AGENT = "http://localhost:5001";
+Use this PC: http://localhost:5001
+Other PC on LAN: http://<agent-ip>:5001",
+                        current
+                    );
+                    if (next === null) return;
+                    setAgentHost(next || DEFAULT_AGENT_HOST);
+                    LOCAL_AGENT = getAgentHost();
+                    if (typeof agentConnectionEnabled !== "undefined" && agentConnectionEnabled && typeof startAgentPolling === "function") {
+                        startAgentPolling();
+                    } else if (typeof checkAgentHealth === "function") {
+                        checkAgentHealth();
+                    }
+                    var badge = document.getElementById("agentBadge");
+                    if (badge) badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
+                }
 
-            const AGENT_PREF_KEY = "iconprint_agent_enabled_photoprint";
+const AGENT_PREF_KEY = "iconprint_agent_enabled_photoprint";
             function getAgentEnabledPref() {
                 try {
                     const v = localStorage.getItem(AGENT_PREF_KEY);
@@ -1042,7 +1078,10 @@
                         if (online) badge.classList.remove("offline");
                         else badge.classList.add("offline");
                     }
-                    if (badgeText) badgeText.textContent = online ? "Agent online" : (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled ? "Agent off" : "Agent offline");
+                    if (badgeText) {
+                    badgeText.textContent = online ? "Agent online" : (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled ? "Agent off" : "Agent offline");
+                    if (badge) badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
+                }
                     var nodes = document.querySelectorAll(".agent-only");
                     for (var i = 0; i < nodes.length; i++) {
                         if (online) nodes[i].classList.add("visible");
@@ -3533,7 +3572,22 @@ function refreshDevicesPrintersOnly() {
                 }
             })();
 
-                setStatus("Ready - Select preset (default 1x1), upload images, place on paper");
+                
+
+            (function initAgentHostUi() {
+                var badge = document.getElementById("agentBadge");
+                if (!badge) return;
+                badge.style.cursor = "pointer";
+                badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
+                badge.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    promptAgentHost();
+                    badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
+                });
+            })();
+
+setStatus("Ready - Select preset (default 1x1), upload images, place on paper");
             })();
         </script>
         <script>
