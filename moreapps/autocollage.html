@@ -404,7 +404,15 @@
             }
             .tile.dragging {
                 cursor: grabbing;
-                z-index: 999 !important;
+                z-index: 9999 !important;
+                outline: 2px solid var(--accent);
+            }
+            .page.drag-source {
+                overflow: visible !important;
+            }
+            .tile {
+                pointer-events: auto;
+                cursor: grab;
             }
             .tile img {
                 width: 100%;
@@ -1552,11 +1560,19 @@
                 }
 
                 // Find the .page element (if any) under a viewport point — used so tiles can be
-                // dragged from one page onto another.
+                // dragged from one page onto another. Also resolves sprocket / label hits
+                // via the surrounding page-shell.
                 function pageElementAtPoint(x, y) {
                     const el = document.elementFromPoint(x, y);
                     if (!el) return null;
-                    return el.closest(".page");
+                    const page = el.closest(".page");
+                    if (page) return page;
+                    const shell = el.closest(".page-shell");
+                    if (shell) {
+                        const p = shell.querySelector(".page");
+                        if (p) return p;
+                    }
+                    return null;
                 }
 
                 function buildTile(rec, pageEl) {
@@ -1649,11 +1665,15 @@
                 }
 
                 // ---------- drag / resize / rotate ----------
-                // Drag in unrotated page-local space (accounts for viewZoom). pointer-events:none on
-                // the tile so elementFromPoint can see the page underneath; rAF batches layout work.
+                // Drag in unrotated page-local space (accounts for viewZoom).
+                // Document-level listeners survive reparenting; overflow:visible on pages while
+                // dragging so tiles are not clipped at the edge; pointer-events:none only on the
+                // active tile so elementFromPoint can hit the destination page.
                 function startDrag(e, rec) {
                     e.preventDefault();
+                    e.stopPropagation();
                     const startPage = rec.el.parentElement;
+                    if (!startPage) return;
                     const startPageRect = startPage.getBoundingClientRect();
                     // Offset of pointer from the tile's layout top-left (rec.x/rec.y), in page px.
                     // getBoundingClientRect is scaled by viewZoom, so divide to stay in layout space.
@@ -1663,19 +1683,41 @@
                     rec.el.classList.add("dragging");
                     rec.el.style.zIndex = zTop++;
                     rec.el.style.pointerEvents = "none";
-                    rec.el.setPointerCapture(e.pointerId);
+                    document.querySelectorAll(".page").forEach((p) => p.classList.add("drag-source"));
 
                     let raf = 0;
                     let lastEv = null;
+                    let finished = false;
+
+                    function autoScrollViewport(ev) {
+                        if (!zoomViewport) return;
+                        const rect = zoomViewport.getBoundingClientRect();
+                        const edge = 48;
+                        const speed = 22;
+                        if (ev.clientY < rect.top + edge) zoomViewport.scrollTop -= speed;
+                        else if (ev.clientY > rect.bottom - edge) zoomViewport.scrollTop += speed;
+                        if (ev.clientX < rect.left + edge) zoomViewport.scrollLeft -= speed;
+                        else if (ev.clientX > rect.right - edge) zoomViewport.scrollLeft += speed;
+                    }
 
                     function applyMove(ev) {
-                        const targetPage = pageElementAtPoint(ev.clientX, ev.clientY) || rec.el.parentElement;
-                        if (targetPage !== rec.el.parentElement) {
+                        autoScrollViewport(ev);
+                        let targetPage = pageElementAtPoint(ev.clientX, ev.clientY);
+                        if (!targetPage || !targetPage.classList.contains("page")) {
+                            targetPage = rec.el.parentElement;
+                        }
+                        if (targetPage && targetPage !== rec.el.parentElement) {
                             targetPage.appendChild(rec.el);
                         }
-                        const pageRect = targetPage.getBoundingClientRect();
-                        rec.x = (ev.clientX - pageRect.left) / viewZoom - offsetX;
-                        rec.y = (ev.clientY - pageRect.top) / viewZoom - offsetY;
+                        const pageEl = rec.el.parentElement;
+                        if (!pageEl) return;
+                        const pageRect = pageEl.getBoundingClientRect();
+                        const layoutW = parseFloat(pageEl.style.width) || currentPagePx().w || 1;
+                        const layoutH = parseFloat(pageEl.style.height) || currentPagePx().h || 1;
+                        const sx = pageRect.width > 1 ? pageRect.width / layoutW : viewZoom || 1;
+                        const sy = pageRect.height > 1 ? pageRect.height / layoutH : viewZoom || 1;
+                        rec.x = (ev.clientX - pageRect.left) / sx - offsetX;
+                        rec.y = (ev.clientY - pageRect.top) / sy - offsetY;
                         renderTile(rec);
                     }
 
@@ -1684,26 +1726,33 @@
                         if (raf) return;
                         raf = requestAnimationFrame(() => {
                             raf = 0;
-                            if (lastEv) applyMove(lastEv);
+                            if (lastEv && !finished) applyMove(lastEv);
                         });
                     }
 
-                    function up() {
+                    function up(ev) {
+                        if (finished) return;
+                        finished = true;
                         if (raf) {
                             cancelAnimationFrame(raf);
                             raf = 0;
                         }
-                        if (lastEv) applyMove(lastEv);
+                        try {
+                            if (lastEv) applyMove(lastEv);
+                            else if (ev) applyMove(ev);
+                        } catch (err) {}
                         rec.el.classList.remove("dragging");
-                        rec.el.style.pointerEvents = "";
-                        rec.el.removeEventListener("pointermove", move);
-                        rec.el.removeEventListener("pointerup", up);
-                        rec.el.removeEventListener("pointercancel", up);
+                        // Always restore hit-testing so the tile stays selectable
+                        rec.el.style.pointerEvents = "auto";
+                        document.querySelectorAll(".page").forEach((p) => p.classList.remove("drag-source"));
+                        document.removeEventListener("pointermove", move, true);
+                        document.removeEventListener("pointerup", up, true);
+                        document.removeEventListener("pointercancel", up, true);
                     }
 
-                    rec.el.addEventListener("pointermove", move);
-                    rec.el.addEventListener("pointerup", up);
-                    rec.el.addEventListener("pointercancel", up);
+                    document.addEventListener("pointermove", move, true);
+                    document.addEventListener("pointerup", up, true);
+                    document.addEventListener("pointercancel", up, true);
                 }
 
                 function startResize(e, rec) {
