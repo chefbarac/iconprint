@@ -583,6 +583,31 @@
                 color: var(--accent);
                 font-weight: 600;
             }
+            .hint.confidence-alert {
+                display: flex;
+                align-items: flex-start;
+                gap: 7px;
+                font-size: 12.5px;
+                line-height: 1.45;
+                color: var(--accent);
+                font-weight: 600;
+                background: var(--accent-soft);
+                border: 1px solid var(--accent);
+                border-radius: var(--radius);
+                padding: 8px 10px;
+                margin-top: 6px;
+                animation: confidence-pop 0.18s ease-out;
+            }
+            .hint.confidence-alert::before {
+                content: "⚠";
+                flex: 0 0 auto;
+                font-size: 14px;
+                line-height: 1.3;
+            }
+            @keyframes confidence-pop {
+                from { transform: scale(0.97); opacity: 0; }
+                to { transform: scale(1); opacity: 1; }
+            }
             .divider {
                 height: 1px;
                 background: var(--line);
@@ -2310,10 +2335,11 @@ function computeGlobalOverlapEstimate(topLayer, bottomLayer) {
                     return { top, bottom };
                 }
 
-                function setStitchStatus(msg, warn) {
+                function setStitchStatus(msg, warn, alertLevel) {
     if (els.stitchStatus) {
         els.stitchStatus.textContent = msg || "";
-        els.stitchStatus.classList.toggle("warn", !!warn);
+        els.stitchStatus.classList.toggle("warn", !!warn && alertLevel !== "confidence");
+        els.stitchStatus.classList.toggle("confidence-alert", alertLevel === "confidence");
     }
     const overlayText = document.getElementById("stitchOverlayText");
     if (overlayText && msg) overlayText.textContent = msg;
@@ -2368,6 +2394,14 @@ function computeGlobalOverlapEstimate(topLayer, bottomLayer) {
         "Smart-aligned — overlap " + Math.round(overlapPx) + "px, shift " +
         Math.round(result.dxPx) + "px (confidence " + Math.round(result.confidence * 100) + "%)."
     );
+} else {
+    const pct = result ? Math.round(result.confidence * 100) : 0;
+    setStitchStatus(
+        "Low confidence (" + pct + "%) — couldn't find a reliable seam. " +
+        "Using basic auto-fit; drag a layer or use the overlap slider to align by hand.",
+        true,
+        "confidence"
+    );
 }
                     } catch (err) {
                         console.error("Smart stitch failed:", err);
@@ -2421,6 +2455,14 @@ function computeGlobalOverlapEstimate(topLayer, bottomLayer) {
     setStitchStatus(
         "Smart-aligned — overlap " + Math.round(overlapPx) + "px, shift " +
         Math.round(result.dxPx) + "px (confidence " + Math.round(result.confidence * 100) + "%)."
+    );
+} else {
+    const pct = result ? Math.round(result.confidence * 100) : 0;
+    setStitchStatus(
+        "Low confidence (" + pct + "%) — couldn't find a reliable seam. " +
+        "Using basic auto-fit; drag a layer or use the overlap slider to align by hand.",
+        true,
+        "confidence"
     );
 }
     } catch (err) {
