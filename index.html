@@ -3821,8 +3821,15 @@ const botGraySAT = buildIntegralImages(botGray);
                     const paperSel = document.getElementById("printPaper");
                     if (paperSel) {
                         const key = state.paperKey || "long";
-                        // Map frontend paper keys
-                        if (["a4", "short", "long", "legal"].includes(key)) paperSel.value = key;
+                        // Map frontend paper keys. "legal" (8.5×14) in the layout
+                        // auto-populates "long" (8.5×13) here — that's the size
+                        // actually loaded in the tray, and "legal"/"long" get
+                        // conflated often enough (folio/oficio/govt-legal all mean
+                        // 8.5×13 locally) that defaulting to the real physical size
+                        // avoids a paper-mismatch abort at print time. Still
+                        // user-overridable in the dropdown.
+                        if (key === "legal") paperSel.value = "long";
+                        else if (["a4", "short", "long"].includes(key)) paperSel.value = key;
                         else if (key === "letter") paperSel.value = "short";
                         else paperSel.value = key;
                     }
