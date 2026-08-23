@@ -3328,6 +3328,40 @@ const botGraySAT = buildIntegralImages(botGray);
                     return canvas;
                 }
 
+                // ---------- Direct-print canvas (with safety padding) ----------
+                // The legacy browser-print path (printLayout(), below) applied a
+                // `padding: 0.15in` inset via CSS on #printArea so content never sat
+                // flush against the literal physical paper edge — printers commonly
+                // clip a sliver right at the edge (especially the top/leading edge)
+                // even when told to print "actual size" full-bleed. The direct-to-
+                // printer path (submitDirectPrint -> local agent -> scan.py) sends a
+                // raw buildStitchedCanvas(1) PNG with no such inset, which is why
+                // that path was showing a small top clip. This restores the same
+                // 0.15in padding for that path specifically, without touching
+                // download/export or the legacy browser-print flow (which already
+                // gets its padding from the CSS above).
+                const PRINT_SAFETY_PADDING_IN = 0.15;
+
+                function buildPrintCanvas() {
+                    const padPx = Math.round(PRINT_SAFETY_PADDING_IN * state.dpi);
+                    const canvas = document.createElement("canvas");
+                    canvas.width = Math.max(1, state.pageW);
+                    canvas.height = Math.max(1, state.pageH);
+                    const ctx = canvas.getContext("2d");
+                    ctx.fillStyle = "#FFFFFF";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    const innerW = Math.max(1, canvas.width - 2 * padPx);
+                    const innerH = Math.max(1, canvas.height - 2 * padPx);
+
+                    const design = buildStitchedCanvas(1);
+                    // Match the old CSS behavior (width/height 100% + object-fit:
+                    // fill inside the padded box): stretch the full design to
+                    // exactly fill the page minus the safety padding on every side.
+                    ctx.drawImage(design, 0, 0, design.width, design.height, padPx, padPx, innerW, innerH);
+                    return canvas;
+                }
+
                 // Samples the composited page (unadjusted) and picks a brightness multiplier
                 // that pushes the average luminance toward a clean white background.
                 function computeAutoBrightness() {
@@ -3862,7 +3896,7 @@ const botGraySAT = buildIntegralImages(botGray);
                     if (printSubmitBtn) printSubmitBtn.disabled = true;
 
                     try {
-                        const canvas = buildStitchedCanvas(1);
+                        const canvas = buildPrintCanvas();
                         const blob = await new Promise((resolve, reject) => {
                             canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/png");
                         });
