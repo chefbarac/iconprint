@@ -21,777 +21,880 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <style>
-                        :root {
-                            --paper-bg: #faf9f5;
-                            --ink: #1e2a33;
-                            --ink-soft: #5c6b74;
-                            --line: #cbc3ae;
-                            --line-soft: #e4dfd2;
-                            --laminate: #2e6e8e;
-                            --laminate-soft: #e6eef2;
-                            --amber: #d98c2b;
-                            --amber-dark: #b5721c;
-                            --card-bg: #ffffff;
-                            --panel-bg: #fffefb;
-                            --danger: #b6462c;
+            :root {
+                --paper-bg: #faf9f5;
+                --ink: #1e2a33;
+                --ink-soft: #5c6b74;
+                --line: #cbc3ae;
+                --line-soft: #e4dfd2;
+                --laminate: #2e6e8e;
+                --laminate-soft: #e6eef2;
+                --amber: #d98c2b;
+                --amber-dark: #b5721c;
+                --card-bg: #ffffff;
+                --panel-bg: #fffefb;
+                --danger: #b6462c;
 
-                            --card-w: 6in;
-                            --card-h: 4in;
-                            --gap: 0in;
-                            --paper-w: 8.5in;
-                            --paper-h: 13in;
-                        }
+                --card-w: 6in;
+                --card-h: 4in;
+                --gap: 0in;
+                --paper-w: 8.5in;
+                --paper-h: 13in;
+            }
 
-                        * {
-                            box-sizing: border-box;
-                        }
-                        html,
-                        body {
-                            height: 100%;
-                            margin: 0;
-                        }
-                        body {
-                            margin: 0;
-                            font-family: "IBM Plex Sans", system-ui, sans-serif;
-                            background: radial-gradient(1200px 600px at 15% -10%, #f1ede2 0%, transparent 60%), var(--paper-bg);
-                            color: var(--ink);
-                            -webkit-font-smoothing: antialiased;
-                            display: flex;
-                            flex-direction: column;
-                            height: 100vh;
-                            overflow: hidden;
-                        }
-                        body > iframe.promo-banner {
-                            flex: 0 0 auto;
-                            width: 100%;
-                            height: 72px;
-                            border: none;
-                            display: block;
-                        }
-                        h1,
-                        h2,
-                        h3 {
-                            margin: 0;
-                        }
-                        .mono {
-                            font-family: "IBM Plex Mono", monospace;
-                        }
+            * {
+                box-sizing: border-box;
+            }
+            html,
+            body {
+                height: 100%;
+                margin: 0;
+            }
+            body {
+                margin: 0;
+                font-family: "IBM Plex Sans", system-ui, sans-serif;
+                background: radial-gradient(1200px 600px at 15% -10%, #f1ede2 0%, transparent 60%), var(--paper-bg);
+                color: var(--ink);
+                -webkit-font-smoothing: antialiased;
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+                overflow: hidden;
+            }
+            body > iframe.promo-banner {
+                flex: 0 0 auto;
+                width: 100%;
+                height: 72px;
+                border: none;
+                display: block;
+            }
+            h1,
+            h2,
+            h3 {
+                margin: 0;
+            }
+            .mono {
+                font-family: "IBM Plex Mono", monospace;
+            }
 
-                        /* ---------- App shell ---------- */
-                        .app {
-                            display: flex;
-                            flex: 1 1 auto;
-                            min-height: 0;
-                            overflow: hidden;
-                        }
+            /* ---------- App shell ---------- */
+            .app {
+                display: flex;
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow: hidden;
+            }
 
-                        .sidebar {
-                            width: 50%;
-                            flex: 0 0 50%;
-                            background: var(--panel-bg);
-                            border-right: 1px solid var(--line-soft);
-                            padding: 22px 20px 100px;
-                            overflow-y: auto;
-                            min-height: 0;
-                        }
+            .sidebar {
+                width: 50%;
+                flex: 0 0 50%;
+                background: var(--panel-bg);
+                border-right: 1px solid var(--line-soft);
+                padding: 22px 20px 100px;
+                overflow-y: auto;
+                min-height: 0;
+            }
 
-                        .brand {
-                            display: flex;
-                            align-items: baseline;
-                            gap: 9px;
-                            margin-bottom: 4px;
-                        }
-                        .brand .swatch {
-                            width: 11px;
-                            height: 11px;
-                            border-radius: 2px;
-                            background: linear-gradient(135deg, var(--laminate), var(--amber));
-                            flex: none;
-                        }
-                        .brand h1 {
-                            font-size: 16.5px;
-                            letter-spacing: 0.01em;
-                            font-weight: 700;
-                        }
-                        .tagline {
-                            font-family: "IBM Plex Mono", monospace;
-                            font-size: 10.5px;
-                            color: var(--ink-soft);
-                            letter-spacing: 0.04em;
-                            text-transform: uppercase;
-                            margin: 2px 0 22px;
-                        }
+            .brand {
+                display: flex;
+                align-items: baseline;
+                gap: 9px;
+                margin-bottom: 4px;
+            }
+            .brand .swatch {
+                width: 11px;
+                height: 11px;
+                border-radius: 2px;
+                background: linear-gradient(135deg, var(--laminate), var(--amber));
+                flex: none;
+            }
+            .brand h1 {
+                font-size: 16.5px;
+                letter-spacing: 0.01em;
+                font-weight: 700;
+            }
+            .tagline {
+                font-family: "IBM Plex Mono", monospace;
+                font-size: 10.5px;
+                color: var(--ink-soft);
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                margin: 2px 0 22px;
+            }
 
-                        .section {
-                            margin-bottom: 22px;
-                            padding-bottom: 20px;
-                            border-bottom: 1px dashed var(--line-soft);
-                        }
-                        .section:last-of-type {
-                            border-bottom: none;
-                        }
+            .section {
+                margin-bottom: 22px;
+                padding-bottom: 20px;
+                border-bottom: 1px dashed var(--line-soft);
+            }
+            .section:last-of-type {
+                border-bottom: none;
+            }
 
-                        .section-title {
-                            font-family: "IBM Plex Mono", monospace;
-                            font-size: 11px;
-                            letter-spacing: 0.08em;
-                            text-transform: uppercase;
-                            color: var(--laminate);
-                            font-weight: 600;
-                            display: flex;
-                            align-items: center;
-                            gap: 7px;
-                            margin-bottom: 12px;
-                        }
-                        .section-title .num {
-                            display: inline-flex;
-                            align-items: center;
-                            justify-content: center;
-                            width: 17px;
-                            height: 17px;
-                            border-radius: 50%;
-                            background: var(--laminate-soft);
-                            color: var(--laminate);
-                            font-size: 9.5px;
-                            font-weight: 600;
-                        }
+            .section-title {
+                font-family: "IBM Plex Mono", monospace;
+                font-size: 11px;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--laminate);
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 7px;
+                margin-bottom: 12px;
+            }
+            .section-title .num {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 17px;
+                height: 17px;
+                border-radius: 50%;
+                background: var(--laminate-soft);
+                color: var(--laminate);
+                font-size: 9.5px;
+                font-weight: 600;
+            }
 
-                        .field {
-                            margin-bottom: 12px;
-                        }
-                        .field:last-child {
-                            margin-bottom: 0;
-                        }
-                        .field label {
-                            display: block;
-                            font-size: 12px;
-                            color: var(--ink-soft);
-                            margin-bottom: 5px;
-                            font-weight: 500;
-                        }
-                        .row {
-                            display: flex;
-                            gap: 10px;
-                        }
-                        .row .field {
-                            flex: 1;
-                            margin-bottom: 0;
-                        }
+            .field {
+                margin-bottom: 12px;
+            }
+            .field:last-child {
+                margin-bottom: 0;
+            }
+            .field label {
+                display: block;
+                font-size: 12px;
+                color: var(--ink-soft);
+                margin-bottom: 5px;
+                font-weight: 500;
+            }
+            .row {
+                display: flex;
+                gap: 10px;
+            }
+            .row .field {
+                flex: 1;
+                margin-bottom: 0;
+            }
 
-                        select,
-                        input[type="number"],
-                        input[type="text"] {
-                            width: 100%;
-                            padding: 8px 9px;
-                            border: 1px solid var(--line);
-                            border-radius: 6px;
-                            background: #fff;
-                            font-family: "IBM Plex Mono", monospace;
-                            font-size: 13px;
-                            color: var(--ink);
-                        }
-                        select:focus,
-                        input:focus {
-                            outline: 2px solid var(--laminate);
-                            outline-offset: 1px;
-                        }
+            select,
+            input[type="number"],
+            input[type="text"] {
+                width: 100%;
+                padding: 8px 9px;
+                border: 1px solid var(--line);
+                border-radius: 6px;
+                background: #fff;
+                font-family: "IBM Plex Mono", monospace;
+                font-size: 13px;
+                color: var(--ink);
+            }
+            select:focus,
+            input:focus {
+                outline: 2px solid var(--laminate);
+                outline-offset: 1px;
+            }
 
-                        .unit-suffix {
-                            position: relative;
-                        }
-                        .unit-suffix::after {
-                            content: "in";
-                            position: absolute;
-                            right: 10px;
-                            top: 50%;
-                            transform: translateY(-50%);
-                            font-size: 11px;
-                            color: var(--ink-soft);
-                            pointer-events: none;
-                        }
-                        .unit-suffix input {
-                            padding-right: 26px;
-                        }
+            .unit-suffix {
+                position: relative;
+            }
+            .unit-suffix::after {
+                content: "in";
+                position: absolute;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 11px;
+                color: var(--ink-soft);
+                pointer-events: none;
+            }
+            .unit-suffix input {
+                padding-right: 26px;
+            }
 
-                        .btn {
-                            appearance: none;
-                            border: 1px solid var(--line);
-                            background: #fff;
-                            color: var(--ink);
-                            padding: 8px 10px;
-                            border-radius: 6px;
-                            font-family: "IBM Plex Mono", monospace;
-                            font-size: 12px;
-                            cursor: pointer;
-                            display: inline-flex;
-                            align-items: center;
-                            justify-content: center;
-                            gap: 6px;
-                            transition:
-                                background 0.12s,
-                                border-color 0.12s;
-                        }
-                        .btn:hover {
-                            background: var(--laminate-soft);
-                            border-color: var(--laminate);
-                        }
-                        .btn:active {
-                            transform: translateY(1px);
-                        }
-                        .btn-block {
-                            width: 100%;
-                        }
-                        .btn-icon {
-                            padding: 8px;
-                            width: 36px;
-                            flex: none;
-                        }
-                        .btn svg {
-                            width: 14px;
-                            height: 14px;
-                            flex: none;
-                        }
+            .btn {
+                appearance: none;
+                border: 1px solid var(--line);
+                background: #fff;
+                color: var(--ink);
+                padding: 8px 10px;
+                border-radius: 6px;
+                font-family: "IBM Plex Mono", monospace;
+                font-size: 12px;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                transition:
+                    background 0.12s,
+                    border-color 0.12s;
+            }
+            .btn:hover {
+                background: var(--laminate-soft);
+                border-color: var(--laminate);
+            }
+            .btn:active {
+                transform: translateY(1px);
+            }
+            .btn-block {
+                width: 100%;
+            }
+            .btn-icon {
+                padding: 8px;
+                width: 36px;
+                flex: none;
+            }
+            .btn svg {
+                width: 14px;
+                height: 14px;
+                flex: none;
+            }
 
-                        .btn-row {
-                            display: flex;
-                            gap: 8px;
-                            flex-wrap: wrap;
-                        }
-                        .btn-row .btn {
-                            flex: 1 1 auto;
-                        }
+            .btn-row {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            .btn-row .btn {
+                flex: 1 1 auto;
+            }
 
-                        .presets {
-                            display: flex;
-                            gap: 6px;
-                            flex-wrap: wrap;
-                        }
-                        .presets .btn {
-                            font-size: 11px;
-                            padding: 6px 9px;
-                        }
+            .presets {
+                display: flex;
+                gap: 6px;
+                flex-wrap: wrap;
+            }
+            .presets .btn {
+                font-size: 11px;
+                padding: 6px 9px;
+            }
 
-                        .toggle-row {
-                            display: flex;
-                            align-items: center;
-                            justify-content: space-between;
-                            padding: 8px 0;
-                        }
-                        .toggle-row .lbl {
-                            font-size: 12.5px;
-                            color: var(--ink);
-                            font-weight: 500;
-                        }
-                        .toggle-row .sub {
-                            font-size: 10.5px;
-                            color: var(--ink-soft);
-                            display: block;
-                            margin-top: 1px;
-                        }
+            .toggle-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 8px 0;
+            }
+            .toggle-row .lbl {
+                font-size: 12.5px;
+                color: var(--ink);
+                font-weight: 500;
+            }
+            .toggle-row .sub {
+                font-size: 10.5px;
+                color: var(--ink-soft);
+                display: block;
+                margin-top: 1px;
+            }
 
-                        .switch {
-                            position: relative;
-                            width: 38px;
-                            height: 21px;
-                            flex: none;
-                        }
-                        .switch input {
-                            position: absolute;
-                            opacity: 0;
-                            width: 100%;
-                            height: 100%;
-                            margin: 0;
-                            cursor: pointer;
-                        }
-                        .switch .track {
-                            position: absolute;
-                            inset: 0;
-                            background: var(--line);
-                            border-radius: 20px;
-                            transition: background 0.15s;
-                        }
-                        .switch .thumb {
-                            position: absolute;
-                            top: 2px;
-                            left: 2px;
-                            width: 17px;
-                            height: 17px;
-                            border-radius: 50%;
-                            background: #fff;
-                            transition: transform 0.15s;
-                            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-                        }
-                        .switch input:checked + .track {
-                            background: var(--laminate);
-                        }
-                        .switch input:checked + .track .thumb {
-                            transform: translateX(17px);
-                        }
+            .switch {
+                position: relative;
+                width: 38px;
+                height: 21px;
+                flex: none;
+            }
+            .switch input {
+                position: absolute;
+                opacity: 0;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                cursor: pointer;
+            }
+            .switch .track {
+                position: absolute;
+                inset: 0;
+                background: var(--line);
+                border-radius: 20px;
+                transition: background 0.15s;
+            }
+            .switch .thumb {
+                position: absolute;
+                top: 2px;
+                left: 2px;
+                width: 17px;
+                height: 17px;
+                border-radius: 50%;
+                background: #fff;
+                transition: transform 0.15s;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+            }
+            .switch input:checked + .track {
+                background: var(--laminate);
+            }
+            .switch input:checked + .track .thumb {
+                transform: translateX(17px);
+            }
 
-                        /* ---------- Card control block ---------- */
-                        .card-ctrl {
-                            border: 1px solid var(--line-soft);
-                            border-radius: 10px;
-                            padding: 14px;
-                            background: #fff;
-                            margin-bottom: 14px;
-                        }
-                        .card-ctrl-head {
-                            display: flex;
-                            align-items: center;
-                            justify-content: space-between;
-                            margin-bottom: 10px;
-                        }
-                        .card-ctrl-head .tag {
-                            display: inline-flex;
-                            align-items: center;
-                            gap: 6px;
-                            font-family: "IBM Plex Mono", monospace;
-                            font-size: 11.5px;
-                            font-weight: 600;
-                        }
-                        .dot {
-                            width: 8px;
-                            height: 8px;
-                            border-radius: 50%;
-                        }
-                        .dot.front {
-                            background: var(--amber);
-                        }
-                        .dot.back {
-                            background: var(--laminate);
-                        }
-                        .filename {
-                            font-size: 10.5px;
-                            color: var(--ink-soft);
-                            max-width: 120px;
-                            overflow: hidden;
-                            text-overflow: ellipsis;
-                            white-space: nowrap;
-                        }
+            /* ---------- Card control block ---------- */
+            .card-ctrl {
+                border: 1px solid var(--line-soft);
+                border-radius: 10px;
+                padding: 14px;
+                background: #fff;
+                margin-bottom: 14px;
+            }
+            .card-ctrl-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 10px;
+            }
+            .card-ctrl-head .tag {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                font-family: "IBM Plex Mono", monospace;
+                font-size: 11.5px;
+                font-weight: 600;
+            }
+            .dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+            }
+            .dot.front {
+                background: var(--amber);
+            }
+            .dot.back {
+                background: var(--laminate);
+            }
+            .filename {
+                font-size: 10.5px;
+                color: var(--ink-soft);
+                max-width: 120px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
 
-                        .zoom-line {
-                            display: flex;
-                            align-items: center;
-                            gap: 8px;
-                            margin-top: 10px;
-                        }
-                        .zoom-line input[type="range"] {
-                            flex: 1;
-                        }
-                        input[type="range"] {
-                            accent-color: var(--laminate);
-                            height: 4px;
-                        }
+            .zoom-line {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-top: 10px;
+            }
+            .zoom-line input[type="range"] {
+                flex: 1;
+            }
+            input[type="range"] {
+                accent-color: var(--laminate);
+                height: 4px;
+            }
 
-                        .hint {
-                            font-size: 10.5px;
-                            color: var(--ink-soft);
-                            line-height: 1.5;
-                            margin-top: 8px;
-                        }
+            .hint {
+                font-size: 10.5px;
+                color: var(--ink-soft);
+                line-height: 1.5;
+                margin-top: 8px;
+            }
 
+            .agent-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                font-family: "IBM Plex Mono", monospace;
+                font-size: 10.5px;
+                padding: 4px 8px;
+                border-radius: 6px;
+                background: var(--laminate-soft);
+                color: var(--laminate);
+                border: 1px solid #b8d0dc;
+                margin-bottom: 14px;
+            }
+            .agent-badge.offline {
+                background: #f4f2ec;
+                color: var(--ink-soft);
+                border-color: var(--line-soft);
+            }
+            .agent-badge .dot {
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                background: var(--laminate);
+            }
+            .agent-badge.offline .dot {
+                background: var(--ink-soft);
+            }
+            .agent-only {
+                display: none !important;
+            }
+            .agent-only.visible {
+                display: block !important;
+            }
 
-                        .agent-badge {
-                            display: inline-flex;
-                            align-items: center;
-                            gap: 6px;
-                            font-family: "IBM Plex Mono", monospace;
-                            font-size: 10.5px;
-                            padding: 4px 8px;
-                            border-radius: 6px;
-                            background: var(--laminate-soft);
-                            color: var(--laminate);
-                            border: 1px solid #b8d0dc;
-                            margin-bottom: 14px;
-                        }
-                        .agent-badge.offline {
-                            background: #f4f2ec;
-                            color: var(--ink-soft);
-                            border-color: var(--line-soft);
-                        }
-                        .agent-badge .dot {
-                            width: 7px; height: 7px; border-radius: 50%;
-                            background: var(--laminate);
-                        }
-                        .agent-badge.offline .dot { background: var(--ink-soft); }
-                        .agent-only { display: none !important; }
-                        .agent-only.visible { display: block !important; }
+            .print-modal-backdrop {
+                position: fixed;
+                inset: 0;
+                background: rgba(30, 42, 51, 0.55);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 100;
+                padding: 16px;
+            }
+            .print-modal-backdrop.open {
+                display: flex;
+            }
+            .print-modal {
+                background: #fff;
+                color: var(--ink);
+                border: 1px solid var(--line-soft);
+                border-radius: 10px;
+                padding: 20px;
+                width: 100%;
+                max-width: 420px;
+                max-height: 92vh;
+                overflow-y: auto;
+            }
+            .print-modal h2 {
+                margin: 0 0 14px;
+                font-size: 16px;
+                font-weight: 700;
+            }
+            .print-modal .field-row {
+                margin-bottom: 12px;
+            }
+            .print-modal .field-row > label {
+                display: block;
+                font-size: 12px;
+                color: var(--ink-soft);
+                margin-bottom: 5px;
+                font-weight: 500;
+            }
+            .print-modal .field-row select,
+            .print-modal .field-row input[type="number"],
+            .print-modal .field-row input[type="text"] {
+                width: 100%;
+                padding: 8px 9px;
+                border: 1px solid var(--line);
+                border-radius: 6px;
+                background: #fff;
+                font-family: "IBM Plex Mono", monospace;
+                font-size: 13px;
+            }
+            .print-modal .radio-row {
+                display: flex;
+                gap: 14px;
+                flex-wrap: wrap;
+                font-size: 13px;
+            }
+            .print-modal .radio-row label {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                cursor: pointer;
+                margin: 0;
+                color: var(--ink);
+                font-weight: 500;
+            }
+            .print-status {
+                font-size: 12px;
+                min-height: 1.2em;
+                margin-top: 6px;
+                color: var(--ink-soft);
+            }
+            .print-status.ok {
+                color: var(--laminate);
+            }
+            .print-status.error {
+                color: var(--danger);
+            }
+            .print-actions {
+                display: flex;
+                justify-content: flex-end;
+                gap: 8px;
+                margin-top: 14px;
+            }
 
-                        .print-modal-backdrop {
-                            position: fixed; inset: 0;
-                            background: rgba(30, 42, 51, 0.55);
-                            display: none; align-items: center; justify-content: center;
-                            z-index: 100; padding: 16px;
-                        }
-                        .print-modal-backdrop.open { display: flex; }
-                        .print-modal {
-                            background: #fff; color: var(--ink);
-                            border: 1px solid var(--line-soft); border-radius: 10px;
-                            padding: 20px; width: 100%; max-width: 420px;
-                            max-height: 92vh; overflow-y: auto;
-                        }
-                        .print-modal h2 {
-                            margin: 0 0 14px; font-size: 16px; font-weight: 700;
-                        }
-                        .print-modal .field-row { margin-bottom: 12px; }
-                        .print-modal .field-row > label {
-                            display: block; font-size: 12px; color: var(--ink-soft);
-                            margin-bottom: 5px; font-weight: 500;
-                        }
-                        .print-modal .field-row select,
-                        .print-modal .field-row input[type="number"],
-                        .print-modal .field-row input[type="text"] {
-                            width: 100%; padding: 8px 9px; border: 1px solid var(--line);
-                            border-radius: 6px; background: #fff;
-                            font-family: "IBM Plex Mono", monospace; font-size: 13px;
-                        }
-                        .print-modal .radio-row {
-                            display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px;
-                        }
-                        .print-modal .radio-row label {
-                            display: flex; align-items: center; gap: 6px; cursor: pointer;
-                            margin: 0; color: var(--ink); font-weight: 500;
-                        }
-                        .print-status {
-                            font-size: 12px; min-height: 1.2em; margin-top: 6px; color: var(--ink-soft);
-                        }
-                        .print-status.ok { color: var(--laminate); }
-                        .print-status.error { color: var(--danger); }
-                        .print-actions {
-                            display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px;
-                        }
+            /* ---------- Print button ---------- */
+            .print-cta {
+                position: sticky;
+                bottom: 0;
+                background: linear-gradient(180deg, rgba(255, 254, 251, 0) 0%, var(--panel-bg) 25%);
+                padding-top: 18px;
+                margin-top: -4px;
+            }
+            .print-btn {
+                width: 100%;
+                background: var(--amber);
+                border: 1px solid var(--amber-dark);
+                color: #fff;
+                font-family: "IBM Plex Mono", monospace;
+                font-weight: 600;
+                font-size: 13.5px;
+                padding: 13px 14px;
+                border-radius: 8px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 9px;
+                letter-spacing: 0.02em;
+                box-shadow: 0 2px 0 var(--amber-dark);
+            }
+            .print-btn:hover {
+                background: var(--amber-dark);
+            }
+            .print-btn:active {
+                transform: translateY(2px);
+                box-shadow: none;
+            }
+            .print-btn svg {
+                width: 16px;
+                height: 16px;
+            }
 
-                        /* ---------- Print button ---------- */
-                        .print-cta {
-                            position: sticky;
-                            bottom: 0;
-                            background: linear-gradient(180deg, rgba(255, 254, 251, 0) 0%, var(--panel-bg) 25%);
-                            padding-top: 18px;
-                            margin-top: -4px;
-                        }
-                        .print-btn {
-                            width: 100%;
-                            background: var(--amber);
-                            border: 1px solid var(--amber-dark);
-                            color: #fff;
-                            font-family: "IBM Plex Mono", monospace;
-                            font-weight: 600;
-                            font-size: 13.5px;
-                            padding: 13px 14px;
-                            border-radius: 8px;
-                            cursor: pointer;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            gap: 9px;
-                            letter-spacing: 0.02em;
-                            box-shadow: 0 2px 0 var(--amber-dark);
-                        }
-                        .print-btn:hover {
-                            background: var(--amber-dark);
-                        }
-                        .print-btn:active {
-                            transform: translateY(2px);
-                            box-shadow: none;
-                        }
-                        .print-btn svg {
-                            width: 16px;
-                            height: 16px;
-                        }
+            /* ---------- Stage ---------- */
+            .stage {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 36px;
+                overflow: auto;
+                min-height: 0;
+                position: relative;
+            }
+            .stage-topbar {
+                position: absolute;
+                top: 20px;
+                left: 0;
+                right: 0;
+                display: flex;
+                justify-content: center;
+                pointer-events: none;
+            }
+            .stage-badge {
+                font-family: "IBM Plex Mono", monospace;
+                font-size: 11px;
+                color: var(--ink-soft);
+                background: #fff;
+                border: 1px solid var(--line-soft);
+                padding: 6px 12px;
+                border-radius: 20px;
+                letter-spacing: 0.03em;
+            }
 
-                        /* ---------- Stage ---------- */
-                        .stage {
-                            flex: 1;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            padding: 36px;
-                            overflow: auto;
-                            min-height: 0;
-                            position: relative;
-                        }
-                        .stage-topbar {
-                            position: absolute;
-                            top: 20px;
-                            left: 0;
-                            right: 0;
-                            display: flex;
-                            justify-content: center;
-                            pointer-events: none;
-                        }
-                        .stage-badge {
-                            font-family: "IBM Plex Mono", monospace;
-                            font-size: 11px;
-                            color: var(--ink-soft);
-                            background: #fff;
-                            border: 1px solid var(--line-soft);
-                            padding: 6px 12px;
-                            border-radius: 20px;
-                            letter-spacing: 0.03em;
-                        }
+            .paper-scale-wrap {
+                transform-origin: center center;
+                filter: drop-shadow(0 18px 34px rgba(30, 42, 51, 0.16));
+            }
 
-                        .paper-scale-wrap {
-                            transform-origin: center center;
-                            filter: drop-shadow(0 18px 34px rgba(30, 42, 51, 0.16));
-                        }
-
-                        .paper {
-                            width: var(--paper-w);
-                            height: var(--paper-h);
-                            /* background: rgb(55, 55, 55); */
-                            background: var(--panel-bg);
-                            position: relative;
-                            display: flex;
-                            flex-direction: column;
-                            align-items: center;
-                            justify-content: center;
-                            background-image: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.015) 0px, rgba(0, 0, 0, 0.015) 1px, transparent 1px, transparent 6px);
-                        }
-
-                        /* ruler ticks along top & left, screen only */
-                        .ruler-top,
-                        .ruler-left {
-                            position: absolute;
-                            color: rgb(208, 208, 208);
-                            font-family: "IBM Plex Mono", monospace;
-                            font-size: 8px;
-                            pointer-events: none;
-                        }
-
-                        .ruler-top {
-                            top: 4px;
-                            left: 0;
-                            right: 0;
-                            display: none;
-                            justify-content: space-between;
-                            padding: 0 6px;
-                        }
-                        .ruler-left {
-                            left: 4px;
-                            top: 0;
-                            bottom: 0;
-                            display: none;
-                            flex-direction: column;
-                            justify-content: space-between;
-                            padding: 6px 0;
-                        }
-                        .paper.show-ruler .ruler-top,
-                        .paper.show-ruler .ruler-left {
-            display: flex;
-                        }
-
-
-                        .card-slot {
-                            width: var(--card-w);
-                            height: var(--card-h);
-                            position: relative;
-                            flex: none;
-                            background: #f4f2ec;
-                        }
-                        .paper.show-cuts .frame {
-                            outline: 1px dashed var(--ink-soft);
-                            outline-offset: -1px;
-                            padding: 1px;
-                        }
-
-                        .frame {
-                            width: 100%;
-                            height: 100%;
-                            position: relative;
-                            overflow: hidden;
-                        }
-                        .img-wrap {
-                            width: 100%;
-                            height: 100%;
-                            position: relative;
-                            overflow: hidden;
-                            cursor: grab;
-                            touch-action: none;
-                        }
-                        .card-slot:not(.has-image) .img-wrap {
-                            pointer-events: none;
-                        }
-                        .img-wrap img {
-                            position: absolute;
-                            left: 50%;
-                            top: 50%;
-                            max-width: none;
-                            max-height: none;
-                            user-select: none;
-                            -webkit-user-drag: none;
-                            display: block;
-                        }
-
-                        .dropzone {
-                            position: absolute;
-                            inset: 0;
-                            display: flex;
-                            flex-direction: column;
-                            align-items: center;
-                            justify-content: center;
-                            gap: 8px;
-                            border: 2px dashed var(--line);
-                            background: #f4f2ec;
-                            color: var(--ink-soft);
-                            cursor: pointer;
-                            text-align: center;
-                            padding: 10px;
-                            transition:
-                                border-color 0.12s,
-                                background 0.12s;
-                        }
-                        .dropzone svg {
-                            width: 26px;
-                            height: 26px;
-                            stroke: var(--ink-soft);
-                        }
-                        .dropzone .dz-title {
-                            font-size: 12.5px;
-                            font-weight: 600;
-                            color: var(--ink);
-                        }
-                        .dropzone .dz-sub {
-                            font-size: 10.5px;
-                            max-width: 80%;
-                        }
-                        .dropzone.drag-over {
-                            border-color: var(--laminate);
-                            background: var(--laminate-soft);
-                        }
-                        .card-slot.has-image .dropzone {
-                            display: none;
-                        }
-
-                        .corner-label {
-                            position: absolute;
-                            top: 0;
-                            left: 0;
-                            background: rgba(30, 42, 51, 0.78);
-                            color: #fff;
-                            font-family: "IBM Plex Mono", monospace;
-                            font-size: 9.5px;
-                            padding: 3px 7px;
-                            letter-spacing: 0.03em;
-                            border-bottom-right-radius: 6px;
-                            z-index: 3;
-                            pointer-events: none;
-                        }
-                        .card-slot.has-image .corner-label {
-                            opacity: 0;
-                            transition: opacity 0.15s;
-                        }
-                        .card-slot.has-image:hover .corner-label {
-                            opacity: 1;
-                        }
-
-                        .change-btn {
-                            position: absolute;
-                            bottom: 6px;
-                            right: 6px;
-                            z-index: 3;
-                            font-size: 10px;
-                            padding: 5px 8px;
-                            background: rgba(255, 255, 255, 0.92);
-                            opacity: 0;
-                            transition: opacity 0.15s;
-                        }
-                        .card-slot.has-image:hover .change-btn {
-                            opacity: 1;
-                        }
-
-                        /* fold line */
-                        .fold-line {
-                            height: var(--gap);
-                            align-self: stretch;
-                            position: relative;
-                            flex: none;
-                        }
-                        .fold-line::before {
-                            content: "";
-                            position: absolute;
-                            top: 50%;
-                            left: 6px;
-                            right: 6px;
-                            border-top: 1.4px dashed var(--laminate);
-                            transform: translateY(-50%);
-                        }
-                        .fold-tag {
-                            position: absolute;
-                            left: 50%;
-                            top: 50%;
-                            transform: translate(-50%, -50%);
-                            font-family: "IBM Plex Mono", monospace;
-                            font-size: 8px;
-                            letter-spacing: 0.14em;
-                            color: var(--laminate);
-                            background: var(--paper-bg);
-                            padding: 3px 6px;
-                            white-space: nowrap;
-                        }
-                        .paper:not(.show-fold) .fold-line::before,
-                        .paper:not(.show-fold) .fold-tag {
-                            display: none;
-                        }
-
-                        /* ---------- responsive ---------- */
-                        @media (max-width: 900px) {
-                            .app {
-                                flex-direction: column;
-                            }
-                            .sidebar {
-                                width: 100%;
-                                flex: none;
-                                max-height: none;
-                                position: relative;
-                                border-right: none;
-                                border-bottom: 1px solid var(--line-soft);
-                            }
-                            .stage {
-                                min-height: 70vh;
-                                padding: 24px 12px;
-                            }
-                        }
-
-                        /* ---------- print ---------- */
-                        @media print {
-                            body {
-                                background: #fff !important;
-                            }
-                            .sidebar,
-                            .stage-topbar,
-                            .corner-label,
-                            .change-btn {
-                                display: none !important;
-                            }
-                            .app {
-                                display: block;
-                            }
-                            .stage {
-                                padding: 0;
-                                min-height: auto;
-                                display: block;
-                                overflow: visible;
-                            }
-                            .paper-scale-wrap {
-                                transform: none !important;
-                                filter: none !important;
-                            }
-                            .paper {
-                                box-shadow: none !important;
-                                background-image: none !important;
-                            }
-                            .dropzone {
-                                display: none !important;
-                            }
-                            .card-slot {
-                                background: #fff !important;
-                            }
-                            iframe {
+            /* ---------- Stage zoom controls ---------- */
+            .stage-zoom {
+                position: absolute;
+                right: 20px;
+                bottom: 20px;
+                z-index: 2;
+                display: flex;
+                align-items: center;
+                gap: 2px;
+                background: #fff;
+                border: 1px solid var(--line-soft);
+                border-radius: 20px;
+                padding: 4px;
+                box-shadow: 0 6px 16px rgba(30, 42, 51, 0.1);
+            }
+            .stage-zoom button {
+                width: 26px;
+                height: 26px;
+                border-radius: 50%;
+                border: none;
+                background: transparent;
+                color: var(--ink);
+                font-size: 15px;
+                line-height: 1;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .stage-zoom button:hover {
+                background: var(--laminate-soft);
+                color: var(--laminate);
+            }
+            .stage-zoom button:disabled {
+                opacity: 0.35;
+                cursor: default;
+                background: transparent;
+                color: var(--ink);
+            }
+            .stage-zoom .zoom-pct {
+                font-family: "IBM Plex Mono", monospace;
+                font-size: 10.5px;
+                color: var(--ink-soft);
+                width: 42px;
+                text-align: center;
+                cursor: pointer;
+                user-select: none;
+            }
+            .stage-zoom .zoom-pct:hover {
+                color: var(--laminate);
+            }
+            @media print {
+                .stage-zoom {
                     display: none !important;
                 }
-                        }
-        
+            }
+
+            .paper {
+                width: var(--paper-w);
+                height: var(--paper-h);
+                /* background: rgb(55, 55, 55); */
+                background: var(--panel-bg);
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                background-image: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.015) 0px, rgba(0, 0, 0, 0.015) 1px, transparent 1px, transparent 6px);
+            }
+
+            /* ruler ticks along top & left, screen only */
+            .ruler-top,
+            .ruler-left {
+                position: absolute;
+                color: rgb(208, 208, 208);
+                font-family: "IBM Plex Mono", monospace;
+                font-size: 8px;
+                pointer-events: none;
+            }
+
+            .ruler-top {
+                top: 4px;
+                left: 0;
+                right: 0;
+                display: none;
+                justify-content: space-between;
+                padding: 0 6px;
+            }
+            .ruler-left {
+                left: 4px;
+                top: 0;
+                bottom: 0;
+                display: none;
+                flex-direction: column;
+                justify-content: space-between;
+                padding: 6px 0;
+            }
+            .paper.show-ruler .ruler-top,
+            .paper.show-ruler .ruler-left {
+                display: flex;
+            }
+
+            .card-slot {
+                width: var(--card-w);
+                height: var(--card-h);
+                position: relative;
+                flex: none;
+                background: #f4f2ec;
+            }
+            .paper.show-cuts .frame {
+                outline: 1px dashed var(--ink-soft);
+                outline-offset: -1px;
+                padding: 1px;
+            }
+
+            .frame {
+                width: 100%;
+                height: 100%;
+                position: relative;
+                overflow: hidden;
+            }
+            .img-wrap {
+                width: 100%;
+                height: 100%;
+                position: relative;
+                overflow: hidden;
+                cursor: grab;
+                touch-action: none;
+            }
+            .card-slot:not(.has-image) .img-wrap {
+                pointer-events: none;
+            }
+            .img-wrap img {
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                max-width: none;
+                max-height: none;
+                user-select: none;
+                -webkit-user-drag: none;
+                display: block;
+            }
+
+            .dropzone {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                border: 2px dashed var(--line);
+                background: #f4f2ec;
+                color: var(--ink-soft);
+                cursor: pointer;
+                text-align: center;
+                padding: 10px;
+                transition:
+                    border-color 0.12s,
+                    background 0.12s;
+            }
+            .dropzone svg {
+                width: 26px;
+                height: 26px;
+                stroke: var(--ink-soft);
+            }
+            .dropzone .dz-title {
+                font-size: 12.5px;
+                font-weight: 600;
+                color: var(--ink);
+            }
+            .dropzone .dz-sub {
+                font-size: 10.5px;
+                max-width: 80%;
+            }
+            .dropzone.drag-over {
+                border-color: var(--laminate);
+                background: var(--laminate-soft);
+            }
+            .card-slot.has-image .dropzone {
+                display: none;
+            }
+
+            .corner-label {
+                position: absolute;
+                top: 0;
+                left: 0;
+                background: rgba(30, 42, 51, 0.78);
+                color: #fff;
+                font-family: "IBM Plex Mono", monospace;
+                font-size: 9.5px;
+                padding: 3px 7px;
+                letter-spacing: 0.03em;
+                border-bottom-right-radius: 6px;
+                z-index: 3;
+                pointer-events: none;
+            }
+            .card-slot.has-image .corner-label {
+                opacity: 0;
+                transition: opacity 0.15s;
+            }
+            .card-slot.has-image:hover .corner-label {
+                opacity: 1;
+            }
+
+            .change-btn {
+                position: absolute;
+                bottom: 6px;
+                right: 6px;
+                z-index: 3;
+                font-size: 10px;
+                padding: 5px 8px;
+                background: rgba(255, 255, 255, 0.92);
+                opacity: 0;
+                transition: opacity 0.15s;
+            }
+            .card-slot.has-image:hover .change-btn {
+                opacity: 1;
+            }
+
+            /* fold line */
+            .fold-line {
+                height: var(--gap);
+                align-self: stretch;
+                position: relative;
+                flex: none;
+            }
+            .fold-line::before {
+                content: "";
+                position: absolute;
+                top: 50%;
+                left: 6px;
+                right: 6px;
+                border-top: 1.4px dashed var(--laminate);
+                transform: translateY(-50%);
+            }
+            .fold-tag {
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                font-family: "IBM Plex Mono", monospace;
+                font-size: 8px;
+                letter-spacing: 0.14em;
+                color: var(--laminate);
+                background: var(--paper-bg);
+                padding: 3px 6px;
+                white-space: nowrap;
+            }
+            .paper:not(.show-fold) .fold-line::before,
+            .paper:not(.show-fold) .fold-tag {
+                display: none;
+            }
+
+            /* ---------- responsive ---------- */
+            @media (max-width: 900px) {
+                .app {
+                    flex-direction: column;
+                }
+                .sidebar {
+                    width: 100%;
+                    flex: none;
+                    max-height: none;
+                    position: relative;
+                    border-right: none;
+                    border-bottom: 1px solid var(--line-soft);
+                }
+                .stage {
+                    min-height: 70vh;
+                    padding: 24px 12px;
+                }
+            }
+
+            /* ---------- print ---------- */
+            @media print {
+                body {
+                    background: #fff !important;
+                }
+                .sidebar,
+                .stage-topbar,
+                .corner-label,
+                .change-btn {
+                    display: none !important;
+                }
+                .app {
+                    display: block;
+                }
+                .stage {
+                    padding: 0;
+                    min-height: auto;
+                    display: block;
+                    overflow: visible;
+                }
+                .paper-scale-wrap {
+                    transform: none !important;
+                    filter: none !important;
+                }
+                .paper {
+                    box-shadow: none !important;
+                    background-image: none !important;
+                }
+                .dropzone {
+                    display: none !important;
+                }
+                .card-slot {
+                    background: #fff !important;
+                }
+                iframe {
+                    display: none !important;
+                }
+            }
+
             .agent-toggle-wrap {
                 display: inline-flex;
                 align-items: center;
@@ -838,7 +941,7 @@
                 background: #fff;
                 border-radius: 50%;
                 transition: transform 0.2s;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
             }
             .agent-toggle input:checked + .slider {
                 background: #22c55e;
@@ -850,8 +953,7 @@
                 outline: 2px solid #2563eb;
                 outline-offset: 2px;
             }
-
-</style>
+        </style>
     </head>
     <body>
         <iframe class="promo-banner" src="https://chefbarac.github.io/promo-banner/" width="100%" height="72" loading="lazy"></iframe>
@@ -1120,6 +1222,12 @@
             <main class="stage">
                 <div class="stage-topbar" style="z-index: 1"><span class="stage-badge mono" id="stageBadge">Long Bond · 8.5 × 13 in — fold in half after cutting</span></div>
 
+                <div class="stage-zoom mono" id="stageZoom">
+                    <button type="button" id="zoomOutBtn" title="Zoom out">−</button>
+                    <span class="zoom-pct" id="zoomPct" title="Reset to fit">100%</span>
+                    <button type="button" id="zoomInBtn" title="Zoom in">+</button>
+                </div>
+
                 <div class="paper-scale-wrap" id="paperScaleWrap">
                     <div class="paper show-cuts show-ruler" id="paper">
                         <div class="ruler-top" id="rulerTop"></div>
@@ -1166,7 +1274,6 @@
                 </div>
             </main>
         </div>
-
 
         <div class="print-modal-backdrop" id="printBackdrop">
             <div class="print-modal">
@@ -1224,9 +1331,7 @@
                     <input type="number" id="printCopies" min="1" max="99" value="1" />
                 </div>
                 <div class="field-row agent-only">
-                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0">
-                        <input type="checkbox" id="printCollate" checked /> Collate
-                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0"> <input type="checkbox" id="printCollate" checked /> Collate </label>
                 </div>
                 <div class="field-row agent-only">
                     <label for="printScaling">Scaling</label>
@@ -1245,7 +1350,7 @@
                 <div class="print-status" id="printStatus"></div>
                 <div class="print-actions">
                     <button type="button" class="btn" id="printCancelBtn">Close</button>
-                    <button type="button" class="print-btn" id="printSubmitBtn" style="width:auto;padding:10px 16px;box-shadow:none">Print</button>
+                    <button type="button" class="print-btn" id="printSubmitBtn" style="width: auto; padding: 10px 16px; box-shadow: none">Print</button>
                 </div>
             </div>
         </div>
@@ -1258,129 +1363,74 @@
 
                 // ---------- Local print agent (configurable host) ----------
 
-
                 const AGENT_HOST_KEY = "iconprint_agent_host";
-
 
                 const DEFAULT_AGENT_HOST = "http://localhost:5001";
 
-
                 function getAgentHost() {
-
-
                     try {
-
-
                         const v = (localStorage.getItem(AGENT_HOST_KEY) || "").trim();
 
-
                         if (v) return v.replace(/\/+$/, "");
-
-
                     } catch (e) {}
-
 
                     return DEFAULT_AGENT_HOST;
-
-
                 }
-
 
                 function setAgentHost(url) {
-
-
                     try {
-
-
                         const cleaned = (url || "").trim().replace(/\/+$/, "");
 
-
                         if (cleaned) localStorage.setItem(AGENT_HOST_KEY, cleaned);
-
-
                         else localStorage.removeItem(AGENT_HOST_KEY);
-
-
                     } catch (e) {}
-
-
                 }
-
 
                 let LOCAL_AGENT = getAgentHost();
 
-
                 function promptAgentHost() {
-
-
                     const current = getAgentHost();
 
-
                     const next = window.prompt(
-
-
                         "Print agent URL\n\nUse this PC: http://localhost:5001\nOther PC on LAN: http://<agent-ip>:5001",
 
-
-                        current
-
-
+                        current,
                     );
-
 
                     if (next === null) return;
 
-
                     setAgentHost(next || DEFAULT_AGENT_HOST);
-
 
                     LOCAL_AGENT = getAgentHost();
 
-
                     if (typeof agentConnectionEnabled !== "undefined" && agentConnectionEnabled && typeof startAgentPolling === "function") {
-
-
                         startAgentPolling();
-
-
                     } else if (typeof checkAgentHealth === "function") {
-
-
                         checkAgentHealth();
-
-
                     }
-
 
                     const badgeText = document.getElementById("agentBadgeText");
 
-
                     if (badgeText && typeof agentOnline !== "undefined" && !agentOnline) {
-
-
                         badgeText.title = "Agent host: " + LOCAL_AGENT + " (click to change)";
-
-
                     }
-
-
                 }
-const AGENT_PREF_KEY = "iconprint_agent_enabled_b2blamination";
-            function getAgentEnabledPref() {
-                try {
-                    const v = localStorage.getItem(AGENT_PREF_KEY);
-                    if (v === null || v === undefined) return true; // first visit: on (apps can override below)
-                    return v === "1" || v === "true";
-                } catch (e) {
-                    return true;
+                const AGENT_PREF_KEY = "iconprint_agent_enabled_b2blamination";
+                function getAgentEnabledPref() {
+                    try {
+                        const v = localStorage.getItem(AGENT_PREF_KEY);
+                        if (v === null || v === undefined) return true; // first visit: on (apps can override below)
+                        return v === "1" || v === "true";
+                    } catch (e) {
+                        return true;
+                    }
                 }
-            }
-            function setAgentEnabledPref(on) {
-                try {
-                    localStorage.setItem(AGENT_PREF_KEY, on ? "1" : "0");
-                } catch (e) {}
-            }
-            let agentConnectionEnabled = getAgentEnabledPref();
+                function setAgentEnabledPref(on) {
+                    try {
+                        localStorage.setItem(AGENT_PREF_KEY, on ? "1" : "0");
+                    } catch (e) {}
+                }
+                let agentConnectionEnabled = getAgentEnabledPref();
 
                 let agentOnline = false;
                 let agentDevices = { scanners: [], printers: [] };
@@ -1389,14 +1439,21 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_b2blamination";
                 function getPrinterFilterPatterns() {
                     const raw = (localStorage.getItem("iconprint_printer_filter") || "").trim();
                     if (!raw) return [];
-                    return raw.split(",").map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean);
+                    return raw
+                        .split(",")
+                        .map(function (s) {
+                            return s.trim().toLowerCase();
+                        })
+                        .filter(Boolean);
                 }
                 function filterPrinters(printers) {
                     const patterns = getPrinterFilterPatterns();
                     if (!patterns.length) return printers || [];
                     return (printers || []).filter(function (p) {
                         const name = (p.name || p.id || "").toLowerCase();
-                        return patterns.some(function (pat) { return name.indexOf(pat) !== -1; });
+                        return patterns.some(function (pat) {
+                            return name.indexOf(pat) !== -1;
+                        });
                     });
                 }
                 function fillSelect(sel, items, selectedId) {
@@ -1428,9 +1485,9 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_b2blamination";
                         else badge.classList.add("offline");
                     }
                     if (badgeText) {
-                    badgeText.textContent = online ? "Agent online" : (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled ? "Agent off" : "Agent offline");
-                    if (badge) badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
-                }
+                        badgeText.textContent = online ? "Agent online" : typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled ? "Agent off" : "Agent offline";
+                        if (badge) badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
+                    }
                     document.querySelectorAll(".agent-only").forEach(function (el) {
                         if (online) el.classList.add("visible");
                         else el.classList.remove("visible");
@@ -1456,12 +1513,16 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_b2blamination";
                         return;
                     }
                     const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
-                    const t = setTimeout(function () { if (ctrl) ctrl.abort(); }, 2500);
+                    const t = setTimeout(function () {
+                        if (ctrl) ctrl.abort();
+                    }, 2500);
                     fetch(LOCAL_AGENT + "/health", { cache: "no-store", signal: ctrl ? ctrl.signal : undefined })
                         .then(function (res) {
                             clearTimeout(t);
                             if (!res.ok) throw new Error("health");
-                            return res.json().catch(function () { return {}; });
+                            return res.json().catch(function () {
+                                return {};
+                            });
                         })
                         .then(function (data) {
                             // Health succeeded — mark online first so a devices refresh failure
@@ -1469,7 +1530,9 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_b2blamination";
                             var wasOffline = !agentOnline;
                             setAgentUI(true);
                             if (wasOffline && typeof refreshDevicesScannersOnly === "function") {
-                                try { refreshDevicesScannersOnly(); } catch (devErr) {
+                                try {
+                                    refreshDevicesScannersOnly();
+                                } catch (devErr) {
                                     console.warn("Scanner list refresh failed (agent still online):", devErr);
                                 }
                             }
@@ -1480,56 +1543,55 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_b2blamination";
                         });
                 }
 
-
-            function refreshDevicesScannersOnly() {
-                return fetch(LOCAL_AGENT + "/devices?printers=0", { cache: "no-store" })
-                    .then(function (res) {
-                        if (!res.ok) throw new Error("devices " + res.status);
-                        return res.json();
-                    })
-                    .then(function (data) {
-                        if (typeof agentDevices === "undefined") {
-                            agentDevices = { scanners: [], printers: [] };
-                        }
-                        agentDevices.scanners = data.scanners || [];
-                        if (typeof fillSelect === "function") {
-                            var sc = document.getElementById("scannerSelect");
-                            if (sc) {
-                                fillSelect(sc, agentDevices.scanners, typeof selectedScannerId !== "undefined" ? selectedScannerId : null);
-                                if (typeof selectedScannerId !== "undefined") selectedScannerId = sc.value || null;
+                function refreshDevicesScannersOnly() {
+                    return fetch(LOCAL_AGENT + "/devices?printers=0", { cache: "no-store" })
+                        .then(function (res) {
+                            if (!res.ok) throw new Error("devices " + res.status);
+                            return res.json();
+                        })
+                        .then(function (data) {
+                            if (typeof agentDevices === "undefined") {
+                                agentDevices = { scanners: [], printers: [] };
                             }
-                        }
-                        return agentDevices.scanners;
-                    });
-            }
+                            agentDevices.scanners = data.scanners || [];
+                            if (typeof fillSelect === "function") {
+                                var sc = document.getElementById("scannerSelect");
+                                if (sc) {
+                                    fillSelect(sc, agentDevices.scanners, typeof selectedScannerId !== "undefined" ? selectedScannerId : null);
+                                    if (typeof selectedScannerId !== "undefined") selectedScannerId = sc.value || null;
+                                }
+                            }
+                            return agentDevices.scanners;
+                        });
+                }
 
-function refreshDevicesPrintersOnly() {
-                return fetch(LOCAL_AGENT + "/devices?scanners=0", { cache: "no-store" })
-                    .then(function (res) {
-                        if (!res.ok) throw new Error("devices");
-                        return res.json();
-                    })
-                    .then(function (data) {
-                        if (typeof agentDevices === "undefined") {
-                            agentDevices = { scanners: [], printers: [] };
-                        }
-                        agentDevices.printers = data.printers || [];
-                        var list =
-                            typeof filterPrinters === "function"
-                                ? filterPrinters(agentDevices.printers)
-                                : agentDevices.printers;
-                        if (typeof fillSelect === "function") {
-                            fillSelect(document.getElementById("printPrinter"), list, null);
-                            var tb = document.getElementById("printerSelect");
-                            if (tb) fillSelect(tb, list, null);
-                        }
-                        return agentDevices.printers;
-                    });
-            }
+                function refreshDevicesPrintersOnly() {
+                    return fetch(LOCAL_AGENT + "/devices?scanners=0", { cache: "no-store" })
+                        .then(function (res) {
+                            if (!res.ok) throw new Error("devices");
+                            return res.json();
+                        })
+                        .then(function (data) {
+                            if (typeof agentDevices === "undefined") {
+                                agentDevices = { scanners: [], printers: [] };
+                            }
+                            agentDevices.printers = data.printers || [];
+                            var list = typeof filterPrinters === "function" ? filterPrinters(agentDevices.printers) : agentDevices.printers;
+                            if (typeof fillSelect === "function") {
+                                fillSelect(document.getElementById("printPrinter"), list, null);
+                                var tb = document.getElementById("printerSelect");
+                                if (tb) fillSelect(tb, list, null);
+                            }
+                            return agentDevices.printers;
+                        });
+                }
 
-            function startAgentPolling() {
+                function startAgentPolling() {
                     if (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled) {
-                        if (healthTimer) { clearInterval(healthTimer); healthTimer = null; }
+                        if (healthTimer) {
+                            clearInterval(healthTimer);
+                            healthTimer = null;
+                        }
                         setAgentUI(false);
                         return;
                     }
@@ -1539,12 +1601,15 @@ function refreshDevicesPrintersOnly() {
                     healthTimer = setInterval(checkAgentHealth, 4000);
                 }
 
-
                 const root = document.documentElement;
                 const paperEl = document.getElementById("paper");
                 const paperScaleWrap = document.getElementById("paperScaleWrap");
                 const stageBadge = document.getElementById("stageBadge");
                 const pageSizeStyle = document.getElementById("pageSizeStyle");
+                const stageEl = document.querySelector(".stage");
+                const zoomInBtn = document.getElementById("zoomInBtn");
+                const zoomOutBtn = document.getElementById("zoomOutBtn");
+                const zoomPctEl = document.getElementById("zoomPct");
 
                 const paperSizes = {
                     "8.5x13": { w: 8.5, h: 13, label: "Long Bond · 8.5 × 13 in" },
@@ -1556,6 +1621,10 @@ function refreshDevicesPrintersOnly() {
                 let paperW = 8.5,
                     paperH = 13;
                 let paperScale = 1;
+                let viewZoom = 1;
+                const VIEW_ZOOM_MIN = 0.25;
+                const VIEW_ZOOM_MAX = 4;
+                const VIEW_ZOOM_STEP = 0.25;
 
                 function clamp(v, min, max) {
                     return Math.max(min, Math.min(max, v));
@@ -1805,8 +1874,8 @@ function refreshDevicesPrintersOnly() {
                     });
                     card.wrap.addEventListener("pointermove", function (e) {
                         if (!card.dragging) return;
-                        card.tx = card.startTx + (e.clientX - card.startX) / paperScale;
-                        card.ty = card.startTy + (e.clientY - card.startY) / paperScale;
+                        card.tx = card.startTx + (e.clientX - card.startX) / (paperScale * viewZoom);
+                        card.ty = card.startTy + (e.clientY - card.startY) / (paperScale * viewZoom);
                         render(card);
                     });
                     ["pointerup", "pointerleave", "pointercancel"].forEach(function (evt) {
@@ -1923,18 +1992,61 @@ function refreshDevicesPrintersOnly() {
 
                 /* ---------------- stage scaling ---------------- */
                 function fitPaperToStage() {
-                    const stage = document.querySelector(".stage");
-                    const availW = stage.clientWidth - 60;
-                    const availH = stage.clientHeight - 60;
+                    const availW = stageEl.clientWidth - 60;
+                    const availH = stageEl.clientHeight - 60;
                     const pxW = paperW * 96;
                     const pxH = paperH * 96;
                     paperScale = Math.min(availW / pxW, availH / pxH, 1);
-                    paperScaleWrap.style.transform = "scale(" + paperScale + ")";
+                    applyStageZoom();
                 }
                 window.addEventListener("resize", function () {
                     clearTimeout(window.__rfit);
                     window.__rfit = setTimeout(fitPaperToStage, 80);
                 });
+
+                /* ---------------- stage zoom (user-controlled) ---------------- */
+                function applyStageZoom() {
+                    paperScaleWrap.style.transform = "scale(" + paperScale * viewZoom + ")";
+                    if (zoomPctEl) zoomPctEl.textContent = Math.round(viewZoom * 100) + "%";
+                    if (zoomInBtn) zoomInBtn.disabled = viewZoom >= VIEW_ZOOM_MAX - 1e-6;
+                    if (zoomOutBtn) zoomOutBtn.disabled = viewZoom <= VIEW_ZOOM_MIN + 1e-6;
+                }
+
+                function setViewZoom(z) {
+                    viewZoom = clamp(Math.round(z / VIEW_ZOOM_STEP) * VIEW_ZOOM_STEP, VIEW_ZOOM_MIN, VIEW_ZOOM_MAX);
+                    applyStageZoom();
+                }
+
+                if (zoomInBtn) {
+                    zoomInBtn.addEventListener("click", function () {
+                        setViewZoom(viewZoom + VIEW_ZOOM_STEP);
+                    });
+                }
+                if (zoomOutBtn) {
+                    zoomOutBtn.addEventListener("click", function () {
+                        setViewZoom(viewZoom - VIEW_ZOOM_STEP);
+                    });
+                }
+                if (zoomPctEl) {
+                    zoomPctEl.addEventListener("click", function () {
+                        setViewZoom(1);
+                    });
+                    zoomPctEl.addEventListener("dblclick", function (e) {
+                        e.preventDefault();
+                    });
+                }
+                if (stageEl) {
+                    stageEl.addEventListener(
+                        "wheel",
+                        function (e) {
+                            if (!(e.ctrlKey || e.metaKey)) return;
+                            e.preventDefault();
+                            const delta = e.deltaY > 0 ? -VIEW_ZOOM_STEP : VIEW_ZOOM_STEP;
+                            setViewZoom(viewZoom + delta);
+                        },
+                        { passive: false },
+                    );
+                }
 
                 /* ---------------- print ---------------- */
                 function printLayoutBrowser() {
@@ -2082,12 +2194,12 @@ function refreshDevicesPrintersOnly() {
                         printLayoutBrowser();
                         return;
                     }
-                /* printers-on-print */
-                try {
-                    if (typeof refreshDevicesPrintersOnly === "function") {
-                        refreshDevicesPrintersOnly();
-                    }
-                } catch (e) {}
+                    /* printers-on-print */
+                    try {
+                        if (typeof refreshDevicesPrintersOnly === "function") {
+                            refreshDevicesPrintersOnly();
+                        }
+                    } catch (e) {}
                     const paperSel = document.getElementById("printPaper");
                     if (paperSel) paperSel.value = mapPaperToAgent();
                     const filterInput = document.getElementById("printFilter");
@@ -2127,10 +2239,8 @@ function refreshDevicesPrintersOnly() {
                         return;
                     }
                     const paperSize = document.getElementById("printPaper").value || "long";
-                    const orient =
-                        (document.querySelector('input[name="printOrient"]:checked') || {}).value || "portrait";
-                    const colorMode =
-                        (document.querySelector('input[name="printColor"]:checked') || {}).value || "color";
+                    const orient = (document.querySelector('input[name="printOrient"]:checked') || {}).value || "portrait";
+                    const colorMode = (document.querySelector('input[name="printColor"]:checked') || {}).value || "color";
                     let copies = parseInt(document.getElementById("printCopies").value || "1", 10);
                     if (!(copies >= 1 && copies <= 99)) copies = 1;
                     const collate = !!document.getElementById("printCollate").checked;
@@ -2173,7 +2283,7 @@ function refreshDevicesPrintersOnly() {
                             fd.append("scaling", scaling);
                             fd.append("margins", margins);
                             fd.append("media_type", mediaType);
-                    fd.append("quality", (document.getElementById("printQuality") && document.getElementById("printQuality").value) || "standard");
+                            fd.append("quality", (document.getElementById("printQuality") && document.getElementById("printQuality").value) || "standard");
                             fd.append("page_width_inches", String(pageW));
                             fd.append("page_height_inches", String(pageH));
                             return fetch(LOCAL_AGENT + "/print", { method: "POST", body: fd });
@@ -2199,13 +2309,8 @@ function refreshDevicesPrintersOnly() {
                                     .then(function (job) {
                                         const status = job.status || "unknown";
                                         if (st) {
-                                            st.textContent =
-                                                status.charAt(0).toUpperCase() +
-                                                status.slice(1) +
-                                                (job.warnings && job.warnings.length ? " — " + job.warnings[0] : "");
-                                            st.className =
-                                                "print-status" +
-                                                (status === "completed" ? " ok" : status === "failed" ? " error" : "");
+                                            st.textContent = status.charAt(0).toUpperCase() + status.slice(1) + (job.warnings && job.warnings.length ? " — " + job.warnings[0] : "");
+                                            st.className = "print-status" + (status === "completed" ? " ok" : status === "failed" ? " error" : "");
                                         }
                                         if (status === "completed" || status === "failed") {
                                             submitBtn.disabled = false;
@@ -2261,49 +2366,46 @@ function refreshDevicesPrintersOnly() {
                 requestAnimationFrame(fitPaperToStage);
                 startAgentPolling();
 
-            (function initAgentToggle() {
-                const toggle = document.getElementById("agentToggle");
-                if (!toggle) return;
-                toggle.checked = !!agentConnectionEnabled;
-                toggle.addEventListener("change", function () {
-                    agentConnectionEnabled = !!toggle.checked;
-                    setAgentEnabledPref(agentConnectionEnabled);
-                    if (agentConnectionEnabled) {
-                        startAgentPolling();
-                    } else {
+                (function initAgentToggle() {
+                    const toggle = document.getElementById("agentToggle");
+                    if (!toggle) return;
+                    toggle.checked = !!agentConnectionEnabled;
+                    toggle.addEventListener("change", function () {
+                        agentConnectionEnabled = !!toggle.checked;
+                        setAgentEnabledPref(agentConnectionEnabled);
+                        if (agentConnectionEnabled) {
+                            startAgentPolling();
+                        } else {
+                            if (typeof healthTimer !== "undefined" && healthTimer) {
+                                clearInterval(healthTimer);
+                                healthTimer = null;
+                            }
+                            setAgentUI(false);
+                        }
+                    });
+                    // Apply saved preference (may disable polling started below)
+                    if (!agentConnectionEnabled) {
                         if (typeof healthTimer !== "undefined" && healthTimer) {
                             clearInterval(healthTimer);
                             healthTimer = null;
                         }
                         setAgentUI(false);
                     }
-                });
-                // Apply saved preference (may disable polling started below)
-                if (!agentConnectionEnabled) {
-                    if (typeof healthTimer !== "undefined" && healthTimer) {
-                        clearInterval(healthTimer);
-                        healthTimer = null;
-                    }
-                    setAgentUI(false);
-                }
-            })();
+                })();
 
-            
-
-            (function initAgentHostUi() {
-                const badge = document.getElementById("agentBadge");
-                if (!badge) return;
-                badge.style.cursor = "pointer";
-                badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
-                badge.addEventListener("click", function (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    promptAgentHost();
+                (function initAgentHostUi() {
+                    const badge = document.getElementById("agentBadge");
+                    if (!badge) return;
+                    badge.style.cursor = "pointer";
                     badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
-                });
+                    badge.addEventListener("click", function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        promptAgentHost();
+                        badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
+                    });
+                })();
             })();
-
-})();
         </script>
         <script>
             if ("serviceWorker" in navigator) {
