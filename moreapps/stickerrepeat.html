@@ -1234,10 +1234,12 @@ function refreshDevicesPrintersOnly() {
                 const totalW = cols * stickerW + Math.max(0, cols - 1) * gap;
                 const totalH = rows * stickerH + Math.max(0, rows - 1) * gap;
 
-                // Center the grid within the usable area, distributing
-                // any leftover space evenly on all sides
+                // Center the grid horizontally, but align it to the TOP of the
+                // usable area vertically — any leftover space (from rows not
+                // dividing evenly into the page height) collects at the bottom
+                // instead of being split top/bottom, minimizing wasted paper.
                 const offsetX = padding + (usableW - totalW) / 2;
-                const offsetY = padding + (usableH - totalH) / 2;
+                const offsetY = padding;
 
                 return {
                     stickerW,
@@ -1278,6 +1280,36 @@ function refreshDevicesPrintersOnly() {
                 return N - 1;
             }
 
+            /**
+             * Draw `img` into the box (x, y, w, h) preserving the image's own
+             * aspect ratio (like CSS `object-fit: cover`) — crops the longer
+             * side and centers it, instead of non-uniformly stretching the
+             * image to match the box, which is what caused visible
+             * horizontal/vertical distortion whenever an uploaded design's
+             * aspect ratio didn't exactly match the sticker's.
+             */
+            function drawImageCover(targetCtx, img, x, y, w, h) {
+                const imgRatio = img.width / img.height;
+                const boxRatio = w / h;
+                let sx, sy, sWidth, sHeight;
+
+                if (imgRatio > boxRatio) {
+                    // Image is relatively wider than the box: crop left/right
+                    sHeight = img.height;
+                    sWidth = img.height * boxRatio;
+                    sx = (img.width - sWidth) / 2;
+                    sy = 0;
+                } else {
+                    // Image is relatively taller than the box: crop top/bottom
+                    sWidth = img.width;
+                    sHeight = img.width / boxRatio;
+                    sx = 0;
+                    sy = (img.height - sHeight) / 2;
+                }
+
+                targetCtx.drawImage(img, sx, sy, sWidth, sHeight, x, y, w, h);
+            }
+
             function drawSheet(targetCtx, targetCanvas, scale, isPreview) {
                 const layout = calculateLayout();
                 const { stickerW, stickerH, gap, pageW, pageH, cols, rows, offsetX, offsetY } = layout;
@@ -1311,7 +1343,7 @@ function refreshDevicesPrintersOnly() {
                         }
 
                         if (designImg) {
-                            targetCtx.drawImage(designImg, x, y, w, h);
+                            drawImageCover(targetCtx, designImg, x, y, w, h);
                         } else {
                             // Placeholder
                             targetCtx.fillStyle = "#f0f4f8";
