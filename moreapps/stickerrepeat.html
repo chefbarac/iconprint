@@ -1233,9 +1233,10 @@ function refreshDevicesPrintersOnly() {
                 const totalW = cols * stickerW + Math.max(0, cols - 1) * gap;
                 const totalH = rows * stickerH + Math.max(0, rows - 1) * gap;
 
-                // Align grid to top-right corner (with page padding)
-                const offsetX = page.w - padding - totalW;
-                const offsetY = padding;
+                // Center the grid within the usable area, distributing
+                // any leftover space evenly on all sides
+                const offsetX = padding + (usableW - totalW) / 2;
+                const offsetY = padding + (usableH - totalH) / 2;
 
                 return {
                     stickerW,
