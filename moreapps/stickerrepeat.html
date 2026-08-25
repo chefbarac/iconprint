@@ -1282,32 +1282,32 @@ function refreshDevicesPrintersOnly() {
 
             /**
              * Draw `img` into the box (x, y, w, h) preserving the image's own
-             * aspect ratio (like CSS `object-fit: cover`) — crops the longer
-             * side and centers it, instead of non-uniformly stretching the
-             * image to match the box, which is what caused visible
-             * horizontal/vertical distortion whenever an uploaded design's
-             * aspect ratio didn't exactly match the sticker's.
+             * aspect ratio (like CSS `object-fit: contain`) — scales the image
+             * down so it fits entirely inside the box and centers it, adding a
+             * thin margin on two sides if the image's aspect ratio doesn't
+             * exactly match the box. This guarantees the design is never
+             * stretched AND never clipped/cropped.
              */
-            function drawImageCover(targetCtx, img, x, y, w, h) {
+            function drawImageContain(targetCtx, img, x, y, w, h) {
                 const imgRatio = img.width / img.height;
                 const boxRatio = w / h;
-                let sx, sy, sWidth, sHeight;
+                let dWidth, dHeight, dx, dy;
 
                 if (imgRatio > boxRatio) {
-                    // Image is relatively wider than the box: crop left/right
-                    sHeight = img.height;
-                    sWidth = img.height * boxRatio;
-                    sx = (img.width - sWidth) / 2;
-                    sy = 0;
+                    // Image is relatively wider than the box: fit to width
+                    dWidth = w;
+                    dHeight = w / imgRatio;
+                    dx = x;
+                    dy = y + (h - dHeight) / 2;
                 } else {
-                    // Image is relatively taller than the box: crop top/bottom
-                    sWidth = img.width;
-                    sHeight = img.width / boxRatio;
-                    sx = 0;
-                    sy = (img.height - sHeight) / 2;
+                    // Image is relatively taller than the box: fit to height
+                    dHeight = h;
+                    dWidth = h * imgRatio;
+                    dx = x + (w - dWidth) / 2;
+                    dy = y;
                 }
 
-                targetCtx.drawImage(img, sx, sy, sWidth, sHeight, x, y, w, h);
+                targetCtx.drawImage(img, dx, dy, dWidth, dHeight);
             }
 
             function drawSheet(targetCtx, targetCanvas, scale, isPreview) {
@@ -1343,7 +1343,7 @@ function refreshDevicesPrintersOnly() {
                         }
 
                         if (designImg) {
-                            drawImageCover(targetCtx, designImg, x, y, w, h);
+                            drawImageContain(targetCtx, designImg, x, y, w, h);
                         } else {
                             // Placeholder
                             targetCtx.fillStyle = "#f0f4f8";
