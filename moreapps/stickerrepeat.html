@@ -423,8 +423,9 @@
                 height: auto;
                 max-width: 100%;
                 max-height: calc(80vh - 48px);
-                box-shadow: 0 0 0 1px #ccc;
+                aspect-ratio: 210 / 297;
                 object-fit: contain;
+                box-shadow: 0 0 0 1px #ccc;
             }
 
             .hint {
@@ -1233,8 +1234,11 @@ function refreshDevicesPrintersOnly() {
                 const totalW = cols * stickerW + Math.max(0, cols - 1) * gap;
                 const totalH = rows * stickerH + Math.max(0, rows - 1) * gap;
 
-                // Align grid to top-right corner (with page padding)
-                const offsetX = page.w - padding - totalW;
+                // Center the grid horizontally, but align it to the TOP of the
+                // usable area vertically — any leftover space (from rows not
+                // dividing evenly into the page height) collects at the bottom
+                // instead of being split top/bottom, minimizing wasted paper.
+                const offsetX = padding + (usableW - totalW) / 2;
                 const offsetY = padding;
 
                 return {
@@ -1256,16 +1260,54 @@ function refreshDevicesPrintersOnly() {
 
             /**
              * Map a grid position (r, c) to a design index.
-             * Distribution is always along the row direction (top → bottom).
-             * Designs occupy successive horizontal bands of rows.
+             * Distribution is balanced by TOTAL slot count, not by row bands:
+             * the grid is filled left-to-right, top-to-bottom, and split into
+             * N roughly-equal chunks (total / N each). Any remainder from the
+             * division is absorbed entirely by the LAST design, so e.g. 15
+             * slots / 2 designs = 7 + 8, not an uneven row-based split.
              */
             function getDesignIndex(r, c, rows, cols, N) {
                 if (N <= 1) return 0;
 
-                // Split rows into N equal horizontal bands (top to bottom)
-                const band = rows / N;
-                const idx = Math.min(N - 1, Math.floor(r / band));
-                return idx;
+                const total = rows * cols;
+                const base = Math.floor(total / N);
+                const flatIndex = r * cols + c;
+                const boundary = base * (N - 1);
+
+                if (flatIndex < boundary) {
+                    return Math.floor(flatIndex / base);
+                }
+                return N - 1;
+            }
+
+            /**
+             * Draw `img` into the box (x, y, w, h) preserving the image's own
+             * aspect ratio (like CSS `object-fit: contain`) — scales the image
+             * down so it fits entirely inside the box and centers it, adding a
+             * thin margin on two sides if the image's aspect ratio doesn't
+             * exactly match the box. This guarantees the design is never
+             * stretched AND never clipped/cropped.
+             */
+            function drawImageContain(targetCtx, img, x, y, w, h) {
+                const imgRatio = img.width / img.height;
+                const boxRatio = w / h;
+                let dWidth, dHeight, dx, dy;
+
+                if (imgRatio > boxRatio) {
+                    // Image is relatively wider than the box: fit to width
+                    dWidth = w;
+                    dHeight = w / imgRatio;
+                    dx = x;
+                    dy = y + (h - dHeight) / 2;
+                } else {
+                    // Image is relatively taller than the box: fit to height
+                    dHeight = h;
+                    dWidth = h * imgRatio;
+                    dx = x + (w - dWidth) / 2;
+                    dy = y;
+                }
+
+                targetCtx.drawImage(img, dx, dy, dWidth, dHeight);
             }
 
             function drawSheet(targetCtx, targetCanvas, scale, isPreview) {
@@ -1274,6 +1316,10 @@ function refreshDevicesPrintersOnly() {
 
                 targetCanvas.width = Math.round(pageW * scale);
                 targetCanvas.height = Math.round(pageH * scale);
+
+                if (isPreview) {
+                    canvas.style.aspectRatio = pageW + " / " + pageH;
+                }
 
                 // White background
                 targetCtx.fillStyle = "#ffffff";
@@ -1297,7 +1343,7 @@ function refreshDevicesPrintersOnly() {
                         }
 
                         if (designImg) {
-                            targetCtx.drawImage(designImg, x, y, w, h);
+                            drawImageContain(targetCtx, designImg, x, y, w, h);
                         } else {
                             // Placeholder
                             targetCtx.fillStyle = "#f0f4f8";
