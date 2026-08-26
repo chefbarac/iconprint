@@ -732,14 +732,23 @@
                     <h2>Sticker Settings</h2>
 
                     <div class="form-group">
-                        <label>Sticker Dimensions <span class="unit">(mm)</span></label>
+                        <label>Units</label>
+                        <select id="unitSelect">
+                            <option value="mm">Millimeters (mm)</option>
+                            <option value="cm">Centimeters (cm)</option>
+                            <option value="in">Inches (in)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Sticker Dimensions <span class="unit" data-unit-label>(mm)</span></label>
                         <div class="form-row">
                             <div>
-                                <input type="number" id="stickerW" value="50" min="5" max="200" step="0.1" />
+                                <input type="number" id="stickerW" value="50" min="5" max="200" step="0.1" data-min-mm="5" data-max-mm="200" />
                                 <span class="unit">Width</span>
                             </div>
                             <div>
-                                <input type="number" id="stickerH" value="50" min="0" max="280" step="0.1" />
+                                <input type="number" id="stickerH" value="50" min="0" max="280" step="0.1" data-min-mm="0" data-max-mm="280" />
                                 <span class="unit">Height</span>
                             </div>
                         </div>
@@ -747,13 +756,13 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Gap between stickers <span class="unit">(mm)</span></label>
-                        <input type="number" id="gap" value="0" min="0" max="20" step="0.5" />
+                        <label>Gap between stickers <span class="unit" data-unit-label>(mm)</span></label>
+                        <input type="number" id="gap" value="0" min="0" max="20" step="0.5" data-min-mm="0" data-max-mm="20" />
                     </div>
 
                     <div class="form-group">
-                        <label>Page padding <span class="unit">(mm)</span></label>
-                        <input type="number" id="padding" value="5" min="0" max="30" step="0.5" />
+                        <label>Page padding <span class="unit" data-unit-label>(mm)</span></label>
+                        <input type="number" id="padding" value="5" min="0" max="30" step="0.5" data-min-mm="0" data-max-mm="30" />
                     </div>
 
                     <div class="form-group">
@@ -761,11 +770,11 @@
                         <div class="radio-group" id="pageSizeGroup">
                             <label class="radio-option selected">
                                 <input type="radio" name="pageSize" value="full" checked />
-                                <span>Full A4 <small style="color: var(--muted)">(210 × 297 mm)</small></span>
+                                <span>Full A4 <small style="color: var(--muted)" id="pageSizeFullLabel">(210 × 297 mm)</small></span>
                             </label>
                             <label class="radio-option">
                                 <input type="radio" name="pageSize" value="half" />
-                                <span>Half A4 <small style="color: var(--muted)">(210 × 148.5 mm)</small></span>
+                                <span>Half A4 <small style="color: var(--muted)" id="pageSizeHalfLabel">(210 × 148.5 mm)</small></span>
                             </label>
                         </div>
                     </div>
@@ -790,14 +799,14 @@
 
                         <div id="brandingControls" style="display: none; margin-top: 14px">
                             <div class="form-group">
-                                <label>Branding sticker size <span class="unit">(mm)</span></label>
+                                <label>Branding sticker size <span class="unit" data-unit-label>(mm)</span></label>
                                 <div class="form-row">
                                     <div>
-                                        <input type="number" id="brandingW" value="25" min="5" max="200" step="0.1" />
+                                        <input type="number" id="brandingW" value="25" min="5" max="200" step="0.1" data-min-mm="5" data-max-mm="200" />
                                         <span class="unit">Width</span>
                                     </div>
                                     <div>
-                                        <input type="number" id="brandingH" value="25" min="0" max="200" step="0.1" />
+                                        <input type="number" id="brandingH" value="25" min="0" max="200" step="0.1" data-min-mm="0" data-max-mm="200" />
                                         <span class="unit">Height</span>
                                     </div>
                                 </div>
@@ -805,8 +814,8 @@
                             </div>
 
                             <div class="form-group">
-                                <label>Gap between branding stickers <span class="unit">(mm)</span></label>
-                                <input type="number" id="brandingGap" value="2" min="0" max="20" step="0.5" />
+                                <label>Gap between branding stickers <span class="unit" data-unit-label>(mm)</span></label>
+                                <input type="number" id="brandingGap" value="2" min="0" max="20" step="0.5" data-min-mm="0" data-max-mm="20" />
                             </div>
 
                             <div class="form-group">
@@ -1210,12 +1219,35 @@ function refreshDevicesPrintersOnly() {
             let pageMode = "full"; // 'full' | 'half'
             let brandingEnabled = false;
             let brandingDesignImages = [null, null]; // up to 2 branding slots
+            let currentUnit = "mm"; // 'mm' | 'cm' | 'in' — display unit; all internal math stays in mm
+
+            // Unit conversion
+            const UNIT_TO_MM = { mm: 1, cm: 10, in: 25.4 };
+            const UNIT_STEP = { mm: 0.1, cm: 0.05, in: 0.01 };
+            const UNIT_DECIMALS = { mm: 1, cm: 2, in: 3 };
+
+            // Multiplies a value already in the CURRENT display unit into mm.
+            // Since NaN * n === NaN and 0 * n === 0, this can drop straight
+            // into existing `parseFloat(el.value) || fallback` expressions
+            // without disturbing their fallback/zero-detection behavior.
+            function unitToMM(v) {
+                return v * UNIT_TO_MM[currentUnit];
+            }
+
+            function roundForDisplay(mmValue, unit) {
+                const d = UNIT_DECIMALS[unit];
+                const f = Math.pow(10, d);
+                return Math.round((mmValue / UNIT_TO_MM[unit]) * f) / f;
+            }
 
             // DOM
             const stickerWEl = document.getElementById("stickerW");
             const stickerHEl = document.getElementById("stickerH");
             const gapEl = document.getElementById("gap");
             const paddingEl = document.getElementById("padding");
+            const unitSelectEl = document.getElementById("unitSelect");
+            const pageSizeFullLabelEl = document.getElementById("pageSizeFullLabel");
+            const pageSizeHalfLabelEl = document.getElementById("pageSizeHalfLabel");
             const canvas = document.getElementById("sheetCanvas");
             const ctx = canvas.getContext("2d");
             const hiResCanvas = document.getElementById("hiResCanvas");
@@ -1241,6 +1273,49 @@ function refreshDevicesPrintersOnly() {
             const brandingSummaryEl = document.getElementById("brandingSummary");
             const brandingCountEl = document.getElementById("brandingCount");
             const brandingSummaryDetailEl = document.getElementById("brandingSummaryDetail");
+
+            // All the numeric fields that are entered in the display unit and
+            // need converting/relabeling whenever the unit changes.
+            const unitAwareInputs = [stickerWEl, stickerHEl, gapEl, paddingEl, brandingWEl, brandingHEl, brandingGapEl];
+
+            function updateUnitLabels() {
+                document.querySelectorAll("[data-unit-label]").forEach((el) => {
+                    el.textContent = "(" + currentUnit + ")";
+                });
+            }
+
+            function updatePageSizeLabels() {
+                const w = roundForDisplay(A4_W, currentUnit);
+                const hFull = roundForDisplay(A4_H, currentUnit);
+                const hHalf = roundForDisplay(HALF_H, currentUnit);
+                pageSizeFullLabelEl.textContent = `(${w} × ${hFull} ${currentUnit})`;
+                pageSizeHalfLabelEl.textContent = `(${w} × ${hHalf} ${currentUnit})`;
+            }
+
+            function applyUnit(newUnit) {
+                const oldUnit = currentUnit;
+                unitAwareInputs.forEach((el) => {
+                    const raw = parseFloat(el.value);
+                    if (!isNaN(raw)) {
+                        const mm = raw * UNIT_TO_MM[oldUnit];
+                        el.value = roundForDisplay(mm, newUnit);
+                    }
+                    const minMM = parseFloat(el.dataset.minMm);
+                    const maxMM = parseFloat(el.dataset.maxMm);
+                    if (!isNaN(minMM)) el.min = roundForDisplay(minMM, newUnit);
+                    if (!isNaN(maxMM)) el.max = roundForDisplay(maxMM, newUnit);
+                    el.step = UNIT_STEP[newUnit];
+                });
+                currentUnit = newUnit;
+                updateUnitLabels();
+                updatePageSizeLabels();
+                render();
+            }
+
+            unitSelectEl.value = currentUnit;
+            unitSelectEl.addEventListener("change", () => applyUnit(unitSelectEl.value));
+            updateUnitLabels();
+            updatePageSizeLabels();
 
             // Zoom DOM
             const canvasWrapperEl = document.querySelector(".canvas-wrapper");
@@ -1530,11 +1605,11 @@ function refreshDevicesPrintersOnly() {
             }
 
             function calculateLayout() {
-                const stickerW = parseFloat(stickerWEl.value) || 50;
-                const stickerHInput = parseFloat(stickerHEl.value);
+                const stickerW = unitToMM(parseFloat(stickerWEl.value)) || 50;
+                const stickerHInput = unitToMM(parseFloat(stickerHEl.value));
                 const stickerH = stickerHInput === 0 ? autoHeightFromDesigns(stickerW, getActiveDesigns()) : stickerHInput || 50;
-                const gap = parseFloat(gapEl.value) || 0;
-                const padding = Math.max(0, parseFloat(paddingEl.value) || 0);
+                const gap = unitToMM(parseFloat(gapEl.value)) || 0;
+                const padding = Math.max(0, unitToMM(parseFloat(paddingEl.value)) || 0);
                 const page = getPageSize();
 
                 const usableW = page.w - 2 * padding;
@@ -1580,10 +1655,10 @@ function refreshDevicesPrintersOnly() {
             function calculateBrandingLayout(mainLayout) {
                 if (!brandingEnabled) return null;
 
-                const w = parseFloat(brandingWEl.value) || 0;
-                const hInput = parseFloat(brandingHEl.value);
+                const w = unitToMM(parseFloat(brandingWEl.value)) || 0;
+                const hInput = unitToMM(parseFloat(brandingHEl.value));
                 const h = hInput === 0 ? autoHeightFromDesigns(w, getActiveBrandingDesigns()) : hInput || 0;
-                const gap = Math.max(0, parseFloat(brandingGapEl.value) || 0);
+                const gap = Math.max(0, unitToMM(parseFloat(brandingGapEl.value)) || 0);
                 if (w <= 0 || h <= 0) return null;
 
                 const pageW = mainLayout.pageW;
@@ -1792,7 +1867,7 @@ function refreshDevicesPrintersOnly() {
                     summaryEl.style.display = "block";
                     stickerCountEl.textContent = layout.count;
                     const designText = activeCount > 0 ? `${activeCount} design${activeCount > 1 ? "s" : ""}` : "no designs";
-                    summaryDetailEl.textContent = `${layout.cols} × ${layout.rows} grid · ${layout.stickerW}×${layout.stickerH} mm · ${pageMode === "full" ? "Full A4" : "Half A4"} · ${designText}`;
+                    summaryDetailEl.textContent = `${layout.cols} × ${layout.rows} grid · ${roundForDisplay(layout.stickerW, currentUnit)}×${roundForDisplay(layout.stickerH, currentUnit)} ${currentUnit} · ${pageMode === "full" ? "Full A4" : "Half A4"} · ${designText}`;
                     let hint =
                         activeCount > 0
                             ? `Ready · ${layout.count} stickers · ${activeCount} design${activeCount > 1 ? "s" : ""} distributed proportionally`
@@ -1814,7 +1889,7 @@ function refreshDevicesPrintersOnly() {
                         brandingCountEl.textContent = bLayout.count;
                         const bDesigns = getActiveBrandingDesigns().length;
                         const bDesignText = bDesigns > 0 ? `${bDesigns} design${bDesigns > 1 ? "s" : ""}` : "no design — placeholder shown";
-                        brandingSummaryDetailEl.textContent = `${bLayout.cols} × ${bLayout.rows} grid · ${bLayout.stickerW}×${bLayout.stickerH} mm · ${bDesignText}`;
+                        brandingSummaryDetailEl.textContent = `${bLayout.cols} × ${bLayout.rows} grid · ${roundForDisplay(bLayout.stickerW, currentUnit)}×${roundForDisplay(bLayout.stickerH, currentUnit)} ${currentUnit} · ${bDesignText}`;
                     } else {
                         brandingCountEl.textContent = "0";
                         brandingSummaryDetailEl.textContent =
