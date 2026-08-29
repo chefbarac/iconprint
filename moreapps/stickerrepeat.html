@@ -434,7 +434,6 @@
                 text-align: center;
             }
 
-
             .agent-badge {
                 display: inline-flex;
                 align-items: center;
@@ -454,55 +453,106 @@
                 border-color: var(--border);
             }
             .agent-badge .dot {
-                width: 7px; height: 7px; border-radius: 50%;
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
                 background: #60a5fa;
             }
-            .agent-badge.offline .dot { background: var(--muted); }
-            .agent-only { display: none !important; }
-            .agent-only.visible { display: block !important; }
+            .agent-badge.offline .dot {
+                background: var(--muted);
+            }
+            .agent-only {
+                display: none !important;
+            }
+            .agent-only.visible {
+                display: block !important;
+            }
 
             .print-modal-backdrop {
-                position: fixed; inset: 0;
-                background: rgba(0,0,0,0.65);
-                display: none; align-items: center; justify-content: center;
-                z-index: 100; padding: 16px;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.65);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 100;
+                padding: 16px;
             }
-            .print-modal-backdrop.open { display: flex; }
+            .print-modal-backdrop.open {
+                display: flex;
+            }
             .print-modal {
-                background: var(--panel); color: var(--text);
-                border: 1px solid var(--border); border-radius: 12px;
-                padding: 20px; width: 100%; max-width: 420px;
-                max-height: 92vh; overflow-y: auto;
+                background: var(--panel);
+                color: var(--text);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 20px;
+                width: 100%;
+                max-width: 420px;
+                max-height: 92vh;
+                overflow-y: auto;
             }
-            .print-modal h2 { margin: 0 0 14px; font-size: 1.1rem; }
-            .print-modal .field-row { margin-bottom: 12px; }
+            .print-modal h2 {
+                margin: 0 0 14px;
+                font-size: 1.1rem;
+            }
+            .print-modal .field-row {
+                margin-bottom: 12px;
+            }
             .print-modal .field-row > label {
-                display: block; font-size: 0.8rem; font-weight: 500;
-                color: var(--muted); margin-bottom: 6px;
+                display: block;
+                font-size: 0.8rem;
+                font-weight: 500;
+                color: var(--muted);
+                margin-bottom: 6px;
             }
             .print-modal .field-row select,
             .print-modal .field-row input[type="number"],
             .print-modal .field-row input[type="text"] {
-                width: 100%; padding: 10px 12px; background: var(--bg);
-                border: 1px solid var(--border); border-radius: 8px;
-                color: var(--text); font-size: 0.95rem;
+                width: 100%;
+                padding: 10px 12px;
+                background: var(--bg);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                color: var(--text);
+                font-size: 0.95rem;
             }
             .print-modal .radio-row {
-                display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.9rem;
+                display: flex;
+                gap: 14px;
+                flex-wrap: wrap;
+                font-size: 0.9rem;
             }
             .print-modal .radio-row label {
-                display: flex; align-items: center; gap: 6px; cursor: pointer;
-                color: var(--text); margin: 0;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                cursor: pointer;
+                color: var(--text);
+                margin: 0;
             }
             .print-status {
-                font-size: 0.82rem; min-height: 1.2em; margin-top: 6px; color: var(--muted);
+                font-size: 0.82rem;
+                min-height: 1.2em;
+                margin-top: 6px;
+                color: var(--muted);
             }
-            .print-status.ok { color: var(--success); }
-            .print-status.error { color: var(--danger); }
+            .print-status.ok {
+                color: var(--success);
+            }
+            .print-status.error {
+                color: var(--danger);
+            }
             .print-actions {
-                display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px;
+                display: flex;
+                justify-content: flex-end;
+                gap: 8px;
+                margin-top: 14px;
             }
-            .print-actions .btn { width: auto; padding: 10px 16px; }
+            .print-actions .btn {
+                width: auto;
+                padding: 10px 16px;
+            }
 
             /* Print styles */
             @media print {
@@ -541,7 +591,7 @@
                 color: var(--accent);
                 text-decoration: none;
             }
-        
+
             .agent-toggle-wrap {
                 display: inline-flex;
                 align-items: center;
@@ -588,7 +638,7 @@
                 background: #fff;
                 border-radius: 50%;
                 transition: transform 0.2s;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
             }
             .agent-toggle input:checked + .slider {
                 background: #22c55e;
@@ -600,26 +650,25 @@
                 outline: 2px solid #2563eb;
                 outline-offset: 2px;
             }
-
-</style>
+        </style>
     </head>
     <body>
-        <iframe class="promo-banner" src="https://chefbarac.github.io/promo-banner/" width="100%" height="72" loading="lazy"></iframe>
+        <iframe class="promo-banner" src="https://chefbarac.github.io/promo-banner/?app=stickerrepeat" width="100%" height="72" loading="lazy"></iframe>
         <div class="app">
             <header>
                 <div>
                     <h1>Sticker Repeat</h1>
                     <p>Auto-repeat tool for sticker printing</p>
                     <span class="agent-toggle-wrap">
-                    <label class="agent-toggle-label" title="Connect to local print agent">
-                        <span class="agent-toggle">
-                            <input type="checkbox" id="agentToggle" checked />
-                            <span class="slider"></span>
-                        </span>
-                        Agent
-                    </label>
-                    <div class="agent-badge offline" id="agentBadge"><span class="dot"></span><span id="agentBadgeText">Agent offline</span></div>
-                </span>
+                        <label class="agent-toggle-label" title="Connect to local print agent">
+                            <span class="agent-toggle">
+                                <input type="checkbox" id="agentToggle" checked />
+                                <span class="slider"></span>
+                            </span>
+                            Agent
+                        </label>
+                        <div class="agent-badge offline" id="agentBadge"><span class="dot"></span><span id="agentBadgeText">Agent offline</span></div>
+                    </span>
                 </div>
             </header>
 
@@ -705,7 +754,6 @@
             <footer>Sticker Repeat · Single-page tool · Works offline · Open source ready for GitHub Pages</footer>
         </div>
 
-
         <div class="print-modal-backdrop" id="printBackdrop">
             <div class="print-modal">
                 <h2>Print sticker sheet</h2>
@@ -761,7 +809,7 @@
                     <input type="number" id="printCopies" min="1" max="99" value="1" />
                 </div>
                 <div class="field-row agent-only">
-                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;color:var(--text);font-weight:500">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0; color: var(--text); font-weight: 500">
                         <input type="checkbox" id="printCollate" checked /> Collate
                     </label>
                 </div>
@@ -781,7 +829,7 @@
                 </div>
                 <div class="print-status" id="printStatus"></div>
                 <div class="print-actions">
-                    <button type="button" class="btn btn-secondary" id="printCancelBtn" style="margin:0">Close</button>
+                    <button type="button" class="btn btn-secondary" id="printCancelBtn" style="margin: 0">Close</button>
                     <button type="button" class="btn btn-primary" id="printSubmitBtn">Print</button>
                 </div>
             </div>
@@ -798,45 +846,33 @@
             const DEFAULT_AGENT_HOST = "http://localhost:5001";
 
             function getAgentHost() {
-
                 try {
-
                     const v = (localStorage.getItem(AGENT_HOST_KEY) || "").trim();
 
                     if (v) return v.replace(/\/+$/, "");
-
                 } catch (e) {}
 
                 return DEFAULT_AGENT_HOST;
-
             }
 
             function setAgentHost(url) {
-
                 try {
-
                     const cleaned = (url || "").trim().replace(/\/+$/, "");
 
                     if (cleaned) localStorage.setItem(AGENT_HOST_KEY, cleaned);
-
                     else localStorage.removeItem(AGENT_HOST_KEY);
-
                 } catch (e) {}
-
             }
 
             let LOCAL_AGENT = getAgentHost();
 
             function promptAgentHost() {
-
                 const current = getAgentHost();
 
                 const next = window.prompt(
-
                     "Print agent URL\n\nUse this PC: http://localhost:5001\nOther PC on LAN: http://<agent-ip>:5001",
 
-                    current
-
+                    current,
                 );
 
                 if (next === null) return;
@@ -846,25 +882,18 @@
                 LOCAL_AGENT = getAgentHost();
 
                 if (typeof agentConnectionEnabled !== "undefined" && agentConnectionEnabled && typeof startAgentPolling === "function") {
-
                     startAgentPolling();
-
                 } else if (typeof checkAgentHealth === "function") {
-
                     checkAgentHealth();
-
                 }
 
                 const badgeText = document.getElementById("agentBadgeText");
 
                 if (badgeText && typeof agentOnline !== "undefined" && !agentOnline) {
-
                     badgeText.title = "Agent host: " + LOCAL_AGENT + " (click to change)";
-
                 }
-
             }
-const AGENT_PREF_KEY = "iconprint_agent_enabled_stickerrepeat";
+            const AGENT_PREF_KEY = "iconprint_agent_enabled_stickerrepeat";
             function getAgentEnabledPref() {
                 try {
                     const v = localStorage.getItem(AGENT_PREF_KEY);
@@ -885,13 +914,13 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_stickerrepeat";
             // Photo paper not supported via local agent — always use browser print dialog.
             // Agent UI/code kept intact; set true to re-enable direct agent printing.
             const USE_PRINT_AGENT = false;
-                // First visit only: default agent connection off for photo-paper apps
-                try {
-                    if (localStorage.getItem(AGENT_PREF_KEY) === null) {
-                        agentConnectionEnabled = false;
-                        setAgentEnabledPref(false);
-                    }
-                } catch (e) {}
+            // First visit only: default agent connection off for photo-paper apps
+            try {
+                if (localStorage.getItem(AGENT_PREF_KEY) === null) {
+                    agentConnectionEnabled = false;
+                    setAgentEnabledPref(false);
+                }
+            } catch (e) {}
 
             let agentDevices = { scanners: [], printers: [] };
             let healthTimer = null;
@@ -899,7 +928,10 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_stickerrepeat";
             function getPrinterFilterPatterns() {
                 const raw = (localStorage.getItem("iconprint_printer_filter") || "").trim();
                 if (!raw) return [];
-                return raw.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+                return raw
+                    .split(",")
+                    .map((s) => s.trim().toLowerCase())
+                    .filter(Boolean);
             }
             function filterPrinters(printers) {
                 const patterns = getPrinterFilterPatterns();
@@ -935,7 +967,7 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_stickerrepeat";
                 const badgeText = document.getElementById("agentBadgeText");
                 if (badge) badge.classList.toggle("offline", !online);
                 if (badgeText) {
-                    badgeText.textContent = online ? "Agent online" : (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled ? "Agent off" : "Agent offline");
+                    badgeText.textContent = online ? "Agent online" : typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled ? "Agent off" : "Agent offline";
                     if (badge) badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
                 }
                 document.querySelectorAll(".agent-only").forEach((el) => {
@@ -955,18 +987,19 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_stickerrepeat";
                 }
             }
             async function checkAgentHealth() {
-
-                    if (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled) {
-                        setAgentUI(false);
-                        return;
-                    }
+                if (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled) {
+                    setAgentUI(false);
+                    return;
+                }
                 try {
                     const res = await fetch(LOCAL_AGENT + "/health", {
                         cache: "no-store",
-                        signal: (typeof AbortSignal !== "undefined" && AbortSignal.timeout ? AbortSignal.timeout(2500) : undefined),
+                        signal: typeof AbortSignal !== "undefined" && AbortSignal.timeout ? AbortSignal.timeout(2500) : undefined,
                     });
                     if (!res.ok) throw new Error("health");
-                    try { await res.json(); } catch (e) {}
+                    try {
+                        await res.json();
+                    } catch (e) {}
                     // Health succeeded — mark online first so a devices refresh failure
                     // does not flip the badge back to offline.
                     const wasOffline = !agentOnline;
@@ -982,7 +1015,6 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_stickerrepeat";
                     setAgentUI(false);
                 }
             }
-
 
             function refreshDevicesScannersOnly() {
                 return fetch(LOCAL_AGENT + "/devices?printers=0", { cache: "no-store" })
@@ -1006,7 +1038,7 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_stickerrepeat";
                     });
             }
 
-function refreshDevicesPrintersOnly() {
+            function refreshDevicesPrintersOnly() {
                 return fetch(LOCAL_AGENT + "/devices?scanners=0", { cache: "no-store" })
                     .then(function (res) {
                         if (!res.ok) throw new Error("devices");
@@ -1017,10 +1049,7 @@ function refreshDevicesPrintersOnly() {
                             agentDevices = { scanners: [], printers: [] };
                         }
                         agentDevices.printers = data.printers || [];
-                        var list =
-                            typeof filterPrinters === "function"
-                                ? filterPrinters(agentDevices.printers)
-                                : agentDevices.printers;
+                        var list = typeof filterPrinters === "function" ? filterPrinters(agentDevices.printers) : agentDevices.printers;
                         if (typeof fillSelect === "function") {
                             fillSelect(document.getElementById("printPrinter"), list, null);
                             var tb = document.getElementById("printerSelect");
@@ -1031,16 +1060,19 @@ function refreshDevicesPrintersOnly() {
             }
 
             function startAgentPolling() {
-                    if (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled) {
-                        if (healthTimer) { clearInterval(healthTimer); healthTimer = null; }
-                        setAgentUI(false);
-                        return;
+                if (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled) {
+                    if (healthTimer) {
+                        clearInterval(healthTimer);
+                        healthTimer = null;
                     }
                     setAgentUI(false);
-                    checkAgentHealth();
-                    if (healthTimer) clearInterval(healthTimer);
-                    healthTimer = setInterval(checkAgentHealth, 4000);
+                    return;
                 }
+                setAgentUI(false);
+                checkAgentHealth();
+                if (healthTimer) clearInterval(healthTimer);
+                healthTimer = setInterval(checkAgentHealth, 4000);
+            }
 
             // Constants
             const MM_TO_PX_PREVIEW = 3.5;
@@ -1506,17 +1538,15 @@ function refreshDevicesPrintersOnly() {
                     return;
                 }
                 const paperSize = document.getElementById("printPaper").value || "a4";
-                const orient =
-                    (document.querySelector('input[name="printOrient"]:checked') || {}).value || "portrait";
-                const colorMode =
-                    (document.querySelector('input[name="printColor"]:checked') || {}).value || "color";
+                const orient = (document.querySelector('input[name="printOrient"]:checked') || {}).value || "portrait";
+                const colorMode = (document.querySelector('input[name="printColor"]:checked') || {}).value || "color";
                 let copies = parseInt(document.getElementById("printCopies").value || "1", 10);
                 if (!(copies >= 1 && copies <= 99)) copies = 1;
                 const collate = !!document.getElementById("printCollate").checked;
                 const scaling = document.getElementById("printScaling").value || "actual";
                 const margins = document.getElementById("printMargins").value || "none";
                 const mediaType = document.getElementById("printMedia").value || "plain";
-                    const quality = (document.getElementById("printQuality") && document.getElementById("printQuality").value) || "standard";
+                const quality = (document.getElementById("printQuality") && document.getElementById("printQuality").value) || "standard";
 
                 // Physical page: always full A4 for agent so half-sheet sits correctly on A4 paper
                 let pageW = 8.27;
@@ -1587,13 +1617,8 @@ function refreshDevicesPrintersOnly() {
                         const job = await sr.json();
                         const status = job.status || "unknown";
                         if (st) {
-                            st.textContent =
-                                status.charAt(0).toUpperCase() +
-                                status.slice(1) +
-                                (job.warnings && job.warnings.length ? " — " + job.warnings[0] : "");
-                            st.className =
-                                "print-status" +
-                                (status === "completed" ? " ok" : status === "failed" ? " error" : "");
+                            st.textContent = status.charAt(0).toUpperCase() + status.slice(1) + (job.warnings && job.warnings.length ? " — " + job.warnings[0] : "");
+                            st.className = "print-status" + (status === "completed" ? " ok" : status === "failed" ? " error" : "");
                         }
                         if (status === "completed") break;
                         if (status === "failed") throw new Error(job.error || "Print job failed");
@@ -1669,8 +1694,6 @@ function refreshDevicesPrintersOnly() {
                 }
             })();
 
-        
-
             (function initAgentHostUi() {
                 const badge = document.getElementById("agentBadge");
                 if (!badge) return;
@@ -1683,8 +1706,7 @@ function refreshDevicesPrintersOnly() {
                     badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
                 });
             })();
-
-</script>
+        </script>
         <script>
             if ("serviceWorker" in navigator) {
                 window.addEventListener("load", () => {

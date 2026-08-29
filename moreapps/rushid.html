@@ -552,7 +552,6 @@
                 }
             }
 
-
             .agent-badge {
                 display: inline-flex;
                 align-items: center;
@@ -572,53 +571,104 @@
                 border-color: var(--line);
             }
             .agent-badge .dot {
-                width: 7px; height: 7px; border-radius: 50%;
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
                 background: var(--accent);
             }
-            .agent-badge.offline .dot { background: #8a95a0; }
-            .agent-only { display: none !important; }
-            .agent-only.visible { display: block !important; }
+            .agent-badge.offline .dot {
+                background: #8a95a0;
+            }
+            .agent-only {
+                display: none !important;
+            }
+            .agent-only.visible {
+                display: block !important;
+            }
 
             .print-modal-backdrop {
-                position: fixed; inset: 0;
+                position: fixed;
+                inset: 0;
                 background: rgba(20, 25, 30, 0.6);
-                display: none; align-items: center; justify-content: center;
-                z-index: 60; padding: 16px;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 60;
+                padding: 16px;
             }
-            .print-modal-backdrop.open { display: flex; }
+            .print-modal-backdrop.open {
+                display: flex;
+            }
             .print-modal {
-                background: #fff; color: var(--ink);
-                border-radius: 10px; padding: 20px;
-                max-width: 420px; width: 100%; max-height: 92vh; overflow: auto;
+                background: #fff;
+                color: var(--ink);
+                border-radius: 10px;
+                padding: 20px;
+                max-width: 420px;
+                width: 100%;
+                max-height: 92vh;
+                overflow: auto;
                 border: 1px solid var(--line);
             }
-            .print-modal h2 { margin: 0 0 14px; font-size: 16px; }
-            .print-modal .field-row { margin-bottom: 12px; }
+            .print-modal h2 {
+                margin: 0 0 14px;
+                font-size: 16px;
+            }
+            .print-modal .field-row {
+                margin-bottom: 12px;
+            }
             .print-modal .field-row > label {
-                display: block; font-size: 11px; font-weight: 700;
-                text-transform: uppercase; letter-spacing: 0.06em;
-                color: #5a6672; margin-bottom: 6px;
+                display: block;
+                font-size: 11px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                color: #5a6672;
+                margin-bottom: 6px;
             }
             .print-modal .field-row select,
             .print-modal .field-row input[type="number"],
             .print-modal .field-row input[type="text"] {
-                width: 100%; border: 1px solid var(--line); border-radius: 6px;
-                padding: 8px 10px; font-size: 14px; font-family: inherit; background: #fff;
+                width: 100%;
+                border: 1px solid var(--line);
+                border-radius: 6px;
+                padding: 8px 10px;
+                font-size: 14px;
+                font-family: inherit;
+                background: #fff;
             }
             .print-modal .radio-row {
-                display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px;
+                display: flex;
+                gap: 14px;
+                flex-wrap: wrap;
+                font-size: 13px;
             }
             .print-modal .radio-row label {
-                display: flex; align-items: center; gap: 6px; cursor: pointer;
-                text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--ink);
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                cursor: pointer;
+                text-transform: none;
+                letter-spacing: 0;
+                font-weight: 500;
+                color: var(--ink);
             }
             .print-status {
-                font-size: 12px; min-height: 1.2em; margin-top: 6px; color: #5a6672;
+                font-size: 12px;
+                min-height: 1.2em;
+                margin-top: 6px;
+                color: #5a6672;
             }
-            .print-status.ok { color: var(--accent); }
-            .print-status.error { color: var(--danger); }
+            .print-status.ok {
+                color: var(--accent);
+            }
+            .print-status.error {
+                color: var(--danger);
+            }
             .print-actions {
-                display: flex; justify-content: flex-end; gap: 8px;
+                display: flex;
+                justify-content: flex-end;
+                gap: 8px;
                 margin-top: 16px;
             }
 
@@ -673,7 +723,7 @@
                     display: none !important;
                 }
             }
-        
+
             .agent-toggle-wrap {
                 display: inline-flex;
                 align-items: center;
@@ -720,7 +770,7 @@
                 background: #fff;
                 border-radius: 50%;
                 transition: transform 0.2s;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
             }
             .agent-toggle input:checked + .slider {
                 background: #22c55e;
@@ -732,11 +782,10 @@
                 outline: 2px solid #2563eb;
                 outline-offset: 2px;
             }
-
-</style>
+        </style>
     </head>
     <body>
-        <iframe class="promo-frame no-print" src="https://chefbarac.github.io/promo-banner/" width="100%" height="72" style="border: none; border-radius: 0" loading="lazy"> </iframe>
+        <iframe class="promo-frame no-print" src="https://chefbarac.github.io/promo-banner/?app=rushid" width="100%" height="72" style="border: none; border-radius: 0" loading="lazy"> </iframe>
 
         <div class="app-layout">
             <!-- ================= SIDEBAR (CONTROLS) ================= -->
@@ -746,15 +795,15 @@
                     <h1>Auto Layout</h1>
                     <p>Capture or upload a photo, crop it, add a name and signature, and print a ready-to-cut A4 sheet.</p>
                     <span class="agent-toggle-wrap">
-                    <label class="agent-toggle-label" title="Connect to local print agent">
-                        <span class="agent-toggle">
-                            <input type="checkbox" id="agentToggle" checked />
-                            <span class="slider"></span>
-                        </span>
-                        Agent
-                    </label>
-                    <div class="agent-badge offline" id="agentBadge"><span class="dot"></span><span id="agentBadgeText">Agent offline</span></div>
-                </span>
+                        <label class="agent-toggle-label" title="Connect to local print agent">
+                            <span class="agent-toggle">
+                                <input type="checkbox" id="agentToggle" checked />
+                                <span class="slider"></span>
+                            </span>
+                            Agent
+                        </label>
+                        <div class="agent-badge offline" id="agentBadge"><span class="dot"></span><span id="agentBadgeText">Agent offline</span></div>
+                    </span>
                 </div>
 
                 <div class="toolbar">
@@ -919,7 +968,6 @@
             </div>
         </div>
 
-
         <div class="print-modal-backdrop no-print" id="printBackdrop">
             <div class="print-modal">
                 <h2>Print</h2>
@@ -975,9 +1023,7 @@
                     <input type="number" id="printCopies" min="1" max="99" value="1" />
                 </div>
                 <div class="field-row agent-only">
-                    <label class="checkline" style="text-transform:none;letter-spacing:0;font-weight:500;color:var(--ink)">
-                        <input type="checkbox" id="printCollate" checked /> Collate
-                    </label>
+                    <label class="checkline" style="text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--ink)"> <input type="checkbox" id="printCollate" checked /> Collate </label>
                 </div>
                 <div class="field-row agent-only">
                     <label for="printScaling">Scaling</label>
@@ -1010,45 +1056,33 @@
                 const DEFAULT_AGENT_HOST = "http://localhost:5001";
 
                 function getAgentHost() {
-
                     try {
-
                         const v = (localStorage.getItem(AGENT_HOST_KEY) || "").trim();
 
                         if (v) return v.replace(/\/+$/, "");
-
                     } catch (e) {}
 
                     return DEFAULT_AGENT_HOST;
-
                 }
 
                 function setAgentHost(url) {
-
                     try {
-
                         const cleaned = (url || "").trim().replace(/\/+$/, "");
 
                         if (cleaned) localStorage.setItem(AGENT_HOST_KEY, cleaned);
-
                         else localStorage.removeItem(AGENT_HOST_KEY);
-
                     } catch (e) {}
-
                 }
 
                 let LOCAL_AGENT = getAgentHost();
 
                 function promptAgentHost() {
-
                     const current = getAgentHost();
 
                     const next = window.prompt(
-
                         "Print agent URL\n\nUse this PC: http://localhost:5001\nOther PC on LAN: http://<agent-ip>:5001",
 
-                        current
-
+                        current,
                     );
 
                     if (next === null) return;
@@ -1058,40 +1092,33 @@
                     LOCAL_AGENT = getAgentHost();
 
                     if (typeof agentConnectionEnabled !== "undefined" && agentConnectionEnabled && typeof startAgentPolling === "function") {
-
                         startAgentPolling();
-
                     } else if (typeof checkAgentHealth === "function") {
-
                         checkAgentHealth();
-
                     }
 
                     const badgeText = document.getElementById("agentBadgeText");
 
                     if (badgeText && typeof agentOnline !== "undefined" && !agentOnline) {
-
                         badgeText.title = "Agent host: " + LOCAL_AGENT + " (click to change)";
-
                     }
-
                 }
-const AGENT_PREF_KEY = "iconprint_agent_enabled_rushid";
-            function getAgentEnabledPref() {
-                try {
-                    const v = localStorage.getItem(AGENT_PREF_KEY);
-                    if (v === null || v === undefined) return true; // first visit: on (apps can override below)
-                    return v === "1" || v === "true";
-                } catch (e) {
-                    return true;
+                const AGENT_PREF_KEY = "iconprint_agent_enabled_rushid";
+                function getAgentEnabledPref() {
+                    try {
+                        const v = localStorage.getItem(AGENT_PREF_KEY);
+                        if (v === null || v === undefined) return true; // first visit: on (apps can override below)
+                        return v === "1" || v === "true";
+                    } catch (e) {
+                        return true;
+                    }
                 }
-            }
-            function setAgentEnabledPref(on) {
-                try {
-                    localStorage.setItem(AGENT_PREF_KEY, on ? "1" : "0");
-                } catch (e) {}
-            }
-            let agentConnectionEnabled = getAgentEnabledPref();
+                function setAgentEnabledPref(on) {
+                    try {
+                        localStorage.setItem(AGENT_PREF_KEY, on ? "1" : "0");
+                    } catch (e) {}
+                }
+                let agentConnectionEnabled = getAgentEnabledPref();
 
                 let agentOnline = false;
                 // Photo paper not supported via local agent — always use browser print dialog.
@@ -1111,7 +1138,10 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_rushid";
                 function getPrinterFilterPatterns() {
                     const raw = (localStorage.getItem("iconprint_printer_filter") || "").trim();
                     if (!raw) return [];
-                    return raw.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+                    return raw
+                        .split(",")
+                        .map((s) => s.trim().toLowerCase())
+                        .filter(Boolean);
                 }
                 function filterPrinters(printers) {
                     const patterns = getPrinterFilterPatterns();
@@ -1147,9 +1177,9 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_rushid";
                     const badgeText = document.getElementById("agentBadgeText");
                     if (badge) badge.classList.toggle("offline", !online);
                     if (badgeText) {
-                    badgeText.textContent = online ? "Agent online" : (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled ? "Agent off" : "Agent offline");
-                    if (badge) badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
-                }
+                        badgeText.textContent = online ? "Agent online" : typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled ? "Agent off" : "Agent offline";
+                        if (badge) badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
+                    }
                     document.querySelectorAll(".agent-only").forEach((el) => {
                         if (online) el.classList.add("visible");
                         else el.classList.remove("visible");
@@ -1167,7 +1197,6 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_rushid";
                     }
                 }
                 async function checkAgentHealth() {
-
                     if (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled) {
                         setAgentUI(false);
                         return;
@@ -1175,10 +1204,12 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_rushid";
                     try {
                         const res = await fetch(LOCAL_AGENT + "/health", {
                             cache: "no-store",
-                            signal: (typeof AbortSignal !== "undefined" && AbortSignal.timeout ? AbortSignal.timeout(2500) : undefined),
+                            signal: typeof AbortSignal !== "undefined" && AbortSignal.timeout ? AbortSignal.timeout(2500) : undefined,
                         });
                         if (!res.ok) throw new Error("health");
-                        try { await res.json(); } catch (e) {}
+                        try {
+                            await res.json();
+                        } catch (e) {}
                         // Health succeeded — mark online first so a devices refresh failure
                         // does not flip the badge back to offline.
                         const wasOffline = !agentOnline;
@@ -1195,56 +1226,55 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_rushid";
                     }
                 }
 
-
-            function refreshDevicesScannersOnly() {
-                return fetch(LOCAL_AGENT + "/devices?printers=0", { cache: "no-store" })
-                    .then(function (res) {
-                        if (!res.ok) throw new Error("devices " + res.status);
-                        return res.json();
-                    })
-                    .then(function (data) {
-                        if (typeof agentDevices === "undefined") {
-                            agentDevices = { scanners: [], printers: [] };
-                        }
-                        agentDevices.scanners = data.scanners || [];
-                        if (typeof fillSelect === "function") {
-                            var sc = document.getElementById("scannerSelect");
-                            if (sc) {
-                                fillSelect(sc, agentDevices.scanners, typeof selectedScannerId !== "undefined" ? selectedScannerId : null);
-                                if (typeof selectedScannerId !== "undefined") selectedScannerId = sc.value || null;
+                function refreshDevicesScannersOnly() {
+                    return fetch(LOCAL_AGENT + "/devices?printers=0", { cache: "no-store" })
+                        .then(function (res) {
+                            if (!res.ok) throw new Error("devices " + res.status);
+                            return res.json();
+                        })
+                        .then(function (data) {
+                            if (typeof agentDevices === "undefined") {
+                                agentDevices = { scanners: [], printers: [] };
                             }
-                        }
-                        return agentDevices.scanners;
-                    });
-            }
+                            agentDevices.scanners = data.scanners || [];
+                            if (typeof fillSelect === "function") {
+                                var sc = document.getElementById("scannerSelect");
+                                if (sc) {
+                                    fillSelect(sc, agentDevices.scanners, typeof selectedScannerId !== "undefined" ? selectedScannerId : null);
+                                    if (typeof selectedScannerId !== "undefined") selectedScannerId = sc.value || null;
+                                }
+                            }
+                            return agentDevices.scanners;
+                        });
+                }
 
-function refreshDevicesPrintersOnly() {
-                return fetch(LOCAL_AGENT + "/devices?scanners=0", { cache: "no-store" })
-                    .then(function (res) {
-                        if (!res.ok) throw new Error("devices");
-                        return res.json();
-                    })
-                    .then(function (data) {
-                        if (typeof agentDevices === "undefined") {
-                            agentDevices = { scanners: [], printers: [] };
-                        }
-                        agentDevices.printers = data.printers || [];
-                        var list =
-                            typeof filterPrinters === "function"
-                                ? filterPrinters(agentDevices.printers)
-                                : agentDevices.printers;
-                        if (typeof fillSelect === "function") {
-                            fillSelect(document.getElementById("printPrinter"), list, null);
-                            var tb = document.getElementById("printerSelect");
-                            if (tb) fillSelect(tb, list, null);
-                        }
-                        return agentDevices.printers;
-                    });
-            }
+                function refreshDevicesPrintersOnly() {
+                    return fetch(LOCAL_AGENT + "/devices?scanners=0", { cache: "no-store" })
+                        .then(function (res) {
+                            if (!res.ok) throw new Error("devices");
+                            return res.json();
+                        })
+                        .then(function (data) {
+                            if (typeof agentDevices === "undefined") {
+                                agentDevices = { scanners: [], printers: [] };
+                            }
+                            agentDevices.printers = data.printers || [];
+                            var list = typeof filterPrinters === "function" ? filterPrinters(agentDevices.printers) : agentDevices.printers;
+                            if (typeof fillSelect === "function") {
+                                fillSelect(document.getElementById("printPrinter"), list, null);
+                                var tb = document.getElementById("printerSelect");
+                                if (tb) fillSelect(tb, list, null);
+                            }
+                            return agentDevices.printers;
+                        });
+                }
 
-            function startAgentPolling() {
+                function startAgentPolling() {
                     if (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled) {
-                        if (healthTimer) { clearInterval(healthTimer); healthTimer = null; }
+                        if (healthTimer) {
+                            clearInterval(healthTimer);
+                            healthTimer = null;
+                        }
                         setAgentUI(false);
                         return;
                     }
@@ -1254,8 +1284,7 @@ function refreshDevicesPrintersOnly() {
                     healthTimer = setInterval(checkAgentHealth, 4000);
                 }
 
-
-                "use strict";
+                ("use strict");
 
                 // ---------------- ID type presets ----------------
                 // wIn/hIn = physical cell size in inches. cols = grid columns.
@@ -1930,8 +1959,7 @@ function refreshDevicesPrintersOnly() {
                     // Physical A4 (or selected) at 300 DPI
                     const paperSel = document.getElementById("printPaper");
                     const paper = (paperSel && paperSel.value) || "a4";
-                    const orient =
-                        (document.querySelector('input[name="printOrient"]:checked') || {}).value || "portrait";
+                    const orient = (document.querySelector('input[name="printOrient"]:checked') || {}).value || "portrait";
                     const sizesIn = {
                         a4: { w: 8.27, h: 11.69 },
                         short: { w: 8.5, h: 11 },
@@ -2073,7 +2101,7 @@ function refreshDevicesPrintersOnly() {
                                     };
                                     im.onerror = () => res();
                                     im.src = photo.src;
-                                })
+                                }),
                             );
                         }
 
@@ -2101,12 +2129,12 @@ function refreshDevicesPrintersOnly() {
                         printLayoutBrowser();
                         return;
                     }
-                /* printers-on-print */
-                try {
-                    if (typeof refreshDevicesPrintersOnly === "function") {
-                        refreshDevicesPrintersOnly();
-                    }
-                } catch (e) {}
+                    /* printers-on-print */
+                    try {
+                        if (typeof refreshDevicesPrintersOnly === "function") {
+                            refreshDevicesPrintersOnly();
+                        }
+                    } catch (e) {}
                     const filterInput = document.getElementById("printFilter");
                     if (filterInput) {
                         if (localStorage.getItem("iconprint_printer_filter") === null) {
@@ -2145,10 +2173,8 @@ function refreshDevicesPrintersOnly() {
                         return;
                     }
                     const paperSize = document.getElementById("printPaper").value || "a4";
-                    const orient =
-                        (document.querySelector('input[name="printOrient"]:checked') || {}).value || "portrait";
-                    const colorMode =
-                        (document.querySelector('input[name="printColor"]:checked') || {}).value || "color";
+                    const orient = (document.querySelector('input[name="printOrient"]:checked') || {}).value || "portrait";
+                    const colorMode = (document.querySelector('input[name="printColor"]:checked') || {}).value || "color";
                     let copies = parseInt(document.getElementById("printCopies").value || "1", 10);
                     if (!(copies >= 1 && copies <= 99)) copies = 1;
                     const collate = !!document.getElementById("printCollate").checked;
@@ -2178,7 +2204,7 @@ function refreshDevicesPrintersOnly() {
                         fd.append("scaling", scaling);
                         fd.append("margins", margins);
                         fd.append("media_type", mediaType);
-                    fd.append("quality", (document.getElementById("printQuality") && document.getElementById("printQuality").value) || "standard");
+                        fd.append("quality", (document.getElementById("printQuality") && document.getElementById("printQuality").value) || "standard");
                         fd.append("page_width_inches", String(pageW));
                         fd.append("page_height_inches", String(pageH));
                         const res = await fetch(LOCAL_AGENT + "/print", { method: "POST", body: fd });
@@ -2194,13 +2220,8 @@ function refreshDevicesPrintersOnly() {
                             const job = await sr.json();
                             const status = job.status || "unknown";
                             if (st) {
-                                st.textContent =
-                                    status.charAt(0).toUpperCase() +
-                                    status.slice(1) +
-                                    (job.warnings && job.warnings.length ? " — " + job.warnings[0] : "");
-                                st.className =
-                                    "print-status" +
-                                    (status === "completed" ? " ok" : status === "failed" ? " error" : "");
+                                st.textContent = status.charAt(0).toUpperCase() + status.slice(1) + (job.warnings && job.warnings.length ? " — " + job.warnings[0] : "");
+                                st.className = "print-status" + (status === "completed" ? " ok" : status === "failed" ? " error" : "");
                             }
                             if (status === "completed") break;
                             if (status === "failed") {
@@ -2285,49 +2306,46 @@ function refreshDevicesPrintersOnly() {
                 fitZoomToWidth();
                 startAgentPolling();
 
-            (function initAgentToggle() {
-                const toggle = document.getElementById("agentToggle");
-                if (!toggle) return;
-                toggle.checked = !!agentConnectionEnabled;
-                toggle.addEventListener("change", function () {
-                    agentConnectionEnabled = !!toggle.checked;
-                    setAgentEnabledPref(agentConnectionEnabled);
-                    if (agentConnectionEnabled) {
-                        startAgentPolling();
-                    } else {
+                (function initAgentToggle() {
+                    const toggle = document.getElementById("agentToggle");
+                    if (!toggle) return;
+                    toggle.checked = !!agentConnectionEnabled;
+                    toggle.addEventListener("change", function () {
+                        agentConnectionEnabled = !!toggle.checked;
+                        setAgentEnabledPref(agentConnectionEnabled);
+                        if (agentConnectionEnabled) {
+                            startAgentPolling();
+                        } else {
+                            if (typeof healthTimer !== "undefined" && healthTimer) {
+                                clearInterval(healthTimer);
+                                healthTimer = null;
+                            }
+                            setAgentUI(false);
+                        }
+                    });
+                    // Apply saved preference (may disable polling started below)
+                    if (!agentConnectionEnabled) {
                         if (typeof healthTimer !== "undefined" && healthTimer) {
                             clearInterval(healthTimer);
                             healthTimer = null;
                         }
                         setAgentUI(false);
                     }
-                });
-                // Apply saved preference (may disable polling started below)
-                if (!agentConnectionEnabled) {
-                    if (typeof healthTimer !== "undefined" && healthTimer) {
-                        clearInterval(healthTimer);
-                        healthTimer = null;
-                    }
-                    setAgentUI(false);
-                }
-            })();
+                })();
 
-            
-
-            (function initAgentHostUi() {
-                const badge = document.getElementById("agentBadge");
-                if (!badge) return;
-                badge.style.cursor = "pointer";
-                badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
-                badge.addEventListener("click", function (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    promptAgentHost();
+                (function initAgentHostUi() {
+                    const badge = document.getElementById("agentBadge");
+                    if (!badge) return;
+                    badge.style.cursor = "pointer";
                     badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
-                });
+                    badge.addEventListener("click", function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        promptAgentHost();
+                        badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
+                    });
+                })();
             })();
-
-})();
         </script>
         <script>
             if ("serviceWorker" in navigator) {

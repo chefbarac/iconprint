@@ -539,7 +539,6 @@
                 display: none;
             }
 
-
             .agent-badge {
                 display: inline-flex;
                 align-items: center;
@@ -558,53 +557,105 @@
                 border-color: var(--border);
             }
             .agent-badge .dot {
-                width: 7px; height: 7px; border-radius: 50%;
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
                 background: var(--accent);
             }
-            .agent-badge.offline .dot { background: var(--muted); }
-            .agent-only { display: none !important; }
-            .agent-only.visible { display: block !important; }
-            .header-actions .agent-badge { display: inline-flex; }
+            .agent-badge.offline .dot {
+                background: var(--muted);
+            }
+            .agent-only {
+                display: none !important;
+            }
+            .agent-only.visible {
+                display: block !important;
+            }
+            .header-actions .agent-badge {
+                display: inline-flex;
+            }
 
             .print-modal-backdrop {
-                position: fixed; inset: 0;
-                background: rgba(0,0,0,0.65);
-                display: none; align-items: center; justify-content: center;
-                z-index: 200; padding: 20px;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.65);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 200;
+                padding: 20px;
             }
-            .print-modal-backdrop.open { display: flex; }
+            .print-modal-backdrop.open {
+                display: flex;
+            }
             .print-modal {
-                background: var(--panel); color: var(--text);
-                border: 1px solid var(--border); border-radius: 10px;
-                padding: 20px; width: 100%; max-width: 420px;
-                max-height: 92vh; overflow-y: auto;
+                background: var(--panel);
+                color: var(--text);
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                padding: 20px;
+                width: 100%;
+                max-width: 420px;
+                max-height: 92vh;
+                overflow-y: auto;
             }
-            .print-modal h3 { margin: 0 0 14px; font-size: 1.05rem; }
-            .print-modal .field-row { margin-bottom: 12px; }
+            .print-modal h3 {
+                margin: 0 0 14px;
+                font-size: 1.05rem;
+            }
+            .print-modal .field-row {
+                margin-bottom: 12px;
+            }
             .print-modal .field-row label {
-                display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 4px;
+                display: block;
+                font-size: 0.75rem;
+                color: var(--muted);
+                margin-bottom: 4px;
             }
             .print-modal .field-row select,
             .print-modal .field-row input[type="number"],
             .print-modal .field-row input[type="text"] {
-                width: 100%; background: var(--bg); border: 1px solid var(--border);
-                color: var(--text); padding: 7px 8px; border-radius: 5px; font-size: 0.85rem;
+                width: 100%;
+                background: var(--bg);
+                border: 1px solid var(--border);
+                color: var(--text);
+                padding: 7px 8px;
+                border-radius: 5px;
+                font-size: 0.85rem;
             }
             .print-modal .radio-row {
-                display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.85rem;
+                display: flex;
+                gap: 14px;
+                flex-wrap: wrap;
+                font-size: 0.85rem;
             }
             .print-modal .radio-row label {
-                display: flex; align-items: center; gap: 6px; color: var(--text);
-                cursor: pointer; margin: 0;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                color: var(--text);
+                cursor: pointer;
+                margin: 0;
             }
             .print-status {
-                font-size: 0.75rem; min-height: 1.2em; margin-top: 6px; color: var(--muted);
+                font-size: 0.75rem;
+                min-height: 1.2em;
+                margin-top: 6px;
+                color: var(--muted);
             }
-            .print-status.ok { color: #51cf66; }
-            .print-status.error { color: var(--danger); }
+            .print-status.ok {
+                color: #51cf66;
+            }
+            .print-status.error {
+                color: var(--danger);
+            }
             .print-actions {
-                display: flex; justify-content: flex-end; gap: 8px;
-                margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px;
+                display: flex;
+                justify-content: flex-end;
+                gap: 8px;
+                margin-top: 14px;
+                border-top: 1px solid var(--border);
+                padding-top: 14px;
             }
 
             ::-webkit-scrollbar {
@@ -618,7 +669,7 @@
                 background: var(--border);
                 border-radius: 4px;
             }
-        
+
             .agent-toggle-wrap {
                 display: inline-flex;
                 align-items: center;
@@ -665,7 +716,7 @@
                 background: #fff;
                 border-radius: 50%;
                 transition: transform 0.2s;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
             }
             .agent-toggle input:checked + .slider {
                 background: #22c55e;
@@ -677,24 +728,23 @@
                 outline: 2px solid #2563eb;
                 outline-offset: 2px;
             }
-
-</style>
+        </style>
     </head>
     <body>
-        <iframe src="https://chefbarac.github.io/promo-banner/" width="100%" height="72" style="border: none; border-radius: 12px; overflow: hidden" loading="lazy"> </iframe>
+        <iframe src="https://chefbarac.github.io/promo-banner/?app=photoprint" width="100%" height="72" style="border: none; border-radius: 12px; overflow: hidden" loading="lazy"> </iframe>
         <header>
             <h1>Photo <span>Printing</span> Studio</h1>
             <div class="header-actions">
                 <span class="agent-toggle-wrap">
-                <label class="agent-toggle-label" title="Connect to local print agent">
-                    <span class="agent-toggle">
-                        <input type="checkbox" id="agentToggle" checked />
-                        <span class="slider"></span>
-                    </span>
-                    Agent
-                </label>
-                <span class="agent-badge offline" id="agentBadge"><span class="dot"></span><span id="agentBadgeText">Agent offline</span></span>
-            </span>
+                    <label class="agent-toggle-label" title="Connect to local print agent">
+                        <span class="agent-toggle">
+                            <input type="checkbox" id="agentToggle" checked />
+                            <span class="slider"></span>
+                        </span>
+                        Agent
+                    </label>
+                    <span class="agent-badge offline" id="agentBadge"><span class="dot"></span><span id="agentBadgeText">Agent offline</span></span>
+                </span>
                 <button class="secondary" id="btnClear" type="button">Clear</button>
                 <button class="secondary" id="btnPrint" type="button">Print</button>
                 <button id="btnExport" type="button">Export PNG</button>
@@ -885,7 +935,6 @@
             <span>Print / Print / Export @ 300 DPI</span>
         </div>
 
-
         <div class="print-modal-backdrop" id="printBackdrop">
             <div class="print-modal">
                 <h3>Print</h3>
@@ -943,9 +992,7 @@
                     <input type="number" id="printCopies" min="1" max="99" value="1" />
                 </div>
                 <div class="field-row agent-only">
-                    <label style="display:flex;align-items:center;gap:8px;color:var(--text);cursor:pointer;margin:0">
-                        <input type="checkbox" id="printCollate" checked /> Collate
-                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; color: var(--text); cursor: pointer; margin: 0"> <input type="checkbox" id="printCollate" checked /> Collate </label>
                 </div>
                 <div class="field-row agent-only">
                     <label for="printScaling">Scaling</label>
@@ -994,10 +1041,7 @@
                 var LOCAL_AGENT = getAgentHost();
                 function promptAgentHost() {
                     var current = getAgentHost();
-                    var next = window.prompt(
-                        "Print agent URL\n\nUse this PC: http://localhost:5001\nOther PC on LAN: http://<agent-ip>:5001",
-                        current
-                    );
+                    var next = window.prompt("Print agent URL\n\nUse this PC: http://localhost:5001\nOther PC on LAN: http://<agent-ip>:5001", current);
                     if (next === null) return;
                     setAgentHost(next || DEFAULT_AGENT_HOST);
                     LOCAL_AGENT = getAgentHost();
@@ -1010,22 +1054,22 @@
                     if (badge) badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
                 }
 
-const AGENT_PREF_KEY = "iconprint_agent_enabled_photoprint";
-            function getAgentEnabledPref() {
-                try {
-                    const v = localStorage.getItem(AGENT_PREF_KEY);
-                    if (v === null || v === undefined) return true;
-                    return v === "1" || v === "true";
-                } catch (e) {
-                    return true;
+                const AGENT_PREF_KEY = "iconprint_agent_enabled_photoprint";
+                function getAgentEnabledPref() {
+                    try {
+                        const v = localStorage.getItem(AGENT_PREF_KEY);
+                        if (v === null || v === undefined) return true;
+                        return v === "1" || v === "true";
+                    } catch (e) {
+                        return true;
+                    }
                 }
-            }
-            function setAgentEnabledPref(on) {
-                try {
-                    localStorage.setItem(AGENT_PREF_KEY, on ? "1" : "0");
-                } catch (e) {}
-            }
-            let agentConnectionEnabled = getAgentEnabledPref();
+                function setAgentEnabledPref(on) {
+                    try {
+                        localStorage.setItem(AGENT_PREF_KEY, on ? "1" : "0");
+                    } catch (e) {}
+                }
+                let agentConnectionEnabled = getAgentEnabledPref();
 
                 var agentOnline = false;
                 var agentDevices = { scanners: [], printers: [] };
@@ -1034,7 +1078,12 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_photoprint";
                 function getPrinterFilterPatterns() {
                     var raw = (localStorage.getItem("iconprint_printer_filter") || "").trim();
                     if (!raw) return [];
-                    return raw.split(",").map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean);
+                    return raw
+                        .split(",")
+                        .map(function (s) {
+                            return s.trim().toLowerCase();
+                        })
+                        .filter(Boolean);
                 }
 
                 function filterPrinters(printers) {
@@ -1042,7 +1091,9 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_photoprint";
                     if (!patterns.length) return printers || [];
                     return (printers || []).filter(function (p) {
                         var name = (p.name || p.id || "").toLowerCase();
-                        return patterns.some(function (pat) { return name.indexOf(pat) !== -1; });
+                        return patterns.some(function (pat) {
+                            return name.indexOf(pat) !== -1;
+                        });
                     });
                 }
 
@@ -1076,9 +1127,9 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_photoprint";
                         else badge.classList.add("offline");
                     }
                     if (badgeText) {
-                    badgeText.textContent = online ? "Agent online" : (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled ? "Agent off" : "Agent offline");
-                    if (badge) badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
-                }
+                        badgeText.textContent = online ? "Agent online" : typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled ? "Agent off" : "Agent offline";
+                        if (badge) badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
+                    }
                     var nodes = document.querySelectorAll(".agent-only");
                     for (var i = 0; i < nodes.length; i++) {
                         if (online) nodes[i].classList.add("visible");
@@ -1110,7 +1161,9 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_photoprint";
                         return;
                     }
                     var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
-                    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 2500);
+                    var timer = setTimeout(function () {
+                        if (ctrl) ctrl.abort();
+                    }, 2500);
                     fetch(LOCAL_AGENT + "/health", {
                         cache: "no-store",
                         signal: ctrl ? ctrl.signal : undefined,
@@ -1118,7 +1171,9 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_photoprint";
                         .then(function (res) {
                             clearTimeout(timer);
                             if (!res.ok) throw new Error("health " + res.status);
-                            return res.json().catch(function () { return {}; });
+                            return res.json().catch(function () {
+                                return {};
+                            });
                         })
                         .then(function (data) {
                             // Health succeeded — mark online first so a devices refresh failure
@@ -1126,7 +1181,9 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_photoprint";
                             var wasOffline = !agentOnline;
                             setAgentUI(true);
                             if (wasOffline && typeof refreshDevicesScannersOnly === "function") {
-                                try { refreshDevicesScannersOnly(); } catch (devErr) {
+                                try {
+                                    refreshDevicesScannersOnly();
+                                } catch (devErr) {
                                     console.warn("Scanner list refresh failed (agent still online):", devErr);
                                 }
                             }
@@ -1137,56 +1194,55 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_photoprint";
                         });
                 }
 
-
-            function refreshDevicesScannersOnly() {
-                return fetch(LOCAL_AGENT + "/devices?printers=0", { cache: "no-store" })
-                    .then(function (res) {
-                        if (!res.ok) throw new Error("devices " + res.status);
-                        return res.json();
-                    })
-                    .then(function (data) {
-                        if (typeof agentDevices === "undefined") {
-                            agentDevices = { scanners: [], printers: [] };
-                        }
-                        agentDevices.scanners = data.scanners || [];
-                        if (typeof fillSelect === "function") {
-                            var sc = document.getElementById("scannerSelect");
-                            if (sc) {
-                                fillSelect(sc, agentDevices.scanners, typeof selectedScannerId !== "undefined" ? selectedScannerId : null);
-                                if (typeof selectedScannerId !== "undefined") selectedScannerId = sc.value || null;
+                function refreshDevicesScannersOnly() {
+                    return fetch(LOCAL_AGENT + "/devices?printers=0", { cache: "no-store" })
+                        .then(function (res) {
+                            if (!res.ok) throw new Error("devices " + res.status);
+                            return res.json();
+                        })
+                        .then(function (data) {
+                            if (typeof agentDevices === "undefined") {
+                                agentDevices = { scanners: [], printers: [] };
                             }
-                        }
-                        return agentDevices.scanners;
-                    });
-            }
+                            agentDevices.scanners = data.scanners || [];
+                            if (typeof fillSelect === "function") {
+                                var sc = document.getElementById("scannerSelect");
+                                if (sc) {
+                                    fillSelect(sc, agentDevices.scanners, typeof selectedScannerId !== "undefined" ? selectedScannerId : null);
+                                    if (typeof selectedScannerId !== "undefined") selectedScannerId = sc.value || null;
+                                }
+                            }
+                            return agentDevices.scanners;
+                        });
+                }
 
-function refreshDevicesPrintersOnly() {
-                return fetch(LOCAL_AGENT + "/devices?scanners=0", { cache: "no-store" })
-                    .then(function (res) {
-                        if (!res.ok) throw new Error("devices");
-                        return res.json();
-                    })
-                    .then(function (data) {
-                        if (typeof agentDevices === "undefined") {
-                            agentDevices = { scanners: [], printers: [] };
-                        }
-                        agentDevices.printers = data.printers || [];
-                        var list =
-                            typeof filterPrinters === "function"
-                                ? filterPrinters(agentDevices.printers)
-                                : agentDevices.printers;
-                        if (typeof fillSelect === "function") {
-                            fillSelect(document.getElementById("printPrinter"), list, null);
-                            var tb = document.getElementById("printerSelect");
-                            if (tb) fillSelect(tb, list, null);
-                        }
-                        return agentDevices.printers;
-                    });
-            }
+                function refreshDevicesPrintersOnly() {
+                    return fetch(LOCAL_AGENT + "/devices?scanners=0", { cache: "no-store" })
+                        .then(function (res) {
+                            if (!res.ok) throw new Error("devices");
+                            return res.json();
+                        })
+                        .then(function (data) {
+                            if (typeof agentDevices === "undefined") {
+                                agentDevices = { scanners: [], printers: [] };
+                            }
+                            agentDevices.printers = data.printers || [];
+                            var list = typeof filterPrinters === "function" ? filterPrinters(agentDevices.printers) : agentDevices.printers;
+                            if (typeof fillSelect === "function") {
+                                fillSelect(document.getElementById("printPrinter"), list, null);
+                                var tb = document.getElementById("printerSelect");
+                                if (tb) fillSelect(tb, list, null);
+                            }
+                            return agentDevices.printers;
+                        });
+                }
 
-            function startAgentPolling() {
+                function startAgentPolling() {
                     if (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled) {
-                        if (healthTimer) { clearInterval(healthTimer); healthTimer = null; }
+                        if (healthTimer) {
+                            clearInterval(healthTimer);
+                            healthTimer = null;
+                        }
                         setAgentUI(false);
                         return;
                     }
@@ -3335,12 +3391,12 @@ function refreshDevicesPrintersOnly() {
                         printLayoutBrowser();
                         return;
                     }
-                /* printers-on-print */
-                try {
-                    if (typeof refreshDevicesPrintersOnly === "function") {
-                        refreshDevicesPrintersOnly();
-                    }
-                } catch (e) {}
+                    /* printers-on-print */
+                    try {
+                        if (typeof refreshDevicesPrintersOnly === "function") {
+                            refreshDevicesPrintersOnly();
+                        }
+                    } catch (e) {}
                     var paperSel = document.getElementById("printPaper");
                     if (paperSel) paperSel.value = agentPaperKey(paperKey);
                     var orientPortrait = document.querySelector('input[name="printOrient"][value="portrait"]');
@@ -3445,7 +3501,7 @@ function refreshDevicesPrintersOnly() {
                             fd.append("scaling", scaling);
                             fd.append("margins", margins);
                             fd.append("media_type", mediaType);
-                    fd.append("quality", (document.getElementById("printQuality") && document.getElementById("printQuality").value) || "standard");
+                            fd.append("quality", (document.getElementById("printQuality") && document.getElementById("printQuality").value) || "standard");
                             fd.append("page_width_inches", String(pageW));
                             fd.append("page_height_inches", String(pageH));
                             return fetch(LOCAL_AGENT + "/print", { method: "POST", body: fd });
@@ -3472,13 +3528,8 @@ function refreshDevicesPrintersOnly() {
                                     .then(function (job) {
                                         var status = job.status || "unknown";
                                         if (st) {
-                                            st.textContent =
-                                                status.charAt(0).toUpperCase() +
-                                                status.slice(1) +
-                                                (job.warnings && job.warnings.length ? " — " + job.warnings[0] : "");
-                                            st.className =
-                                                "print-status" +
-                                                (status === "completed" ? " ok" : status === "failed" ? " error" : "");
+                                            st.textContent = status.charAt(0).toUpperCase() + status.slice(1) + (job.warnings && job.warnings.length ? " — " + job.warnings[0] : "");
+                                            st.className = "print-status" + (status === "completed" ? " ok" : status === "failed" ? " error" : "");
                                         }
                                         if (status === "completed" || status === "failed") {
                                             submitBtn.disabled = false;
@@ -3542,49 +3593,47 @@ function refreshDevicesPrintersOnly() {
                 updatePaper();
                 startAgentPolling();
 
-            (function initAgentToggle() {
-                const toggle = document.getElementById("agentToggle");
-                if (!toggle) return;
-                toggle.checked = !!agentConnectionEnabled;
-                toggle.addEventListener("change", function () {
-                    agentConnectionEnabled = !!toggle.checked;
-                    setAgentEnabledPref(agentConnectionEnabled);
-                    if (agentConnectionEnabled) {
-                        startAgentPolling();
-                    } else {
+                (function initAgentToggle() {
+                    const toggle = document.getElementById("agentToggle");
+                    if (!toggle) return;
+                    toggle.checked = !!agentConnectionEnabled;
+                    toggle.addEventListener("change", function () {
+                        agentConnectionEnabled = !!toggle.checked;
+                        setAgentEnabledPref(agentConnectionEnabled);
+                        if (agentConnectionEnabled) {
+                            startAgentPolling();
+                        } else {
+                            if (typeof healthTimer !== "undefined" && healthTimer) {
+                                clearInterval(healthTimer);
+                                healthTimer = null;
+                            }
+                            setAgentUI(false);
+                        }
+                    });
+                    // Apply saved preference (may disable polling started below)
+                    if (!agentConnectionEnabled) {
                         if (typeof healthTimer !== "undefined" && healthTimer) {
                             clearInterval(healthTimer);
                             healthTimer = null;
                         }
                         setAgentUI(false);
                     }
-                });
-                // Apply saved preference (may disable polling started below)
-                if (!agentConnectionEnabled) {
-                    if (typeof healthTimer !== "undefined" && healthTimer) {
-                        clearInterval(healthTimer);
-                        healthTimer = null;
-                    }
-                    setAgentUI(false);
-                }
-            })();
+                })();
 
-                
-
-            (function initAgentHostUi() {
-                var badge = document.getElementById("agentBadge");
-                if (!badge) return;
-                badge.style.cursor = "pointer";
-                badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
-                badge.addEventListener("click", function (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    promptAgentHost();
+                (function initAgentHostUi() {
+                    var badge = document.getElementById("agentBadge");
+                    if (!badge) return;
+                    badge.style.cursor = "pointer";
                     badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
-                });
-            })();
+                    badge.addEventListener("click", function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        promptAgentHost();
+                        badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
+                    });
+                })();
 
-setStatus("Ready - Select preset (default 1x1), upload images, place on paper");
+                setStatus("Ready - Select preset (default 1x1), upload images, place on paper");
             })();
         </script>
         <script>
