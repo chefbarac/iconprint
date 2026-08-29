@@ -313,6 +313,53 @@
                 text-align: center;
             }
 
+            .branding-section {
+                border-top: 1px solid var(--border);
+                padding-top: 16px;
+                margin-top: 4px;
+            }
+
+            .branding-toggle-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                cursor: pointer;
+                margin-bottom: 6px;
+            }
+
+            .branding-toggle-row span.label-text {
+                font-size: 0.875rem;
+                font-weight: 500;
+                color: var(--text);
+            }
+
+            .branding-desc {
+                font-size: 0.78rem;
+                color: var(--muted);
+                text-align: left;
+                margin-top: 0;
+            }
+
+            .branding-summary {
+                background: rgba(59, 130, 246, 0.08);
+                border: 1px solid rgba(59, 130, 246, 0.25);
+                border-radius: 8px;
+                padding: 12px 14px;
+                margin-top: 14px;
+                font-size: 0.85rem;
+            }
+
+            .branding-summary strong {
+                color: #60a5fa;
+                font-size: 1.05rem;
+            }
+
+            .branding-summary .detail {
+                color: var(--muted);
+                margin-top: 4px;
+                font-size: 0.78rem;
+            }
+
             .btn {
                 display: inline-flex;
                 align-items: center;
@@ -417,6 +464,14 @@
                 padding: 24px;
             }
 
+            /* When zoomed beyond fit, switch from flex-centering (which clips
+               the start edge of overflowing content) to a block + text-align
+               layout so the scrollbars behave correctly in every direction. */
+            .canvas-wrapper.zoomed {
+                display: block;
+                text-align: center;
+            }
+
             #sheetCanvas {
                 display: block;
                 width: auto;
@@ -428,11 +483,60 @@
                 box-shadow: 0 0 0 1px #ccc;
             }
 
+            .canvas-wrapper.zoomed #sheetCanvas {
+                display: inline-block;
+            }
+
             .hint {
                 font-size: 0.8rem;
                 color: var(--muted);
                 text-align: center;
             }
+
+            .zoom-controls {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                background: var(--bg);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 3px;
+            }
+
+            .zoom-btn {
+                width: 26px;
+                height: 26px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: none;
+                border-radius: 6px;
+                background: transparent;
+                color: var(--text);
+                font-size: 1rem;
+                font-weight: 600;
+                cursor: pointer;
+                line-height: 1;
+            }
+
+            .zoom-btn:hover {
+                background: rgba(59, 130, 246, 0.15);
+                color: #60a5fa;
+            }
+
+            .zoom-level {
+                font-size: 0.78rem;
+                color: var(--muted);
+                min-width: 44px;
+                text-align: center;
+                cursor: pointer;
+                user-select: none;
+            }
+
+            .zoom-level:hover {
+                color: var(--text);
+            }
+
 
             .agent-badge {
                 display: inline-flex;
@@ -678,27 +782,37 @@
                     <h2>Sticker Settings</h2>
 
                     <div class="form-group">
-                        <label>Sticker Dimensions <span class="unit">(mm)</span></label>
+                        <label>Units</label>
+                        <select id="unitSelect">
+                            <option value="mm">Millimeters (mm)</option>
+                            <option value="cm">Centimeters (cm)</option>
+                            <option value="in">Inches (in)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Sticker Dimensions <span class="unit" data-unit-label>(mm)</span></label>
                         <div class="form-row">
                             <div>
-                                <input type="number" id="stickerW" value="50" min="5" max="200" step="0.1" />
+                                <input type="number" id="stickerW" value="50" min="5" max="200" step="0.1" data-min-mm="5" data-max-mm="200" />
                                 <span class="unit">Width</span>
                             </div>
                             <div>
-                                <input type="number" id="stickerH" value="50" min="5" max="280" step="0.1" />
+                                <input type="number" id="stickerH" value="50" min="0" max="280" step="0.1" data-min-mm="0" data-max-mm="280" />
                                 <span class="unit">Height</span>
                             </div>
                         </div>
+                        <div class="unit" style="margin-top: 6px; display: block">Set height to 0 to auto-match the first design's aspect ratio</div>
                     </div>
 
                     <div class="form-group">
-                        <label>Gap between stickers <span class="unit">(mm)</span></label>
-                        <input type="number" id="gap" value="0" min="0" max="20" step="0.5" />
+                        <label>Gap between stickers <span class="unit" data-unit-label>(mm)</span></label>
+                        <input type="number" id="gap" value="0" min="0" max="20" step="0.5" data-min-mm="0" data-max-mm="20" />
                     </div>
 
                     <div class="form-group">
-                        <label>Page padding <span class="unit">(mm)</span></label>
-                        <input type="number" id="padding" value="5" min="0" max="30" step="0.5" />
+                        <label>Page padding <span class="unit" data-unit-label>(mm)</span></label>
+                        <input type="number" id="padding" value="5" min="0" max="30" step="0.5" data-min-mm="0" data-max-mm="30" />
                     </div>
 
                     <div class="form-group">
@@ -706,11 +820,11 @@
                         <div class="radio-group" id="pageSizeGroup">
                             <label class="radio-option selected">
                                 <input type="radio" name="pageSize" value="full" checked />
-                                <span>Full A4 <small style="color: var(--muted)">(210 × 297 mm)</small></span>
+                                <span>Full A4 <small style="color: var(--muted)" id="pageSizeFullLabel">(210 × 297 mm)</small></span>
                             </label>
                             <label class="radio-option">
                                 <input type="radio" name="pageSize" value="half" />
-                                <span>Half A4 <small style="color: var(--muted)">(210 × 148.5 mm)</small></span>
+                                <span>Half A4 <small style="color: var(--muted)" id="pageSizeHalfLabel">(210 × 148.5 mm)</small></span>
                             </label>
                         </div>
                     </div>
@@ -721,6 +835,52 @@
                             <!-- slots injected by JS -->
                         </div>
                         <div class="design-hint" id="designHint">Full A4 supports up to 4 designs · Half A4 up to 2</div>
+                    </div>
+
+                    <div class="form-group branding-section">
+                        <label class="branding-toggle-row">
+                            <span class="label-text">Business branding stickers</span>
+                            <span class="agent-toggle">
+                                <input type="checkbox" id="brandingToggle" />
+                                <span class="slider"></span>
+                            </span>
+                        </label>
+                        <div class="branding-desc">Fills the leftover space at the bottom of the sheet with your own logo or branding stickers — separate size, gap, and designs from the sheet above.</div>
+
+                        <div id="brandingControls" style="display: none; margin-top: 14px">
+                            <div class="form-group">
+                                <label>Branding sticker size <span class="unit" data-unit-label>(mm)</span></label>
+                                <div class="form-row">
+                                    <div>
+                                        <input type="number" id="brandingW" value="25" min="5" max="200" step="0.1" data-min-mm="5" data-max-mm="200" />
+                                        <span class="unit">Width</span>
+                                    </div>
+                                    <div>
+                                        <input type="number" id="brandingH" value="25" min="0" max="200" step="0.1" data-min-mm="0" data-max-mm="200" />
+                                        <span class="unit">Height</span>
+                                    </div>
+                                </div>
+                                <div class="unit" style="margin-top: 6px; display: block">Set height to 0 to auto-match the first branding design's aspect ratio</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Gap between branding stickers <span class="unit" data-unit-label>(mm)</span></label>
+                                <input type="number" id="brandingGap" value="2" min="0" max="20" step="0.5" data-min-mm="0" data-max-mm="20" />
+                            </div>
+
+                            <div class="form-group">
+                                <label>Branding designs</label>
+                                <div class="designs-grid" id="brandingDesignsGrid">
+                                    <!-- slots injected by JS -->
+                                </div>
+                                <div class="design-hint" id="brandingDesignHint">Up to 2 branding designs · distributed across the leftover space</div>
+                            </div>
+
+                            <div class="branding-summary" id="brandingSummary" style="display: none">
+                                <div><strong id="brandingCount">0</strong> branding stickers fit</div>
+                                <div class="detail" id="brandingSummaryDetail"></div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -744,6 +904,11 @@
                     <div class="preview-header">
                         <h2>Sheet Preview</h2>
                         <span class="hint" id="previewHint">Upload designs and set dimensions to generate the sheet</span>
+                        <div class="zoom-controls">
+                            <button type="button" class="zoom-btn" id="zoomOutBtn" title="Zoom out">−</button>
+                            <span class="zoom-level" id="zoomLevel" title="Click to reset to fit">100%</span>
+                            <button type="button" class="zoom-btn" id="zoomInBtn" title="Zoom in">+</button>
+                        </div>
                     </div>
                     <div class="canvas-wrapper">
                         <canvas id="sheetCanvas" width="735" height="1040"></canvas>
@@ -1085,12 +1250,37 @@
             // State
             let designImages = [null, null, null, null]; // up to 4 slots
             let pageMode = "full"; // 'full' | 'half'
+            let brandingEnabled = false;
+            let brandingDesignImages = [null, null]; // up to 2 branding slots
+            let currentUnit = "mm"; // 'mm' | 'cm' | 'in' — display unit; all internal math stays in mm
+
+            // Unit conversion
+            const UNIT_TO_MM = { mm: 1, cm: 10, in: 25.4 };
+            const UNIT_STEP = { mm: 0.1, cm: 0.05, in: 0.01 };
+            const UNIT_DECIMALS = { mm: 1, cm: 2, in: 3 };
+
+            // Multiplies a value already in the CURRENT display unit into mm.
+            // Since NaN * n === NaN and 0 * n === 0, this can drop straight
+            // into existing `parseFloat(el.value) || fallback` expressions
+            // without disturbing their fallback/zero-detection behavior.
+            function unitToMM(v) {
+                return v * UNIT_TO_MM[currentUnit];
+            }
+
+            function roundForDisplay(mmValue, unit) {
+                const d = UNIT_DECIMALS[unit];
+                const f = Math.pow(10, d);
+                return Math.round((mmValue / UNIT_TO_MM[unit]) * f) / f;
+            }
 
             // DOM
             const stickerWEl = document.getElementById("stickerW");
             const stickerHEl = document.getElementById("stickerH");
             const gapEl = document.getElementById("gap");
             const paddingEl = document.getElementById("padding");
+            const unitSelectEl = document.getElementById("unitSelect");
+            const pageSizeFullLabelEl = document.getElementById("pageSizeFullLabel");
+            const pageSizeHalfLabelEl = document.getElementById("pageSizeHalfLabel");
             const canvas = document.getElementById("sheetCanvas");
             const ctx = canvas.getContext("2d");
             const hiResCanvas = document.getElementById("hiResCanvas");
@@ -1104,6 +1294,67 @@
             const showCutMarksEl = document.getElementById("showCutMarks");
             const designsGrid = document.getElementById("designsGrid");
             const designHint = document.getElementById("designHint");
+
+            // Branding (leftover-space) DOM
+            const brandingToggleEl = document.getElementById("brandingToggle");
+            const brandingControlsEl = document.getElementById("brandingControls");
+            const brandingWEl = document.getElementById("brandingW");
+            const brandingHEl = document.getElementById("brandingH");
+            const brandingGapEl = document.getElementById("brandingGap");
+            const brandingDesignsGrid = document.getElementById("brandingDesignsGrid");
+            const brandingDesignHint = document.getElementById("brandingDesignHint");
+            const brandingSummaryEl = document.getElementById("brandingSummary");
+            const brandingCountEl = document.getElementById("brandingCount");
+            const brandingSummaryDetailEl = document.getElementById("brandingSummaryDetail");
+
+            // All the numeric fields that are entered in the display unit and
+            // need converting/relabeling whenever the unit changes.
+            const unitAwareInputs = [stickerWEl, stickerHEl, gapEl, paddingEl, brandingWEl, brandingHEl, brandingGapEl];
+
+            function updateUnitLabels() {
+                document.querySelectorAll("[data-unit-label]").forEach((el) => {
+                    el.textContent = "(" + currentUnit + ")";
+                });
+            }
+
+            function updatePageSizeLabels() {
+                const w = roundForDisplay(A4_W, currentUnit);
+                const hFull = roundForDisplay(A4_H, currentUnit);
+                const hHalf = roundForDisplay(HALF_H, currentUnit);
+                pageSizeFullLabelEl.textContent = `(${w} × ${hFull} ${currentUnit})`;
+                pageSizeHalfLabelEl.textContent = `(${w} × ${hHalf} ${currentUnit})`;
+            }
+
+            function applyUnit(newUnit) {
+                const oldUnit = currentUnit;
+                unitAwareInputs.forEach((el) => {
+                    const raw = parseFloat(el.value);
+                    if (!isNaN(raw)) {
+                        const mm = raw * UNIT_TO_MM[oldUnit];
+                        el.value = roundForDisplay(mm, newUnit);
+                    }
+                    const minMM = parseFloat(el.dataset.minMm);
+                    const maxMM = parseFloat(el.dataset.maxMm);
+                    if (!isNaN(minMM)) el.min = roundForDisplay(minMM, newUnit);
+                    if (!isNaN(maxMM)) el.max = roundForDisplay(maxMM, newUnit);
+                    el.step = UNIT_STEP[newUnit];
+                });
+                currentUnit = newUnit;
+                updateUnitLabels();
+                updatePageSizeLabels();
+                render();
+            }
+
+            unitSelectEl.value = currentUnit;
+            unitSelectEl.addEventListener("change", () => applyUnit(unitSelectEl.value));
+            updateUnitLabels();
+            updatePageSizeLabels();
+
+            // Zoom DOM
+            const canvasWrapperEl = document.querySelector(".canvas-wrapper");
+            const zoomLevelEl = document.getElementById("zoomLevel");
+            const zoomInBtn = document.getElementById("zoomInBtn");
+            const zoomOutBtn = document.getElementById("zoomOutBtn");
 
             function maxSlots() {
                 return pageMode === "full" ? 4 : 2;
@@ -1223,6 +1474,126 @@
                 reader.readAsDataURL(file);
             }
 
+            // --- Business branding stickers (leftover bottom space) ---
+            // Mirrors the main design-slot UI/logic above, but operates on its
+            // own state (brandingDesignImages) and its own size/gap controls,
+            // so branding stickers can be a totally different design and size
+            // from the main sheet.
+            function brandingMaxSlots() {
+                return 2;
+            }
+
+            function getActiveBrandingDesigns() {
+                const max = brandingMaxSlots();
+                return brandingDesignImages.slice(0, max).filter((img) => img !== null);
+            }
+
+            function buildBrandingSlots() {
+                const max = brandingMaxSlots();
+                brandingDesignsGrid.innerHTML = "";
+                brandingDesignHint.textContent = "Up to " + max + " branding designs · distributed across the leftover space";
+
+                for (let i = 0; i < max; i++) {
+                    const slot = document.createElement("div");
+                    slot.className = "design-slot" + (brandingDesignImages[i] ? " has-image" : "");
+                    slot.dataset.index = i;
+
+                    const label = document.createElement("div");
+                    label.className = "slot-label";
+                    label.textContent = "Branding " + (i + 1);
+
+                    const fileInput = document.createElement("input");
+                    fileInput.type = "file";
+                    fileInput.accept = "image/*";
+                    fileInput.dataset.index = i;
+
+                    const removeBtn = document.createElement("button");
+                    removeBtn.type = "button";
+                    removeBtn.className = "remove-btn";
+                    removeBtn.title = "Remove";
+                    removeBtn.textContent = "×";
+                    removeBtn.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        clearBrandingSlot(i);
+                    });
+
+                    if (brandingDesignImages[i]) {
+                        const img = document.createElement("img");
+                        img.className = "upload-preview";
+                        img.alt = "Branding " + (i + 1);
+                        img.src = brandingDesignImages[i].src;
+                        slot.appendChild(label);
+                        slot.appendChild(img);
+                        slot.appendChild(removeBtn);
+                        slot.appendChild(fileInput);
+                    } else {
+                        const icon = document.createElement("div");
+                        icon.className = "upload-icon";
+                        icon.textContent = "🏷️";
+                        const text = document.createElement("div");
+                        text.className = "upload-text";
+                        text.innerHTML = "Click / drop<br><small>PNG, JPG…</small>";
+                        slot.appendChild(label);
+                        slot.appendChild(icon);
+                        slot.appendChild(text);
+                        slot.appendChild(fileInput);
+                    }
+
+                    slot.addEventListener("dragover", (e) => {
+                        e.preventDefault();
+                        slot.classList.add("dragover");
+                    });
+                    slot.addEventListener("dragleave", () => slot.classList.remove("dragover"));
+                    slot.addEventListener("drop", (e) => {
+                        e.preventDefault();
+                        slot.classList.remove("dragover");
+                        if (e.dataTransfer.files.length) {
+                            handleFileForBrandingSlot(i, e.dataTransfer.files[0]);
+                        }
+                    });
+
+                    fileInput.addEventListener("change", (e) => {
+                        if (e.target.files.length) {
+                            handleFileForBrandingSlot(i, e.target.files[0]);
+                        }
+                    });
+
+                    brandingDesignsGrid.appendChild(slot);
+                }
+            }
+
+            function clearBrandingSlot(index) {
+                brandingDesignImages[index] = null;
+                buildBrandingSlots();
+                render();
+            }
+
+            function handleFileForBrandingSlot(index, file) {
+                if (!file || !file.type.startsWith("image/")) return;
+
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        brandingDesignImages[index] = img;
+                        buildBrandingSlots();
+                        render();
+                    };
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+
+            brandingToggleEl.addEventListener("change", () => {
+                brandingEnabled = brandingToggleEl.checked;
+                brandingControlsEl.style.display = brandingEnabled ? "block" : "none";
+                render();
+            });
+
+            [brandingWEl, brandingHEl, brandingGapEl].forEach((el) => {
+                el.addEventListener("input", () => render());
+            });
+
             // Event listeners for dimensions
             [stickerWEl, stickerHEl, gapEl, paddingEl].forEach((el) => {
                 el.addEventListener("input", () => render());
@@ -1250,11 +1621,28 @@
                 };
             }
 
+            /**
+             * When a height field is set to 0, the sticker box height is
+             * derived from the given width and the first available design
+             * image's own aspect ratio, instead of being a fixed number —
+             * so the box always matches the artwork exactly with no
+             * letterboxing. Falls back to a square box if no design image
+             * is loaded yet (nothing to derive a ratio from).
+             */
+            function autoHeightFromDesigns(width, designs) {
+                const img = designs.find((d) => d && d.width && d.height);
+                if (img) {
+                    return Math.round(width * (img.height / img.width) * 100) / 100;
+                }
+                return width;
+            }
+
             function calculateLayout() {
-                const stickerW = parseFloat(stickerWEl.value) || 50;
-                const stickerH = parseFloat(stickerHEl.value) || 50;
-                const gap = parseFloat(gapEl.value) || 0;
-                const padding = Math.max(0, parseFloat(paddingEl.value) || 0);
+                const stickerW = unitToMM(parseFloat(stickerWEl.value)) || 50;
+                const stickerHInput = unitToMM(parseFloat(stickerHEl.value));
+                const stickerH = stickerHInput === 0 ? autoHeightFromDesigns(stickerW, getActiveDesigns()) : stickerHInput || 50;
+                const gap = unitToMM(parseFloat(gapEl.value)) || 0;
+                const padding = Math.max(0, unitToMM(parseFloat(paddingEl.value)) || 0);
                 const page = getPageSize();
 
                 const usableW = page.w - 2 * padding;
@@ -1287,6 +1675,61 @@
                     offsetY,
                     totalW,
                     totalH,
+                };
+            }
+
+            /**
+             * Works out a grid of branding stickers that fits into whatever
+             * space is left over below the main sticker grid (the main grid
+             * is top-aligned on purpose so leftover space collects at the
+             * bottom — see calculateLayout above). Sized and gapped
+             * completely independently from the main stickers.
+             */
+            function calculateBrandingLayout(mainLayout) {
+                if (!brandingEnabled) return null;
+
+                const w = unitToMM(parseFloat(brandingWEl.value)) || 0;
+                const hInput = unitToMM(parseFloat(brandingHEl.value));
+                const h = hInput === 0 ? autoHeightFromDesigns(w, getActiveBrandingDesigns()) : hInput || 0;
+                const gap = Math.max(0, unitToMM(parseFloat(brandingGapEl.value)) || 0);
+                if (w <= 0 || h <= 0) return null;
+
+                const pageW = mainLayout.pageW;
+                const pageH = mainLayout.pageH;
+                const padding = mainLayout.padding;
+                const usableW = pageW - 2 * padding;
+
+                const mainBottom = mainLayout.rows > 0 ? mainLayout.offsetY + mainLayout.totalH : mainLayout.offsetY;
+                // Small breathing room between the main grid and the branding
+                // zone so cut lines never touch.
+                const separator = mainLayout.rows > 0 ? Math.max(mainLayout.gap, 1) : 0;
+                const stripTop = mainBottom + separator;
+                const stripBottom = pageH - padding;
+                const availH = stripBottom - stripTop;
+
+                const cols = Math.max(0, Math.floor((usableW + gap) / (w + gap)));
+                const rows = Math.max(0, Math.floor((availH + gap) / (h + gap)));
+
+                const totalW = cols * w + Math.max(0, cols - 1) * gap;
+                const totalH = rows * h + Math.max(0, rows - 1) * gap;
+
+                const offsetX = padding + (usableW - totalW) / 2;
+                // Center the branding block vertically within the leftover strip.
+                const offsetY = stripTop + Math.max(0, (availH - totalH) / 2);
+
+                return {
+                    stickerW: w,
+                    stickerH: h,
+                    gap,
+                    cols,
+                    rows,
+                    count: Math.max(0, cols * rows),
+                    offsetX,
+                    offsetY,
+                    totalW,
+                    totalH,
+                    stripTop,
+                    availH,
                 };
             }
 
@@ -1342,24 +1785,13 @@
                 targetCtx.drawImage(img, dx, dy, dWidth, dHeight);
             }
 
-            function drawSheet(targetCtx, targetCanvas, scale, isPreview) {
-                const layout = calculateLayout();
-                const { stickerW, stickerH, gap, pageW, pageH, cols, rows, offsetX, offsetY } = layout;
-
-                targetCanvas.width = Math.round(pageW * scale);
-                targetCanvas.height = Math.round(pageH * scale);
-
-                if (isPreview) {
-                    canvas.style.aspectRatio = pageW + " / " + pageH;
-                }
-
-                // White background
-                targetCtx.fillStyle = "#ffffff";
-                targetCtx.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
-
-                const activeDesigns = getActiveDesigns();
-                const N = activeDesigns.length;
-                const showCutLines = showCutMarksEl.checked;
+            /**
+             * Draws one grid of stickers (used for both the main sheet grid
+             * and the branding grid) into targetCtx at the given scale.
+             */
+            function drawStickerGrid(targetCtx, targetCanvas, scale, isPreview, gridLayout, designs, showCutLines, placeholderIcon) {
+                const { stickerW, stickerH, gap, cols, rows, offsetX, offsetY } = gridLayout;
+                const N = designs.length;
 
                 for (let r = 0; r < rows; r++) {
                     for (let c = 0; c < cols; c++) {
@@ -1371,7 +1803,7 @@
                         let designImg = null;
                         if (N > 0) {
                             const idx = getDesignIndex(r, c, rows, cols, N);
-                            designImg = activeDesigns[Math.min(idx, N - 1)];
+                            designImg = designs[Math.min(idx, N - 1)];
                         }
 
                         if (designImg) {
@@ -1385,7 +1817,7 @@
                             targetCtx.font = `${Math.max(10, Math.min(w, h) * 0.18)}px sans-serif`;
                             targetCtx.textAlign = "center";
                             targetCtx.textBaseline = "middle";
-                            targetCtx.fillText("📎", x + w / 2, y + h / 2 - 8);
+                            targetCtx.fillText(placeholderIcon || "📎", x + w / 2, y + h / 2 - 8);
                             targetCtx.font = `${Math.max(8, Math.min(w, h) * 0.12)}px sans-serif`;
                             targetCtx.fillText("No design", x + w / 2, y + h / 2 + 12);
                         }
@@ -1410,7 +1842,53 @@
                         }
                     }
                 }
+            }
 
+            function drawSheet(targetCtx, targetCanvas, scale, isPreview) {
+                const layout = calculateLayout();
+                const { pageW, pageH } = layout;
+
+                targetCanvas.width = Math.round(pageW * scale);
+                targetCanvas.height = Math.round(pageH * scale);
+
+                if (isPreview) {
+                    canvas.style.aspectRatio = pageW + " / " + pageH;
+                }
+
+                // White background
+                targetCtx.fillStyle = "#ffffff";
+                targetCtx.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
+
+                const showCutLines = showCutMarksEl.checked;
+
+                drawStickerGrid(targetCtx, targetCanvas, scale, isPreview, layout, getActiveDesigns(), showCutLines, "📎");
+
+                const brandingLayout = calculateBrandingLayout(layout);
+                if (brandingLayout && brandingLayout.count > 0) {
+                    drawStickerGrid(targetCtx, targetCanvas, scale, isPreview, brandingLayout, getActiveBrandingDesigns(), showCutLines, "🏷️");
+
+                    if (isPreview) {
+                        // Subtle divider + label marking where the branding zone starts.
+                        targetCtx.save();
+                        targetCtx.strokeStyle = "rgba(59, 130, 246, 0.35)";
+                        targetCtx.setLineDash([4, 3]);
+                        targetCtx.lineWidth = 1;
+                        const ly = brandingLayout.stripTop * scale;
+                        targetCtx.beginPath();
+                        targetCtx.moveTo(8, ly);
+                        targetCtx.lineTo(targetCanvas.width - 8, ly);
+                        targetCtx.stroke();
+                        targetCtx.restore();
+
+                        targetCtx.fillStyle = "rgba(37, 99, 235, 0.85)";
+                        targetCtx.font = "11px sans-serif";
+                        targetCtx.textAlign = "left";
+                        targetCtx.textBaseline = "bottom";
+                        targetCtx.fillText("Branding", 10, ly - 3);
+                    }
+                }
+
+                layout.branding = brandingLayout;
                 return layout;
             }
 
@@ -1422,15 +1900,39 @@
                     summaryEl.style.display = "block";
                     stickerCountEl.textContent = layout.count;
                     const designText = activeCount > 0 ? `${activeCount} design${activeCount > 1 ? "s" : ""}` : "no designs";
-                    summaryDetailEl.textContent = `${layout.cols} × ${layout.rows} grid · ${layout.stickerW}×${layout.stickerH} mm · ${pageMode === "full" ? "Full A4" : "Half A4"} · ${designText}`;
-                    previewHint.textContent =
+                    summaryDetailEl.textContent = `${layout.cols} × ${layout.rows} grid · ${roundForDisplay(layout.stickerW, currentUnit)}×${roundForDisplay(layout.stickerH, currentUnit)} ${currentUnit} · ${pageMode === "full" ? "Full A4" : "Half A4"} · ${designText}`;
+                    let hint =
                         activeCount > 0
                             ? `Ready · ${layout.count} stickers · ${activeCount} design${activeCount > 1 ? "s" : ""} distributed proportionally`
                             : "Placeholder shown · Upload designs to replace";
+                    if (layout.branding && layout.branding.count > 0) {
+                        hint += ` · +${layout.branding.count} branding`;
+                    }
+                    previewHint.textContent = hint;
                 } else {
                     summaryEl.style.display = "none";
                     previewHint.textContent = "Sticker too large for selected page size";
                 }
+
+                // Branding summary panel
+                if (brandingEnabled) {
+                    const bLayout = layout.branding;
+                    brandingSummaryEl.style.display = "block";
+                    if (bLayout && bLayout.count > 0) {
+                        brandingCountEl.textContent = bLayout.count;
+                        const bDesigns = getActiveBrandingDesigns().length;
+                        const bDesignText = bDesigns > 0 ? `${bDesigns} design${bDesigns > 1 ? "s" : ""}` : "no design — placeholder shown";
+                        brandingSummaryDetailEl.textContent = `${bLayout.cols} × ${bLayout.rows} grid · ${roundForDisplay(bLayout.stickerW, currentUnit)}×${roundForDisplay(bLayout.stickerH, currentUnit)} ${currentUnit} · ${bDesignText}`;
+                    } else {
+                        brandingCountEl.textContent = "0";
+                        brandingSummaryDetailEl.textContent =
+                            "No leftover space fits this size yet — try a smaller branding sticker/gap, or reduce the main sticker size/padding to free up more room.";
+                    }
+                } else {
+                    brandingSummaryEl.style.display = "none";
+                }
+
+                applyZoom();
             }
 
             function generateHiRes() {
@@ -1662,8 +2164,76 @@
                 link.click();
             });
 
+            // --- Zoom controls ---
+            // 100% == the default "fit inside the preview panel" sizing that
+            // the CSS already handles (max-width/max-height + aspect-ratio).
+            // Anything else switches to an explicit pixel width (computed
+            // from that same fit size) and lets the wrapper's overflow:auto
+            // scroll to the rest.
+            let zoomPct = 100;
+            const ZOOM_MIN = 50;
+            const ZOOM_MAX = 400;
+            const ZOOM_STEP = 25;
+
+            function computeFitWidthPx() {
+                const savedWidth = canvas.style.width;
+                const savedMaxW = canvas.style.maxWidth;
+                const savedMaxH = canvas.style.maxHeight;
+                canvas.style.width = "";
+                canvas.style.maxWidth = "100%";
+                canvas.style.maxHeight = "calc(80vh - 48px)";
+                const fitWidth = canvas.getBoundingClientRect().width;
+                canvas.style.width = savedWidth;
+                canvas.style.maxWidth = savedMaxW;
+                canvas.style.maxHeight = savedMaxH;
+                return fitWidth;
+            }
+
+            function applyZoom() {
+                zoomLevelEl.textContent = zoomPct + "%";
+
+                if (zoomPct === 100) {
+                    canvas.style.width = "";
+                    canvas.style.maxWidth = "100%";
+                    canvas.style.maxHeight = "calc(80vh - 48px)";
+                    canvasWrapperEl.classList.remove("zoomed");
+                    return;
+                }
+
+                const fitWidth = computeFitWidthPx();
+                canvasWrapperEl.classList.add("zoomed");
+                canvas.style.maxWidth = "none";
+                canvas.style.maxHeight = "none";
+                canvas.style.width = Math.max(1, Math.round((fitWidth * zoomPct) / 100)) + "px";
+            }
+
+            function setZoom(pct) {
+                zoomPct = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, Math.round(pct / ZOOM_STEP) * ZOOM_STEP));
+                applyZoom();
+            }
+
+            zoomInBtn.addEventListener("click", () => setZoom(zoomPct + ZOOM_STEP));
+            zoomOutBtn.addEventListener("click", () => setZoom(zoomPct - ZOOM_STEP));
+            zoomLevelEl.addEventListener("click", () => setZoom(100));
+
+            // Ctrl/Cmd + scroll wheel zooms the canvas, like most design tools.
+            canvasWrapperEl.addEventListener(
+                "wheel",
+                (e) => {
+                    if (!e.ctrlKey && !e.metaKey) return;
+                    e.preventDefault();
+                    setZoom(zoomPct + (e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP));
+                },
+                { passive: false },
+            );
+
+            window.addEventListener("resize", () => {
+                if (zoomPct !== 100) applyZoom();
+            });
+
             // Initial setup
             buildSlots();
+            buildBrandingSlots();
             render();
             startAgentPolling();
 
