@@ -624,10 +624,15 @@
                 margin-bottom: 10px;
             }
 
-
-            .agent-only { display: none !important; }
-            .agent-only.visible { display: block !important; }
-            .scan-row.agent-only.visible { display: flex !important; }
+            .agent-only {
+                display: none !important;
+            }
+            .agent-only.visible {
+                display: block !important;
+            }
+            .scan-row.agent-only.visible {
+                display: flex !important;
+            }
             .agent-badge {
                 display: inline-flex;
                 align-items: center;
@@ -647,54 +652,99 @@
                 border-color: var(--line);
             }
             .agent-badge .dot {
-                width: 7px; height: 7px; border-radius: 50%;
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
                 background: var(--teal);
             }
-            .agent-badge.offline .dot { background: #6b7280; }
+            .agent-badge.offline .dot {
+                background: #6b7280;
+            }
 
             .print-modal-backdrop {
-                position: fixed; inset: 0;
+                position: fixed;
+                inset: 0;
                 background: rgba(10, 13, 18, 0.72);
-                display: none; align-items: center; justify-content: center;
-                z-index: 120; padding: 20px;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 120;
+                padding: 20px;
             }
-            .print-modal-backdrop.open { display: flex; }
+            .print-modal-backdrop.open {
+                display: flex;
+            }
             .print-modal {
-                background: var(--panel); color: var(--text-hi);
-                border: 1px solid var(--line); border-radius: var(--radius);
-                padding: 22px; width: 100%; max-width: 420px;
-                max-height: 94vh; overflow-y: auto;
+                background: var(--panel);
+                color: var(--text-hi);
+                border: 1px solid var(--line);
+                border-radius: var(--radius);
+                padding: 22px;
+                width: 100%;
+                max-width: 420px;
+                max-height: 94vh;
+                overflow-y: auto;
             }
             .print-modal h3 {
-                font-family: var(--display); margin: 0 0 14px; font-size: 1.1rem;
+                font-family: var(--display);
+                margin: 0 0 14px;
+                font-size: 1.1rem;
             }
-            .print-modal .field-row { margin-bottom: 12px; }
+            .print-modal .field-row {
+                margin-bottom: 12px;
+            }
             .print-modal .field-row label {
-                display: block; font-size: 0.78rem; color: var(--text-lo); margin-bottom: 6px;
+                display: block;
+                font-size: 0.78rem;
+                color: var(--text-lo);
+                margin-bottom: 6px;
             }
             .print-modal .field-row select,
             .print-modal .field-row input[type="number"],
             .print-modal .field-row input[type="text"] {
-                width: 100%; background: #0f1620; border: 1px solid var(--line);
-                color: var(--text-hi); padding: 9px 10px; border-radius: 6px;
-                font-family: var(--mono); font-size: 0.85rem;
+                width: 100%;
+                background: #0f1620;
+                border: 1px solid var(--line);
+                color: var(--text-hi);
+                padding: 9px 10px;
+                border-radius: 6px;
+                font-family: var(--mono);
+                font-size: 0.85rem;
             }
             .print-modal .radio-row {
-                display: flex; gap: 14px; font-size: 0.85rem; flex-wrap: wrap;
+                display: flex;
+                gap: 14px;
+                font-size: 0.85rem;
+                flex-wrap: wrap;
             }
             .print-modal .radio-row label {
-                display: flex; align-items: center; gap: 6px; color: var(--text-hi);
-                cursor: pointer; margin: 0;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                color: var(--text-hi);
+                cursor: pointer;
+                margin: 0;
             }
             .print-status {
-                font-family: var(--mono); font-size: 0.75rem;
-                min-height: 1.2em; margin-top: 8px; color: var(--text-lo);
+                font-family: var(--mono);
+                font-size: 0.75rem;
+                min-height: 1.2em;
+                margin-top: 8px;
+                color: var(--text-lo);
             }
-            .print-status.ok { color: var(--teal); }
-            .print-status.error { color: var(--rust); }
+            .print-status.ok {
+                color: var(--teal);
+            }
+            .print-status.error {
+                color: var(--rust);
+            }
             .print-actions {
-                display: flex; justify-content: flex-end; gap: 10px;
-                margin-top: 16px; border-top: 1px solid var(--line); padding-top: 14px;
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+                margin-top: 16px;
+                border-top: 1px solid var(--line);
+                padding-top: 14px;
             }
 
             @media print {
@@ -733,7 +783,7 @@
                     display: none !important;
                 }
             }
-        
+
             .agent-toggle-wrap {
                 display: inline-flex;
                 align-items: center;
@@ -780,7 +830,7 @@
                 background: #fff;
                 border-radius: 50%;
                 transition: transform 0.2s;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
             }
             .agent-toggle input:checked + .slider {
                 background: #22c55e;
@@ -792,11 +842,10 @@
                 outline: 2px solid #2563eb;
                 outline-offset: 2px;
             }
-
-</style>
+        </style>
     </head>
     <body>
-        <iframe class="promo-banner" src="https://chefbarac.github.io/promo-banner/" width="100%" height="72" loading="lazy"></iframe>
+        <iframe class="promo-banner" src="https://chefbarac.github.io/promo-banner/?app=idcopy" width="100%" height="72" loading="lazy"></iframe>
         <header class="app-head">
             <div>
                 <h1><span class="badge-dot"></span>ID Card Scan &amp; Print</h1>
@@ -810,19 +859,21 @@
                     <h2>Scanner</h2>
 
                     <span class="agent-toggle-wrap">
-                    <label class="agent-toggle-label" title="Connect to local print agent">
-                        <span class="agent-toggle">
-                            <input type="checkbox" id="agentToggle" checked />
-                            <span class="slider"></span>
-                        </span>
-                        Agent
-                    </label>
-                    <div class="agent-badge offline" id="agentBadge"><span class="dot"></span><span id="agentBadgeText">Agent offline</span></div>
-                </span>
+                        <label class="agent-toggle-label" title="Connect to local print agent">
+                            <span class="agent-toggle">
+                                <input type="checkbox" id="agentToggle" checked />
+                                <span class="slider"></span>
+                            </span>
+                            Agent
+                        </label>
+                        <div class="agent-badge offline" id="agentBadge"><span class="dot"></span><span id="agentBadgeText">Agent offline</span></div>
+                    </span>
 
                     <div class="field agent-only" id="scannerSelectField">
                         <label for="scannerSelect">Scanner</label>
-                        <select id="scannerSelect"><option value="">—</option></select>
+                        <select id="scannerSelect">
+                            <option value="">—</option>
+                        </select>
                     </div>
 
                     <div class="field">
@@ -858,7 +909,9 @@
                         </div>
                     </div>
 
-                    <p class="field hint" id="agentOfflineHint" style="margin-top:10px">Start the local Icon Print agent (<code style="font-family:var(--mono)">scan.py</code>) to enable scanning and direct printing.</p>
+                    <p class="field hint" id="agentOfflineHint" style="margin-top: 10px">
+                        Start the local Icon Print agent (<code style="font-family: var(--mono)">scan.py</code>) to enable scanning and direct printing.
+                    </p>
                     <div class="log" id="logBox"></div>
                 </div>
 
@@ -870,7 +923,10 @@
                             <input type="range" id="brightnessSlider" min="50" max="180" step="1" value="100" />
                             <span class="brightness-value" id="brightnessValue">100%</span>
                         </div>
-                        <div class="hint">Applies to the whole printable page (both images and background together) — not each scan individually. Hold <b>Compare</b> to briefly see the before (original) vs after brightness.</div>
+                        <div class="hint">
+                            Applies to the whole printable page (both images and background together) — not each scan individually. Hold <b>Compare</b> to briefly see the before (original) vs after
+                            brightness.
+                        </div>
                     </div>
                     <div class="brightness-btn-row">
                         <button type="button" class="btn-scan btn-adjust" id="btnAutoBrightness">Auto Brightness</button>
@@ -902,7 +958,9 @@
                 </div>
 
                 <button class="btn-primary" id="btnPrint">Print Layout</button>
-                <div class="field hint" style="margin-top: 10px" id="printHintBrowser">Agent offline — uses the browser print dialog. Set <strong>Scale</strong> to <strong>100%</strong> (not “Fit to page”).</div>
+                <div class="field hint" style="margin-top: 10px" id="printHintBrowser">
+                    Agent offline — uses the browser print dialog. Set <strong>Scale</strong> to <strong>100%</strong> (not “Fit to page”).
+                </div>
                 <div class="field hint agent-only" style="margin-top: 10px" id="printHintAgent">Agent online — opens direct print (Actual Size, no browser dialog).</div>
             </section>
 
@@ -921,7 +979,6 @@
                 <p class="empty-preview-note" id="emptyNote">Scan the front and back of the ID to see the printable layout here.</p>
             </section>
         </main>
-
 
         <div class="print-modal-backdrop" id="printBackdrop">
             <div class="print-modal">
@@ -978,9 +1035,7 @@
                     <input type="number" id="printCopies" min="1" max="99" value="1" />
                 </div>
                 <div class="field-row">
-                    <label style="display:flex;align-items:center;gap:8px;color:var(--text-hi);cursor:pointer">
-                        <input type="checkbox" id="printCollate" checked /> Collate
-                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; color: var(--text-hi); cursor: pointer"> <input type="checkbox" id="printCollate" checked /> Collate </label>
                 </div>
                 <div class="field-row">
                     <label for="printScaling">Scaling</label>
@@ -999,7 +1054,7 @@
                 <div class="print-status" id="printStatus"></div>
                 <div class="print-actions">
                     <button type="button" class="btn-secondary" id="printCancelBtn">Close</button>
-                    <button type="button" class="btn-primary" id="printSubmitBtn" style="width:auto">Print</button>
+                    <button type="button" class="btn-primary" id="printSubmitBtn" style="width: auto">Print</button>
                 </div>
             </div>
         </div>
@@ -1062,45 +1117,33 @@
             const DEFAULT_AGENT_HOST = "http://localhost:5001";
 
             function getAgentHost() {
-
                 try {
-
                     const v = (localStorage.getItem(AGENT_HOST_KEY) || "").trim();
 
                     if (v) return v.replace(/\/+$/, "");
-
                 } catch (e) {}
 
                 return DEFAULT_AGENT_HOST;
-
             }
 
             function setAgentHost(url) {
-
                 try {
-
                     const cleaned = (url || "").trim().replace(/\/+$/, "");
 
                     if (cleaned) localStorage.setItem(AGENT_HOST_KEY, cleaned);
-
                     else localStorage.removeItem(AGENT_HOST_KEY);
-
                 } catch (e) {}
-
             }
 
             let LOCAL_AGENT = getAgentHost();
 
             function promptAgentHost() {
-
                 const current = getAgentHost();
 
                 const next = window.prompt(
-
                     "Print agent URL\n\nUse this PC: http://localhost:5001\nOther PC on LAN: http://<agent-ip>:5001",
 
-                    current
-
+                    current,
                 );
 
                 if (next === null) return;
@@ -1110,25 +1153,18 @@
                 LOCAL_AGENT = getAgentHost();
 
                 if (typeof agentConnectionEnabled !== "undefined" && agentConnectionEnabled && typeof startAgentPolling === "function") {
-
                     startAgentPolling();
-
                 } else if (typeof checkAgentHealth === "function") {
-
                     checkAgentHealth();
-
                 }
 
                 const badgeText = document.getElementById("agentBadgeText");
 
                 if (badgeText && typeof agentOnline !== "undefined" && !agentOnline) {
-
                     badgeText.title = "Agent host: " + LOCAL_AGENT + " (click to change)";
-
                 }
-
             }
-const AGENT_PREF_KEY = "iconprint_agent_enabled_index";
+            const AGENT_PREF_KEY = "iconprint_agent_enabled_index";
             function getAgentEnabledPref() {
                 try {
                     const v = localStorage.getItem(AGENT_PREF_KEY);
@@ -1176,7 +1212,10 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_index";
             function getPrinterFilterPatterns() {
                 const raw = (localStorage.getItem("iconprint_printer_filter") || "").trim();
                 if (!raw) return [];
-                return raw.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+                return raw
+                    .split(",")
+                    .map((s) => s.trim().toLowerCase())
+                    .filter(Boolean);
             }
 
             function filterPrinters(printers) {
@@ -1216,9 +1255,9 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_index";
                 if (badge) {
                     badge.classList.toggle("offline", !online);
                     if (badgeText) {
-                    badgeText.textContent = online ? "Agent online" : (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled ? "Agent off" : "Agent offline");
-                    if (badge) badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
-                }
+                        badgeText.textContent = online ? "Agent online" : typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled ? "Agent off" : "Agent offline";
+                        if (badge) badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
+                    }
                 }
                 document.querySelectorAll(".agent-only").forEach((el) => {
                     if (online) el.classList.add("visible");
@@ -1254,18 +1293,19 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_index";
             }
 
             async function checkAgentHealth() {
-
-                    if (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled) {
-                        setAgentUI(false);
-                        return;
-                    }
+                if (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled) {
+                    setAgentUI(false);
+                    return;
+                }
                 try {
                     const res = await fetch(LOCAL_AGENT + "/health", {
                         cache: "no-store",
-                        signal: (typeof AbortSignal !== "undefined" && AbortSignal.timeout ? AbortSignal.timeout(2500) : undefined),
+                        signal: typeof AbortSignal !== "undefined" && AbortSignal.timeout ? AbortSignal.timeout(2500) : undefined,
                     });
                     if (!res.ok) throw new Error("health " + res.status);
-                    try { await res.json(); } catch (e) {}
+                    try {
+                        await res.json();
+                    } catch (e) {}
                     // Health succeeded — mark online first so a devices refresh failure
                     // does not flip the badge back to offline.
                     const wasOffline = !agentOnline;
@@ -1313,10 +1353,7 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_index";
                             agentDevices = { scanners: [], printers: [] };
                         }
                         agentDevices.printers = data.printers || [];
-                        var list =
-                            typeof filterPrinters === "function"
-                                ? filterPrinters(agentDevices.printers)
-                                : agentDevices.printers;
+                        var list = typeof filterPrinters === "function" ? filterPrinters(agentDevices.printers) : agentDevices.printers;
                         if (typeof fillSelect === "function") {
                             fillSelect(document.getElementById("printPrinter"), list, null);
                             var tb = document.getElementById("printerSelect");
@@ -1327,16 +1364,19 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_index";
             }
 
             function startAgentPolling() {
-                    if (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled) {
-                        if (healthTimer) { clearInterval(healthTimer); healthTimer = null; }
-                        setAgentUI(false);
-                        return;
+                if (typeof agentConnectionEnabled !== "undefined" && !agentConnectionEnabled) {
+                    if (healthTimer) {
+                        clearInterval(healthTimer);
+                        healthTimer = null;
                     }
                     setAgentUI(false);
-                    checkAgentHealth();
-                    if (healthTimer) clearInterval(healthTimer);
-                    healthTimer = setInterval(checkAgentHealth, 4000);
+                    return;
                 }
+                setAgentUI(false);
+                checkAgentHealth();
+                if (healthTimer) clearInterval(healthTimer);
+                healthTimer = setInterval(checkAgentHealth, 4000);
+            }
 
             let audioCtx;
 
@@ -2424,7 +2464,7 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_index";
                 const scaling = document.getElementById("printScaling").value || "actual";
                 const margins = document.getElementById("printMargins").value || "none";
                 const mediaType = document.getElementById("printMedia").value || "plain";
-                    const quality = (document.getElementById("printQuality") && document.getElementById("printQuality").value) || "standard";
+                const quality = (document.getElementById("printQuality") && document.getElementById("printQuality").value) || "standard";
 
                 const paper = PAPER_SIZES_MM[paperSize] || currentPaper();
                 let pageW = mmToInches(paper.w);
@@ -2478,13 +2518,8 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_index";
                             const job = await sr.json();
                             const status = job.status || "unknown";
                             if (st) {
-                                st.textContent =
-                                    status.charAt(0).toUpperCase() +
-                                    status.slice(1) +
-                                    (job.warnings && job.warnings.length ? " — " + job.warnings[0] : "");
-                                st.className =
-                                    "print-status" +
-                                    (status === "completed" ? " ok" : status === "failed" ? " error" : "");
+                                st.textContent = status.charAt(0).toUpperCase() + status.slice(1) + (job.warnings && job.warnings.length ? " — " + job.warnings[0] : "");
+                                st.className = "print-status" + (status === "completed" ? " ok" : status === "failed" ? " error" : "");
                             }
                             if (status === "completed" || status === "failed") {
                                 submitBtn.disabled = false;
@@ -2571,8 +2606,6 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_index";
                 }
             })();
 
-            
-
             (function initAgentHostUi() {
                 const badge = document.getElementById("agentBadge");
                 if (!badge) return;
@@ -2586,7 +2619,7 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_index";
                 });
             })();
 
-log("Ready. Agent: " + LOCAL_AGENT);
+            log("Ready. Agent: " + LOCAL_AGENT);
         </script>
         <script>
             if ("serviceWorker" in navigator) {
