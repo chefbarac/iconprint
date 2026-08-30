@@ -111,6 +111,7 @@
                 display: flex;
                 min-height: 0;
                 overflow: hidden;
+                position: relative;
             }
 
             .sidebar {
@@ -121,6 +122,9 @@
                 flex-direction: column;
                 overflow-y: auto;
                 flex-shrink: 0;
+                /* Stay above workspace so paper/frames never steal clicks from controls */
+                position: relative;
+                z-index: 4;
             }
             .section {
                 padding: 12px 14px;
@@ -163,6 +167,23 @@
             .row > * {
                 flex: 1;
                 min-width: 0;
+            }
+            /* Keep selects/inputs clickable — min-width:0 on flex children can collapse them */
+            .sidebar select,
+            .sidebar input[type="number"],
+            .sidebar input[type="text"],
+            .print-modal select,
+            .print-modal input[type="number"],
+            .print-modal input[type="text"] {
+                position: relative;
+                z-index: 1;
+                min-width: 3.5em;
+                pointer-events: auto;
+                cursor: pointer;
+            }
+            .sidebar input[type="number"],
+            .print-modal input[type="number"] {
+                cursor: text;
             }
 
             .preset-grid {
@@ -347,6 +368,8 @@
                 min-width: 0;
                 min-height: 0;
                 background: #121214;
+                position: relative;
+                z-index: 1;
             }
             .toolbar {
                 padding: 7px 12px;
@@ -608,8 +631,12 @@
                 background: rgba(0,0,0,0.65);
                 display: none; align-items: center; justify-content: center;
                 z-index: 200; padding: 20px;
+                pointer-events: none;
             }
-            .print-modal-backdrop.open { display: flex; }
+            .print-modal-backdrop.open {
+                display: flex;
+                pointer-events: auto;
+            }
             .print-modal {
                 background: var(--panel); color: var(--text);
                 border: 1px solid var(--border); border-radius: 10px;
@@ -718,7 +745,7 @@
 </style>
     </head>
     <body>
-        <iframe src="https://chefbarac.github.io/promo-banner/" width="100%" height="72" style="border: none; border-radius: 12px; overflow: hidden" loading="lazy"> </iframe>
+        <iframe src="https://chefbarac.github.io/promo-banner/" width="100%" height="72" style="border: none; border-radius: 12px; overflow: hidden; flex-shrink: 0; display: block; position: relative; z-index: 6" loading="lazy"> </iframe>
         <header>
             <h1>Photo <span>Printing</span> Studio</h1>
             <div class="header-actions">
@@ -2619,6 +2646,27 @@ function refreshDevicesPrintersOnly() {
                     dragState = null;
                     window.removeEventListener("mousemove", onDragMove);
                     window.removeEventListener("mouseup", onDragEnd);
+                }
+
+                // Mouseup inside the promo iframe never reaches the parent window,
+                // which can leave drag/marquee listeners stuck and block UI clicks.
+                function cancelPointerGestures() {
+                    if (dragState) onDragEnd();
+                    if (marqueeState) {
+                        window.removeEventListener("mousemove", onMarqueeMove);
+                        window.removeEventListener("mouseup", onMarqueeEnd);
+                        hideMarquee();
+                        marqueeState = null;
+                    }
+                }
+                window.addEventListener("blur", cancelPointerGestures);
+                document.addEventListener("visibilitychange", function () {
+                    if (document.hidden) cancelPointerGestures();
+                });
+                // Promo iframe swallows mouseup — cancel gestures when pointer enters it
+                var promoFrame = document.querySelector("body > iframe");
+                if (promoFrame) {
+                    promoFrame.addEventListener("mouseenter", cancelPointerGestures);
                 }
 
                 // Marquee (drag-rectangle) selection on empty paper
