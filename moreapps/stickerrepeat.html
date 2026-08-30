@@ -245,6 +245,7 @@
             .design-slot.has-image {
                 border-style: solid;
                 padding: 8px;
+                min-height: 130px;
             }
 
             .design-slot input[type="file"] {
@@ -304,6 +305,31 @@
 
             .design-slot.has-image .remove-btn {
                 display: flex;
+            }
+
+            .design-slot .fill-mode {
+                width: 100%;
+                margin-top: 6px;
+                padding: 4px 6px;
+                font-size: 0.68rem;
+                background: var(--panel);
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                color: var(--text);
+                position: relative;
+                z-index: 3;
+                cursor: pointer;
+                outline: none;
+            }
+
+            .design-slot .fill-mode:focus {
+                border-color: var(--accent);
+            }
+
+            /* Leave room at the bottom for the fill-mode select so the
+               invisible file input does not intercept its clicks. */
+            .design-slot.has-image input[type="file"] {
+                bottom: 34px;
             }
 
             .design-hint {
@@ -1216,9 +1242,11 @@ function refreshDevicesPrintersOnly() {
 
             // State
             let designImages = [null, null, null, null]; // up to 4 slots
+            let designFillModes = ["contain", "contain", "contain", "contain"]; // per-slot: contain | cover | stretch
             let pageMode = "full"; // 'full' | 'half'
             let brandingEnabled = false;
             let brandingDesignImages = [null, null]; // up to 2 branding slots
+            let brandingFillModes = ["contain", "contain"];
             let currentUnit = "mm"; // 'mm' | 'cm' | 'in' — display unit; all internal math stays in mm
 
             // Unit conversion
@@ -1332,6 +1360,12 @@ function refreshDevicesPrintersOnly() {
                 return designImages.slice(0, max).filter((img) => img !== null);
             }
 
+            /** Fill modes parallel to getActiveDesigns() — same filter order. */
+            function getActiveFillModes() {
+                const max = maxSlots();
+                return designFillModes.slice(0, max).filter((_, i) => designImages[i] !== null);
+            }
+
             function hasAnyDesign() {
                 return getActiveDesigns().length > 0;
             }
@@ -1376,8 +1410,32 @@ function refreshDevicesPrintersOnly() {
                         img.className = "upload-preview";
                         img.alt = "Design " + (i + 1);
                         img.src = designImages[i].src;
+
+                        const fillSelect = document.createElement("select");
+                        fillSelect.className = "fill-mode";
+                        fillSelect.title = "How this design fills the sticker box";
+                        [
+                            { value: "contain", label: "Contain" },
+                            { value: "cover", label: "Cover" },
+                            { value: "stretch", label: "Stretch" },
+                        ].forEach((opt) => {
+                            const o = document.createElement("option");
+                            o.value = opt.value;
+                            o.textContent = opt.label;
+                            if (designFillModes[i] === opt.value) o.selected = true;
+                            fillSelect.appendChild(o);
+                        });
+                        fillSelect.addEventListener("click", (e) => e.stopPropagation());
+                        fillSelect.addEventListener("mousedown", (e) => e.stopPropagation());
+                        fillSelect.addEventListener("change", (e) => {
+                            e.stopPropagation();
+                            designFillModes[i] = fillSelect.value;
+                            render();
+                        });
+
                         slot.appendChild(label);
                         slot.appendChild(img);
+                        slot.appendChild(fillSelect);
                         slot.appendChild(removeBtn);
                         slot.appendChild(fileInput);
                     } else {
@@ -1419,6 +1477,7 @@ function refreshDevicesPrintersOnly() {
 
             function clearSlot(index) {
                 designImages[index] = null;
+                designFillModes[index] = "contain";
                 buildSlots();
                 updateButtons();
                 render();
@@ -1455,6 +1514,11 @@ function refreshDevicesPrintersOnly() {
                 return brandingDesignImages.slice(0, max).filter((img) => img !== null);
             }
 
+            function getActiveBrandingFillModes() {
+                const max = brandingMaxSlots();
+                return brandingFillModes.slice(0, max).filter((_, i) => brandingDesignImages[i] !== null);
+            }
+
             function buildBrandingSlots() {
                 const max = brandingMaxSlots();
                 brandingDesignsGrid.innerHTML = "";
@@ -1489,8 +1553,32 @@ function refreshDevicesPrintersOnly() {
                         img.className = "upload-preview";
                         img.alt = "Branding " + (i + 1);
                         img.src = brandingDesignImages[i].src;
+
+                        const fillSelect = document.createElement("select");
+                        fillSelect.className = "fill-mode";
+                        fillSelect.title = "How this design fills the sticker box";
+                        [
+                            { value: "contain", label: "Contain" },
+                            { value: "cover", label: "Cover" },
+                            { value: "stretch", label: "Stretch" },
+                        ].forEach((opt) => {
+                            const o = document.createElement("option");
+                            o.value = opt.value;
+                            o.textContent = opt.label;
+                            if (brandingFillModes[i] === opt.value) o.selected = true;
+                            fillSelect.appendChild(o);
+                        });
+                        fillSelect.addEventListener("click", (e) => e.stopPropagation());
+                        fillSelect.addEventListener("mousedown", (e) => e.stopPropagation());
+                        fillSelect.addEventListener("change", (e) => {
+                            e.stopPropagation();
+                            brandingFillModes[i] = fillSelect.value;
+                            render();
+                        });
+
                         slot.appendChild(label);
                         slot.appendChild(img);
+                        slot.appendChild(fillSelect);
                         slot.appendChild(removeBtn);
                         slot.appendChild(fileInput);
                     } else {
@@ -1531,6 +1619,7 @@ function refreshDevicesPrintersOnly() {
 
             function clearBrandingSlot(index) {
                 brandingDesignImages[index] = null;
+                brandingFillModes[index] = "contain";
                 buildBrandingSlots();
                 render();
             }
@@ -1723,42 +1812,72 @@ function refreshDevicesPrintersOnly() {
             }
 
             /**
-             * Draw `img` into the box (x, y, w, h) preserving the image's own
-             * aspect ratio (like CSS `object-fit: contain`) — scales the image
-             * down so it fits entirely inside the box and centers it, adding a
-             * thin margin on two sides if the image's aspect ratio doesn't
-             * exactly match the box. This guarantees the design is never
-             * stretched AND never clipped/cropped.
+             * Draw `img` into the box (x, y, w, h) using the given fill mode:
+             *   contain — fit entire image inside the box, letterbox if needed
+             *   cover   — fill the box completely, crop overflow (centered)
+             *   stretch — scale image to exact box size (may distort)
              */
-            function drawImageContain(targetCtx, img, x, y, w, h) {
+            function drawImageFit(targetCtx, img, x, y, w, h, mode) {
+                mode = mode || "contain";
+
+                if (mode === "stretch") {
+                    targetCtx.drawImage(img, x, y, w, h);
+                    return;
+                }
+
                 const imgRatio = img.width / img.height;
                 const boxRatio = w / h;
                 let dWidth, dHeight, dx, dy;
 
+                if (mode === "cover") {
+                    if (imgRatio > boxRatio) {
+                        // Image wider than box: fit to height, crop sides
+                        dHeight = h;
+                        dWidth = h * imgRatio;
+                        dx = x + (w - dWidth) / 2;
+                        dy = y;
+                    } else {
+                        // Image taller than box: fit to width, crop top/bottom
+                        dWidth = w;
+                        dHeight = w / imgRatio;
+                        dx = x;
+                        dy = y + (h - dHeight) / 2;
+                    }
+                    targetCtx.save();
+                    targetCtx.beginPath();
+                    targetCtx.rect(x, y, w, h);
+                    targetCtx.clip();
+                    targetCtx.drawImage(img, dx, dy, dWidth, dHeight);
+                    targetCtx.restore();
+                    return;
+                }
+
+                // contain (default)
                 if (imgRatio > boxRatio) {
-                    // Image is relatively wider than the box: fit to width
+                    // Image relatively wider: fit to width
                     dWidth = w;
                     dHeight = w / imgRatio;
                     dx = x;
                     dy = y + (h - dHeight) / 2;
                 } else {
-                    // Image is relatively taller than the box: fit to height
+                    // Image relatively taller: fit to height
                     dHeight = h;
                     dWidth = h * imgRatio;
                     dx = x + (w - dWidth) / 2;
                     dy = y;
                 }
-
                 targetCtx.drawImage(img, dx, dy, dWidth, dHeight);
             }
 
             /**
              * Draws one grid of stickers (used for both the main sheet grid
              * and the branding grid) into targetCtx at the given scale.
+             * fillModes is optional and parallel to designs (same length/order).
              */
-            function drawStickerGrid(targetCtx, targetCanvas, scale, isPreview, gridLayout, designs, showCutLines, placeholderIcon) {
+            function drawStickerGrid(targetCtx, targetCanvas, scale, isPreview, gridLayout, designs, showCutLines, placeholderIcon, fillModes) {
                 const { stickerW, stickerH, gap, cols, rows, offsetX, offsetY } = gridLayout;
                 const N = designs.length;
+                const modes = fillModes || [];
 
                 for (let r = 0; r < rows; r++) {
                     for (let c = 0; c < cols; c++) {
@@ -1768,13 +1887,16 @@ function refreshDevicesPrintersOnly() {
                         const h = stickerH * scale;
 
                         let designImg = null;
+                        let fillMode = "contain";
                         if (N > 0) {
                             const idx = getDesignIndex(r, c, rows, cols, N);
-                            designImg = designs[Math.min(idx, N - 1)];
+                            const safeIdx = Math.min(idx, N - 1);
+                            designImg = designs[safeIdx];
+                            fillMode = modes[safeIdx] || "contain";
                         }
 
                         if (designImg) {
-                            drawImageContain(targetCtx, designImg, x, y, w, h);
+                            drawImageFit(targetCtx, designImg, x, y, w, h, fillMode);
                         } else {
                             // Placeholder
                             targetCtx.fillStyle = "#f0f4f8";
@@ -1828,11 +1950,11 @@ function refreshDevicesPrintersOnly() {
 
                 const showCutLines = showCutMarksEl.checked;
 
-                drawStickerGrid(targetCtx, targetCanvas, scale, isPreview, layout, getActiveDesigns(), showCutLines, "📎");
+                drawStickerGrid(targetCtx, targetCanvas, scale, isPreview, layout, getActiveDesigns(), showCutLines, "📎", getActiveFillModes());
 
                 const brandingLayout = calculateBrandingLayout(layout);
                 if (brandingLayout && brandingLayout.count > 0) {
-                    drawStickerGrid(targetCtx, targetCanvas, scale, isPreview, brandingLayout, getActiveBrandingDesigns(), showCutLines, "🏷️");
+                    drawStickerGrid(targetCtx, targetCanvas, scale, isPreview, brandingLayout, getActiveBrandingDesigns(), showCutLines, "🏷️", getActiveBrandingFillModes());
 
                     if (isPreview) {
                         // Subtle divider + label marking where the branding zone starts.

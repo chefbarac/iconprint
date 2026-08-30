@@ -399,15 +399,49 @@
 
             .placed {
                 position: absolute;
-                border: 1px solid transparent;
+                /* No border — selection stroke must not eat into frame size or
+                   create a 2px visual gap between flush stacked frames. */
+                border: none;
+                outline: none;
                 cursor: move;
                 user-select: none;
                 -webkit-user-select: none;
                 overflow: visible;
             }
             .placed.selected {
-                border-color: var(--accent);
+                /* Outline draws outside the box; does not change layout size */
+                outline: 1.5px solid var(--accent);
+                outline-offset: 0;
                 z-index: 20;
+            }
+            .marquee-rect {
+                position: absolute;
+                border: 1px solid var(--accent);
+                background: rgba(77, 171, 247, 0.12);
+                pointer-events: none;
+                z-index: 50;
+                display: none;
+                box-sizing: border-box;
+            }
+            /* Screen-only midpoint guide — never exported/printed */
+            .half-page-line {
+                position: absolute;
+                left: 0;
+                right: 0;
+                height: 0;
+                border-top: 1px dashed rgba(255, 120, 80, 0.55);
+                pointer-events: none;
+                z-index: 8;
+                display: none;
+            }
+            .half-page-line .half-page-label {
+                position: absolute;
+                right: 4px;
+                top: -14px;
+                font-size: 0.58rem;
+                color: rgba(255, 120, 80, 0.75);
+                white-space: nowrap;
+                pointer-events: none;
             }
             .placed .img-clip {
                 position: absolute;
@@ -514,14 +548,17 @@
                 z-index: 15;
             }
 
-            /* Dashed cut border around frame */
+            /* Dashed cut border around frame — subtle so it doesn't compete with photos */
             .placed .cut-guides {
                 position: absolute;
                 inset: 0;
                 pointer-events: none;
                 z-index: 12;
-                border: 1px dashed #9a9a9a;
+                border: 1px dashed rgba(120, 120, 120, 0.32);
                 box-sizing: border-box;
+            }
+            .placed.selected .cut-guides {
+                border-color: rgba(100, 100, 100, 0.42);
             }
 
             .statusbar {
@@ -710,9 +747,6 @@
                         <option value="A4" selected>A4 (210 x 297 mm)</option>
                         <option value="Short">Short / Letter (216 x 279 mm)</option>
                         <option value="Long">Long (8.5 × 13 in)</option>
-                        <option value="A3">A3 (297 x 420 mm)</option>
-                        <option value="A5">A5 (148 x 210 mm)</option>
-                        <option value="S8R">S8R (203 x 305 mm)</option>
                     </select>
                     <div class="row" style="margin-top: 8px">
                         <div>
@@ -723,17 +757,22 @@
                             </select>
                         </div>
                         <div>
-                            <label>Zoom</label>
+                            <label>Canvas zoom</label>
                             <select id="zoomSelect">
+                                <option value="0.25">25%</option>
+                                <option value="0.35">35%</option>
                                 <option value="0.4">40%</option>
                                 <option value="0.5">50%</option>
                                 <option value="0.6" selected>60%</option>
                                 <option value="0.75">75%</option>
                                 <option value="1">100%</option>
                                 <option value="1.25">125%</option>
+                                <option value="1.5">150%</option>
+                                <option value="2">200%</option>
                             </select>
                         </div>
                     </div>
+                    <p class="hint" style="margin-top:6px">Wheel over paper (outside crop mode) zooms canvas. Ctrl/Cmd+wheel also zooms.</p>
                 </div>
 
                 <div class="section">
@@ -852,12 +891,41 @@
                         <button type="button" class="secondary" id="btnFlipH">Flip H</button>
                         <button type="button" class="secondary" id="btnFlipV">Flip V</button>
                     </div>
+                    <label style="margin-top: 10px">Align selection</label>
+                    <div class="row" style="margin-bottom: 6px">
+                        <button type="button" class="secondary" id="btnAlignLeft" title="Align selected frames to leftmost edge">← Left</button>
+                        <button type="button" class="secondary" id="btnAlignRight" title="Align selected frames to rightmost edge">Right →</button>
+                    </div>
+                    <div class="row" style="margin-bottom: 6px">
+                        <button type="button" class="secondary" id="btnAlignTop" title="Align selected frames to topmost edge">↑ Top</button>
+                        <button type="button" class="secondary" id="btnAlignBottom" title="Align selected frames to bottommost edge">↓ Bottom</button>
+                    </div>
+                    <label style="margin-top: 10px">One-stroke pack</label>
+                    <div class="row" style="margin-bottom: 6px">
+                        <div>
+                            <label>Page margin</label>
+                            <input type="number" id="stackPad" value="0.15" min="0" step="0.05" title="Hardware margin from paper edges (non-borderless printers)" />
+                        </div>
+                        <div>
+                            <label>Unit</label>
+                            <select id="stackPadUnit">
+                                <option value="in" selected>in</option>
+                                <option value="mm">mm</option>
+                                <option value="cm">cm</option>
+                            </select>
+                        </div>
+                    </div>
+                    <p class="hint" id="stackPadHint" style="margin-bottom:6px">= 3.81 mm from each paper edge</p>
+                    <div class="row" style="margin-bottom: 6px">
+                        <button type="button" id="btnAutoStack" title="Pack selected frames flush inside page margins, fill width, wrap rows">Auto stack</button>
+                    </div>
+                    <p class="hint" style="margin-bottom:6px">Starts at the selection’s leftmost/topmost, packs flush left→right, wraps at paper right (minus page margin). New rows restart at that leftmost X. Select frames first (Ctrl/Cmd+A for all).</p>
                     <div class="row" style="margin-top: 6px">
                         <button type="button" class="danger" id="btnDelete" style="width: 100%">Delete</button>
                     </div>
                     <p class="hint">
-                        Image mode: Fill (cover/crop), Contain (fit inside), Stretch (distort). Shift/Ctrl+click multi-select · drag group. Arrows nudge. Del = delete. Esc = deselect. C = crop. S =
-                        resize. R = rotate frame. F = fit cover.
+                        Image mode: Fill (cover/crop), Contain (fit inside), Stretch (distort). Drag empty paper to marquee-select · Shift/Ctrl+click multi-select · drag group. Ctrl/Cmd+A select all. Align needs 2+ frames. Arrows nudge. Del = delete. Esc = deselect. C = crop. S =
+                        resize. R = rotate frame. F = fit cover. Wheel = canvas zoom (crop mode = photo zoom).
                     </p>
                 </div>
             </aside>
@@ -866,8 +934,19 @@
                 <div class="toolbar">
                     <span id="paperInfo">A4 · 210 x 297 mm</span>
                     <div class="sep"></div>
+                    <button type="button" class="secondary" id="btnZoomOut" title="Zoom out (canvas)" style="padding:4px 10px">−</button>
+                    <span id="zoomLabel" style="min-width:3.2em;text-align:center;color:var(--muted)">60%</span>
+                    <button type="button" class="secondary" id="btnZoomIn" title="Zoom in (canvas)" style="padding:4px 10px">+</button>
+                    <div class="sep"></div>
                     <label><input type="checkbox" id="snapGrid" checked /> Snap to edges</label>
                     <label><input type="checkbox" id="showGuides" checked /> Cut guides</label>
+                    <label><input type="checkbox" id="showHalfLine" checked /> Half-page line</label>
+                    <div class="sep"></div>
+                    <button type="button" class="secondary" id="btnAlignLeftT" title="Align left" style="padding:4px 8px">⇤</button>
+                    <button type="button" class="secondary" id="btnAlignTopT" title="Align top" style="padding:4px 8px">⤒</button>
+                    <button type="button" class="secondary" id="btnAlignBottomT" title="Align bottom" style="padding:4px 8px">⤓</button>
+                    <button type="button" class="secondary" id="btnAlignRightT" title="Align right" style="padding:4px 8px">⇥</button>
+                    <button type="button" class="secondary" id="btnAutoStackT" title="Auto stack selection for one-stroke cutting" style="padding:4px 10px">Stack</button>
                     <div class="sep"></div>
                     <span id="selInfo">No selection</span>
                     <span id="modeInfo" style="color: var(--accent)"></span>
@@ -875,6 +954,9 @@
                 <div class="canvas-wrap" id="canvasWrap">
                     <div class="paper-stage" id="paperStage">
                         <div class="paper-label" id="paperLabel">A4 · 210 x 297 mm</div>
+                        <div class="half-page-line" id="halfPageLine" aria-hidden="true">
+                            <span class="half-page-label">½ page</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -903,8 +985,6 @@
                         <option value="a4">A4</option>
                         <option value="short">Short / Letter</option>
                         <option value="long">Long — 8.5 × 13"</option>
-                        <option value="a3">A3</option>
-                        <option value="a5">A5</option>
                     </select>
                 </div>
                 <div class="field-row agent-only">
@@ -1202,9 +1282,6 @@ function refreshDevicesPrintersOnly() {
                         A4: "a4",
                         Short: "short",
                         Long: "long",
-                        A3: "a3",
-                        A5: "a5",
-                        S8R: "short",
                     };
                     return map[key] || "a4";
                 }
@@ -1213,9 +1290,6 @@ function refreshDevicesPrintersOnly() {
                     A4: { w: 210, h: 297, name: "A4" },
                     Short: { w: 216, h: 279, name: "Short / Letter" },
                     Long: { w: 216, h: 330, name: "Long" },
-                    A3: { w: 297, h: 420, name: "A3" },
-                    A5: { w: 148, h: 210, name: "A5" },
-                    S8R: { w: 203, h: 305, name: "S8R" },
                 };
 
                 var MM_TO_PX = 3.779527559;
@@ -1254,9 +1328,27 @@ function refreshDevicesPrintersOnly() {
                 var modeInfo = document.getElementById("modeInfo");
 
                 function getPaperDims() {
-                    var p = PAPERS[paperKey];
+                    var p = PAPERS[paperKey] || PAPERS.A4;
                     if (orientation === "landscape") return { w: p.h, h: p.w, name: p.name };
                     return { w: p.w, h: p.h, name: p.name };
+                }
+
+                function updateHalfPageLine() {
+                    var line = document.getElementById("halfPageLine");
+                    var show = document.getElementById("showHalfLine");
+                    if (!line) return;
+                    var on = show ? show.checked : true;
+                    if (!on) {
+                        line.style.display = "none";
+                        return;
+                    }
+                    var d = getPaperDims();
+                    var scale = MM_TO_PX * zoom;
+                    // Horizontal midpoint of the page (screen-only guide)
+                    line.style.display = "block";
+                    line.style.top = (d.h / 2) * scale + "px";
+                    line.style.left = "0";
+                    line.style.width = d.w * scale + "px";
                 }
 
                 function updatePaper() {
@@ -1265,6 +1357,7 @@ function refreshDevicesPrintersOnly() {
                     paperStage.style.height = d.h * MM_TO_PX * zoom + "px";
                     paperInfo.textContent = d.name + " · " + d.w + " x " + d.h + " mm";
                     paperLabel.textContent = d.name + " · " + d.w + " x " + d.h + " mm";
+                    updateHalfPageLine();
                     placed.forEach(function (p) {
                         renderPlaced(p);
                     });
@@ -1414,10 +1507,75 @@ function refreshDevicesPrintersOnly() {
                     orientation = orientSelect.value;
                     updatePaper();
                 });
-                zoomSelect.addEventListener("change", function () {
-                    zoom = parseFloat(zoomSelect.value);
+
+                var ZOOM_STEPS = [0.25, 0.35, 0.4, 0.5, 0.6, 0.75, 1, 1.25, 1.5, 2];
+                function syncZoomUI() {
+                    var z = zoom;
+                    var found = false;
+                    for (var i = 0; i < zoomSelect.options.length; i++) {
+                        if (Math.abs(parseFloat(zoomSelect.options[i].value) - z) < 0.001) {
+                            zoomSelect.selectedIndex = i;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        // pick nearest option for select display; keep actual zoom value
+                        var best = 0;
+                        var bestD = 999;
+                        for (var j = 0; j < zoomSelect.options.length; j++) {
+                            var d = Math.abs(parseFloat(zoomSelect.options[j].value) - z);
+                            if (d < bestD) {
+                                bestD = d;
+                                best = j;
+                            }
+                        }
+                        zoomSelect.selectedIndex = best;
+                    }
+                    var zl = document.getElementById("zoomLabel");
+                    if (zl) zl.textContent = Math.round(z * 100) + "%";
+                }
+                function setCanvasZoom(newZoom, anchorClientX, anchorClientY) {
+                    newZoom = Math.max(0.2, Math.min(3, newZoom));
+                    if (Math.abs(newZoom - zoom) < 1e-6) return;
+                    var wrap = document.getElementById("canvasWrap");
+                    var oldZoom = zoom;
+                    // Preserve scroll position relative to pointer (or center)
+                    var rect = wrap.getBoundingClientRect();
+                    var cx = typeof anchorClientX === "number" ? anchorClientX - rect.left + wrap.scrollLeft : wrap.scrollLeft + wrap.clientWidth / 2;
+                    var cy = typeof anchorClientY === "number" ? anchorClientY - rect.top + wrap.scrollTop : wrap.scrollTop + wrap.clientHeight / 2;
+                    var ratio = newZoom / oldZoom;
+                    zoom = newZoom;
                     updatePaper();
+                    syncZoomUI();
+                    wrap.scrollLeft = cx * ratio - (typeof anchorClientX === "number" ? anchorClientX - rect.left : wrap.clientWidth / 2);
+                    wrap.scrollTop = cy * ratio - (typeof anchorClientY === "number" ? anchorClientY - rect.top : wrap.clientHeight / 2);
+                }
+                function zoomInStep() {
+                    var next = null;
+                    for (var i = 0; i < ZOOM_STEPS.length; i++) {
+                        if (ZOOM_STEPS[i] > zoom + 0.001) {
+                            next = ZOOM_STEPS[i];
+                            break;
+                        }
+                    }
+                    setCanvasZoom(next != null ? next : Math.min(3, zoom * 1.2));
+                }
+                function zoomOutStep() {
+                    var prev = null;
+                    for (var i = 0; i < ZOOM_STEPS.length; i++) {
+                        if (ZOOM_STEPS[i] < zoom - 0.001) prev = ZOOM_STEPS[i];
+                    }
+                    setCanvasZoom(prev != null ? prev : Math.max(0.2, zoom / 1.2));
+                }
+                zoomSelect.addEventListener("change", function () {
+                    setCanvasZoom(parseFloat(zoomSelect.value));
                 });
+                var btnZoomIn = document.getElementById("btnZoomIn");
+                var btnZoomOut = document.getElementById("btnZoomOut");
+                if (btnZoomIn) btnZoomIn.addEventListener("click", zoomInStep);
+                if (btnZoomOut) btnZoomOut.addEventListener("click", zoomOutStep);
+                syncZoomUI();
                 presetOrientEl.addEventListener("change", function () {
                     presetOrient = presetOrientEl.value;
                     updatePresetDimsLabels();
@@ -2463,35 +2621,192 @@ function refreshDevicesPrintersOnly() {
                     window.removeEventListener("mouseup", onDragEnd);
                 }
 
-                paperStage.addEventListener("mousedown", function (e) {
-                    if (e.target === paperStage || e.target.classList.contains("paper-label")) {
-                        selectPlaced(null);
-                        setCropMode(false);
-                        setResizeMode(false);
+                // Marquee (drag-rectangle) selection on empty paper
+                var marqueeEl = document.createElement("div");
+                marqueeEl.className = "marquee-rect";
+                paperStage.appendChild(marqueeEl);
+                var marqueeState = null;
+
+                function clientToPaperMm(clientX, clientY) {
+                    var rect = paperStage.getBoundingClientRect();
+                    var scale = MM_TO_PX * zoom;
+                    return {
+                        x: (clientX - rect.left) / scale,
+                        y: (clientY - rect.top) / scale,
+                    };
+                }
+
+                // Axis-aligned bounds of a frame (accounts for 90°-step and free rotation)
+                function frameAabbMm(inst) {
+                    var rot = ((inst.rotation || 0) * Math.PI) / 180;
+                    var cx = inst.x + inst.w / 2;
+                    var cy = inst.y + inst.h / 2;
+                    var hw = inst.w / 2;
+                    var hh = inst.h / 2;
+                    var cos = Math.cos(rot);
+                    var sin = Math.sin(rot);
+                    var corners = [
+                        { x: -hw, y: -hh },
+                        { x: hw, y: -hh },
+                        { x: hw, y: hh },
+                        { x: -hw, y: hh },
+                    ];
+                    var minX = Infinity,
+                        minY = Infinity,
+                        maxX = -Infinity,
+                        maxY = -Infinity;
+                    for (var i = 0; i < 4; i++) {
+                        var c = corners[i];
+                        var wx = cx + c.x * cos - c.y * sin;
+                        var wy = cy + c.x * sin + c.y * cos;
+                        if (wx < minX) minX = wx;
+                        if (wy < minY) minY = wy;
+                        if (wx > maxX) maxX = wx;
+                        if (wy > maxY) maxY = wy;
                     }
+                    return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+                }
+
+                function rectsIntersect(a, b) {
+                    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+                }
+
+                function updateMarqueeEl(x0, y0, x1, y1) {
+                    var scale = MM_TO_PX * zoom;
+                    var left = Math.min(x0, x1);
+                    var top = Math.min(y0, y1);
+                    var w = Math.abs(x1 - x0);
+                    var h = Math.abs(y1 - y0);
+                    marqueeEl.style.display = "block";
+                    marqueeEl.style.left = left * scale + "px";
+                    marqueeEl.style.top = top * scale + "px";
+                    marqueeEl.style.width = w * scale + "px";
+                    marqueeEl.style.height = h * scale + "px";
+                }
+
+                function hideMarquee() {
+                    marqueeEl.style.display = "none";
+                    marqueeEl.style.width = "0";
+                    marqueeEl.style.height = "0";
+                }
+
+                function onMarqueeMove(e) {
+                    if (!marqueeState) return;
+                    var p = clientToPaperMm(e.clientX, e.clientY);
+                    marqueeState.curX = p.x;
+                    marqueeState.curY = p.y;
+                    updateMarqueeEl(marqueeState.startX, marqueeState.startY, p.x, p.y);
+                }
+
+                function onMarqueeEnd(e) {
+                    if (!marqueeState) return;
+                    window.removeEventListener("mousemove", onMarqueeMove);
+                    window.removeEventListener("mouseup", onMarqueeEnd);
+                    var p = clientToPaperMm(e.clientX, e.clientY);
+                    var x0 = marqueeState.startX;
+                    var y0 = marqueeState.startY;
+                    var x1 = p.x;
+                    var y1 = p.y;
+                    var additive = marqueeState.additive;
+                    var dx = Math.abs(x1 - x0);
+                    var dy = Math.abs(y1 - y0);
+                    hideMarquee();
+                    marqueeState = null;
+
+                    // Tiny drag = click → clear selection (unless additive)
+                    if (dx < 0.4 && dy < 0.4) {
+                        if (!additive) {
+                            selectPlaced(null);
+                            setCropMode(false);
+                            setResizeMode(false);
+                        }
+                        return;
+                    }
+
+                    var selRect = {
+                        x: Math.min(x0, x1),
+                        y: Math.min(y0, y1),
+                        w: Math.abs(x1 - x0),
+                        h: Math.abs(y1 - y0),
+                    };
+                    var hits = [];
+                    for (var i = 0; i < placed.length; i++) {
+                        var box = frameAabbMm(placed[i]);
+                        if (rectsIntersect(selRect, box)) hits.push(placed[i].pid);
+                    }
+
+                    if (additive) {
+                        hits.forEach(function (pid) {
+                            if (selectedIds.indexOf(pid) < 0) selectedIds.push(pid);
+                        });
+                        selectedId = selectedIds.length ? selectedIds[selectedIds.length - 1] : null;
+                        syncSelectionUI();
+                    } else {
+                        selectedIds = hits.slice();
+                        selectedId = selectedIds.length ? selectedIds[selectedIds.length - 1] : null;
+                        syncSelectionUI();
+                        if (!hits.length) {
+                            setCropMode(false);
+                            setResizeMode(false);
+                        }
+                    }
+                    if (hits.length) {
+                        setStatus("Selected " + hits.length + " frame" + (hits.length === 1 ? "" : "s") + " (marquee)");
+                    } else if (!additive) {
+                        setStatus("No frames in selection");
+                    }
+                }
+
+                paperStage.addEventListener("mousedown", function (e) {
+                    if (e.target !== paperStage && !e.target.classList.contains("paper-label")) return;
+                    // Don't start marquee while middle-click etc.
+                    if (e.button !== 0) return;
+                    e.preventDefault();
+                    setCropMode(false);
+                    setResizeMode(false);
+                    var p = clientToPaperMm(e.clientX, e.clientY);
+                    marqueeState = {
+                        startX: p.x,
+                        startY: p.y,
+                        curX: p.x,
+                        curY: p.y,
+                        additive: e.shiftKey || e.ctrlKey || e.metaKey,
+                    };
+                    updateMarqueeEl(p.x, p.y, p.x, p.y);
+                    window.addEventListener("mousemove", onMarqueeMove);
+                    window.addEventListener("mouseup", onMarqueeEnd);
                 });
 
-                // Wheel zoom ONLY in crop mode
-                paperStage.addEventListener(
-                    "wheel",
-                    function (e) {
-                        if (!cropMode || !selectedId) return;
+                // Wheel: crop mode → photo zoom; otherwise (or Ctrl/Cmd) → canvas zoom
+                function onCanvasWheel(e) {
+                    if (cropMode && selectedId && !e.ctrlKey && !e.metaKey) {
                         e.preventDefault();
+                        e.stopPropagation();
                         var inst = getSelected();
                         if (!inst) return;
                         var factor = e.deltaY < 0 ? 1.06 : 0.94;
                         inst.cropScale = Math.max(1, Math.min(5, (inst.cropScale || 1) * factor));
                         renderPlaced(inst);
                         syncSourceTransforms(inst);
-                    },
-                    { passive: false },
-                );
+                        return;
+                    }
+                    // Canvas zoom when not cropping photo, or with Ctrl/Cmd
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var factorZ = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+                    setCanvasZoom(zoom * factorZ, e.clientX, e.clientY);
+                }
+                document.getElementById("canvasWrap").addEventListener("wheel", onCanvasWheel, { passive: false });
 
                 document.getElementById("showGuides").addEventListener("change", function () {
                     placed.forEach(function (p) {
                         renderPlaced(p);
                     });
                 });
+                var showHalfLineEl = document.getElementById("showHalfLine");
+                if (showHalfLineEl) {
+                    showHalfLineEl.addEventListener("change", updateHalfPageLine);
+                }
 
                 document.getElementById("btnCropMode").addEventListener("click", function () {
                     if (!getSelected()) {
@@ -2637,6 +2952,205 @@ function refreshDevicesPrintersOnly() {
                     setResizeMode(false);
                     setStatus("Canvas cleared");
                 });
+
+                // Align selected frames relative to the selection bounding box
+                function alignSelection(edge) {
+                    var group = getSelectedAll();
+                    if (group.length < 2) {
+                        setStatus("Select 2 or more frames to align (Shift/Ctrl+click)");
+                        return;
+                    }
+                    var minX = Infinity,
+                        minY = Infinity,
+                        maxR = -Infinity,
+                        maxB = -Infinity;
+                    group.forEach(function (p) {
+                        if (p.x < minX) minX = p.x;
+                        if (p.y < minY) minY = p.y;
+                        if (p.x + p.w > maxR) maxR = p.x + p.w;
+                        if (p.y + p.h > maxB) maxB = p.y + p.h;
+                    });
+                    group.forEach(function (p) {
+                        if (edge === "left") p.x = minX;
+                        else if (edge === "right") p.x = maxR - p.w;
+                        else if (edge === "top") p.y = minY;
+                        else if (edge === "bottom") p.y = maxB - p.h;
+                        p.x = Math.round(p.x * 1000) / 1000;
+                        p.y = Math.round(p.y * 1000) / 1000;
+                        renderPlaced(p);
+                    });
+                    setStatus("Aligned " + group.length + " frames · " + edge);
+                    syncSelectionUI();
+                }
+                function wireAlign(id, edge) {
+                    var el = document.getElementById(id);
+                    if (el) el.addEventListener("click", function () { alignSelection(edge); });
+                }
+                wireAlign("btnAlignLeft", "left");
+                wireAlign("btnAlignRight", "right");
+                wireAlign("btnAlignTop", "top");
+                wireAlign("btnAlignBottom", "bottom");
+                wireAlign("btnAlignLeftT", "left");
+                wireAlign("btnAlignRightT", "right");
+                wireAlign("btnAlignTopT", "top");
+                wireAlign("btnAlignBottomT", "bottom");
+
+                /**
+                 * Pack selected frames for one-stroke cutting:
+                 * frames sit flush (0 gap) against each other. Page margin insets
+                 * the pack from paper edges for non-borderless printer hardware.
+                 * Fill printable width left→right, wrap rows when needed.
+                 */
+                function getPageMarginMm() {
+                    var padEl = document.getElementById("stackPad");
+                    var unitEl = document.getElementById("stackPadUnit");
+                    var v = padEl ? parseFloat(padEl.value) : 0.15;
+                    if (isNaN(v) || v < 0) v = 0;
+                    var unit = unitEl ? unitEl.value : "in";
+                    if (unit === "in") return v * 25.4;
+                    if (unit === "cm") return v * 10;
+                    return v; // mm
+                }
+                function updateStackPadHint() {
+                    var hint = document.getElementById("stackPadHint");
+                    if (!hint) return;
+                    var mm = getPageMarginMm();
+                    var mmTxt = (Math.round(mm * 100) / 100).toString();
+                    if (mm > 0.001) {
+                        hint.textContent = "= " + mmTxt + " mm from each paper edge";
+                    } else {
+                        hint.textContent = "= 0 mm · edge-to-edge (borderless)";
+                    }
+                }
+                (function wireStackPad() {
+                    var padEl = document.getElementById("stackPad");
+                    var unitEl = document.getElementById("stackPadUnit");
+                    if (padEl) {
+                        padEl.addEventListener("input", updateStackPadHint);
+                        padEl.addEventListener("change", updateStackPadHint);
+                    }
+                    if (unitEl) unitEl.addEventListener("change", updateStackPadHint);
+                    updateStackPadHint();
+                })();
+
+                function autoStackSelection() {
+                    var group = getSelectedAll();
+                    if (!group.length) {
+                        // fallback: all frames on canvas
+                        group = placed.slice();
+                    }
+                    if (!group.length) {
+                        setStatus("Place or select frames to auto stack");
+                        return;
+                    }
+                    var paper = getPaperDims();
+                    var margin = getPageMarginMm(); // hardware margin — used for paper right (and bottom) limit
+                    var gap = 0; // frames flush for shared cut guides
+
+                    // Start from the selection's current leftmost / topmost (not always paper origin)
+                    var originX = Infinity;
+                    var originY = Infinity;
+                    group.forEach(function (p) {
+                        if (p.x < originX) originX = p.x;
+                        if (p.y < originY) originY = p.y;
+                    });
+                    if (!isFinite(originX)) originX = margin;
+                    if (!isFinite(originY)) originY = margin;
+                    // Quantize so shared edges stay exact
+                    originX = Math.round(originX * 1000) / 1000;
+                    originY = Math.round(originY * 1000) / 1000;
+
+                    // Right/bottom bounds: paper edge minus hardware page margin
+                    var maxRight = paper.w - margin;
+                    var maxBottom = paper.h - margin;
+                    var printableW = Math.max(0, maxRight - originX);
+
+                    // Work on a stable order: taller first within similar widths helps
+                    // fill rows, but preserve relative selection order when sizes match.
+                    var items = group.slice();
+                    items.sort(function (a, b) {
+                        var dh = b.h - a.h;
+                        if (Math.abs(dh) > 0.05) return dh;
+                        return a.w - b.w;
+                    });
+
+                    var cursorX = originX;
+                    var cursorY = originY;
+                    var rowH = 0;
+                    var rows = 1;
+                    var overflow = 0;
+
+                    items.forEach(function (p) {
+                        var fw = Math.max(0.1, p.w);
+                        var fh = Math.max(0.1, p.h);
+
+                        function advanceX() {
+                            cursorX += fw + gap;
+                        }
+                        function advanceRow() {
+                            // New rows restart at the same leftmost as the selection
+                            cursorY += rowH + gap;
+                            cursorX = originX;
+                            rowH = 0;
+                            rows++;
+                        }
+
+                        // Frame wider than remaining printable width: pin to leftmost, own row
+                        if (fw > printableW + 0.01) {
+                            if (rowH > 0) advanceRow();
+                            p.x = Math.round(originX * 1000) / 1000;
+                            p.y = Math.round(cursorY * 1000) / 1000;
+                            rowH = fh;
+                            advanceRow();
+                            if (p.y + fh > maxBottom + 0.05) overflow++;
+                            renderPlaced(p);
+                            return;
+                        }
+
+                        // Wrap at paper right boundary (minus page margin)
+                        if (cursorX > originX + 0.001 && cursorX + fw > maxRight + 0.01) {
+                            advanceRow();
+                        }
+
+                        p.x = Math.round(cursorX * 1000) / 1000;
+                        p.y = Math.round(cursorY * 1000) / 1000;
+                        if (fh > rowH) rowH = fh;
+                        advanceX();
+
+                        if (p.y + fh > maxBottom + 0.05) overflow++;
+                        renderPlaced(p);
+                    });
+
+                    // Re-select the packed set so user can nudge/align further
+                    selectedIds = group.map(function (p) {
+                        return p.pid;
+                    });
+                    syncSelectionUI();
+
+                    var mTxt = Math.round(margin * 100) / 100;
+                    var msg =
+                        "Stacked " +
+                        group.length +
+                        " frames · " +
+                        rows +
+                        " row" +
+                        (rows === 1 ? "" : "s") +
+                        " · from (" +
+                        Math.round(originX * 10) / 10 +
+                        ", " +
+                        Math.round(originY * 10) / 10 +
+                        ") mm · flush · right margin " +
+                        mTxt +
+                        " mm";
+                    if (overflow) {
+                        msg += " · " + overflow + " extend past printable height";
+                    }
+                    setStatus(msg);
+                }
+                var btnAutoStack = document.getElementById("btnAutoStack");
+                if (btnAutoStack) btnAutoStack.addEventListener("click", autoStackSelection);
+                var btnAutoStackT = document.getElementById("btnAutoStackT");
+                if (btnAutoStackT) btnAutoStackT.addEventListener("click", autoStackSelection);
 
                 // ----- Keyboard shortcuts -----
                 function isTypingTarget(el) {
@@ -2805,13 +3319,18 @@ function refreshDevicesPrintersOnly() {
                         return;
                     }
 
-                    // +/- or =/_ for crop zoom when in crop mode
-                    if (cropMode && inst && (key === "+" || key === "=" || key === "-" || key === "_")) {
+                    // +/- : crop zoom in crop mode; otherwise (or with Ctrl) canvas zoom
+                    if (key === "+" || key === "=" || key === "-" || key === "_") {
                         e.preventDefault();
-                        var factor = key === "+" || key === "=" ? 1.06 : 0.94;
-                        inst.cropScale = Math.max(1, Math.min(5, (inst.cropScale || 1) * factor));
-                        renderPlaced(inst);
-                        syncSourceTransforms(inst);
+                        if (cropMode && inst && !e.ctrlKey && !e.metaKey) {
+                            var factor = key === "+" || key === "=" ? 1.06 : 0.94;
+                            inst.cropScale = Math.max(1, Math.min(5, (inst.cropScale || 1) * factor));
+                            renderPlaced(inst);
+                            syncSourceTransforms(inst);
+                        } else {
+                            if (key === "+" || key === "=") zoomInStep();
+                            else zoomOutStep();
+                        }
                         return;
                     }
                 });
@@ -3234,11 +3753,11 @@ function refreshDevicesPrintersOnly() {
                             ctx.restore(); // unclip
 
                             if (withGuides) {
-                                // Dashed border around frame (cut guide)
-                                var t = Math.max(1, scale * 0.12);
-                                ctx.strokeStyle = "#9a9a9a";
+                                // Subtle dashed cut guide
+                                var t = Math.max(0.6, scale * 0.08);
+                                ctx.strokeStyle = "rgba(130, 130, 130, 0.45)";
                                 ctx.lineWidth = t;
-                                ctx.setLineDash([Math.max(3, scale * 0.8), Math.max(2, scale * 0.5)]);
+                                ctx.setLineDash([Math.max(2, scale * 0.6), Math.max(2, scale * 0.55)]);
                                 ctx.strokeRect(-fw / 2, -fh / 2, fw, fh);
                                 ctx.setLineDash([]);
                             }
@@ -3253,6 +3772,7 @@ function refreshDevicesPrintersOnly() {
                     });
                 }
 
+                // Half-page line is screen-only and never drawn here
                 function renderSheet(dpi, withGuides) {
                     var d = getPaperDims();
                     var pxW = Math.round((d.w / 25.4) * dpi);
