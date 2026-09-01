@@ -1092,13 +1092,13 @@
                                     <path d="M21 21l-4.3-4.3" />
                                     <path d="M8 10h4" />
                                 </svg>
-                                <input type="range" data-role="zoom" min="0" max="100" value="0" step="0.1" />
+                                <input type="range" data-role="zoom" min="-50" max="50" value="0" step="0.1" />
                                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                                     <circle cx="10" cy="10" r="6" />
                                     <path d="M21 21l-4.3-4.3" />
                                     <path d="M10 8v4M8 10h4" />
                                 </svg>
-                                <input type="number" data-role="zoomNum" min="100" max="600" step="1" value="100" title="Zoom % (100% = fit cover)" style="width: 58px; flex: none; padding: 4px 6px; font-size: 12px" />
+                                <input type="number" data-role="zoomNum" min="10" max="600" step="0.5" value="100" title="Zoom % (100% = cover frame; below 100% = zoom out)" style="width: 58px; flex: none; padding: 4px 6px; font-size: 12px" />
                             </div>
                         </div>
 
@@ -1166,13 +1166,13 @@
                                     <path d="M21 21l-4.3-4.3" />
                                     <path d="M8 10h4" />
                                 </svg>
-                                <input type="range" data-role="zoom" min="0" max="100" value="0" step="0.1" />
+                                <input type="range" data-role="zoom" min="-50" max="50" value="0" step="0.1" />
                                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                                     <circle cx="10" cy="10" r="6" />
                                     <path d="M21 21l-4.3-4.3" />
                                     <path d="M10 8v4M8 10h4" />
                                 </svg>
-                                <input type="number" data-role="zoomNum" min="100" max="600" step="1" value="100" title="Zoom % (100% = fit cover)" style="width: 58px; flex: none; padding: 4px 6px; font-size: 12px" />
+                                <input type="number" data-role="zoomNum" min="10" max="600" step="0.5" value="100" title="Zoom % (100% = cover frame; below 100% = zoom out)" style="width: 58px; flex: none; padding: 4px 6px; font-size: 12px" />
                             </div>
                         </div>
 
@@ -1199,7 +1199,7 @@
                         <input type="file" accept="image/*" data-role="file" hidden />
                     </div>
 
-                    <div class="hint">Drag to pan · hover + scroll to zoom · arrow keys to micro-nudge (Shift = larger). Type exact zoom % or rotation in the number boxes. 90° buttons snap orientation.</div>
+                    <div class="hint">Drag to pan · hover + scroll to zoom (below 100% = zoom out) · arrow keys to micro-nudge (Shift = larger). Type zoom % (10–600, 100% = cover) or rotation. Images load at contain size — not forced to fill. 90° buttons snap orientation.</div>
                 </div>
 
                 <!-- Guides -->
@@ -1675,6 +1675,7 @@
                         mode: "crop",
                         scale: 1,
                         minScale: 1,
+                        coverScale: 1,
                         tx: 0,
                         ty: 0,
                         baseRot: 0,
@@ -1709,15 +1710,35 @@
                     return r === 90 || r === 270;
                 }
 
-                function minScaleFor(card) {
+                /** Scale that fully covers the frame (may crop). */
+                function coverScaleFor(card) {
                     const f = frameLocalSize(card);
                     if (!card.natW || !card.natH) return 1;
                     const theta = ((card.baseRot + (card.fineRot || 0)) * Math.PI) / 180;
                     const c = Math.abs(Math.cos(theta));
                     const s = Math.abs(Math.sin(theta));
+                    // AABB of rotated frame in image space
                     const bw = f.w * c + f.h * s;
                     const bh = f.w * s + f.h * c;
-                    return Math.max(bw / card.natW, bh / card.natH) * 1.001;
+                    return Math.max(bw / card.natW, bh / card.natH);
+                }
+
+                /** Scale that fits entire image inside the frame (no crop, may letterbox). */
+                function containScaleFor(card) {
+                    const f = frameLocalSize(card);
+                    if (!card.natW || !card.natH) return 1;
+                    const theta = ((card.baseRot + (card.fineRot || 0)) * Math.PI) / 180;
+                    const c = Math.abs(Math.cos(theta));
+                    const s = Math.abs(Math.sin(theta));
+                    // AABB of rotated image in frame space
+                    const iw = card.natW * c + card.natH * s;
+                    const ih = card.natW * s + card.natH * c;
+                    return Math.min(f.w / iw, f.h / ih);
+                }
+
+                // Back-compat alias used by older call sites
+                function minScaleFor(card) {
+                    return coverScaleFor(card);
                 }
 
                 function render(card) {
@@ -1741,53 +1762,104 @@
                     }
                 }
 
-                const ZOOM_MAX_MULT = 6; // max scale = minScale * this
+                // Zoom model: 100% = coverScale (fills frame). Values below 100% zoom out (letterbox).
+                // Slider: -50 … +50  →  maps to ZOOM_PCT_MIN … ZOOM_PCT_MAX with 0 = 100%.
+                const ZOOM_PCT_MIN = 10; // 10% of cover = well zoomed out
+                const ZOOM_PCT_MAX = 600;
+                const ZOOM_SLIDER_MIN = -50;
+                const ZOOM_SLIDER_MAX = 50;
 
-                function fitCover(card) {
-                    card.minScale = minScaleFor(card);
-                    card.scale = card.minScale;
+                function floorScale(card) {
+                    const cover = card.coverScale || coverScaleFor(card) || 1;
+                    return cover * (ZOOM_PCT_MIN / 100);
+                }
+
+                function ceilScale(card) {
+                    const cover = card.coverScale || coverScaleFor(card) || 1;
+                    return cover * (ZOOM_PCT_MAX / 100);
+                }
+
+                /** Place image without forcing cover — use contain so full image is visible. */
+                function placeImageDefault(card) {
+                    card.coverScale = coverScaleFor(card);
+                    card.minScale = floorScale(card);
+                    // Don't auto-fit to cover: start at contain (whole image visible, may letterbox)
+                    const contain = containScaleFor(card);
+                    card.scale = contain > 0 ? contain : card.coverScale;
                     card.tx = 0;
                     card.ty = 0;
                     syncZoomUI(card);
                 }
 
-                /** Keep current relative zoom when minScale changes (e.g. after rotate). */
+                /** Legacy name — now just recenters; does NOT force cover scale. */
+                function fitCover(card) {
+                    placeImageDefault(card);
+                }
+
+                /** Update coverScale after rotation/resize; keep absolute scale, only clamp extremes. */
                 function reclampScale(card) {
-                    const prevMin = card.minScale;
-                    const rel = prevMin > 0 ? card.scale / prevMin : 1;
-                    card.minScale = minScaleFor(card);
-                    card.scale = clamp(card.minScale * rel, card.minScale, card.minScale * ZOOM_MAX_MULT);
+                    card.coverScale = coverScaleFor(card);
+                    card.minScale = floorScale(card);
+                    card.scale = clamp(card.scale, floorScale(card), ceilScale(card));
                     syncZoomUI(card);
                 }
 
                 function zoomPercent(card) {
-                    if (!card.minScale) return 100;
-                    return Math.round((card.scale / card.minScale) * 100);
+                    const cover = card.coverScale || coverScaleFor(card) || 1;
+                    if (!cover) return 100;
+                    return Math.round((card.scale / cover) * 1000) / 10; // one decimal
+                }
+
+                function sliderFromPercent(pct) {
+                    // Map ZOOM_PCT_MIN..100..ZOOM_PCT_MAX  →  -50..0..+50 (piecewise linear)
+                    pct = clamp(pct, ZOOM_PCT_MIN, ZOOM_PCT_MAX);
+                    if (pct <= 100) {
+                        // ZOOM_PCT_MIN → -50, 100 → 0
+                        return ZOOM_SLIDER_MIN * (1 - (pct - ZOOM_PCT_MIN) / (100 - ZOOM_PCT_MIN));
+                    }
+                    // 100 → 0, ZOOM_PCT_MAX → +50
+                    return ZOOM_SLIDER_MAX * ((pct - 100) / (ZOOM_PCT_MAX - 100));
+                }
+
+                function percentFromSlider(sv) {
+                    sv = clamp(Number(sv) || 0, ZOOM_SLIDER_MIN, ZOOM_SLIDER_MAX);
+                    if (sv <= 0) {
+                        // -50 → ZOOM_PCT_MIN, 0 → 100
+                        return ZOOM_PCT_MIN + (100 - ZOOM_PCT_MIN) * (1 - sv / ZOOM_SLIDER_MIN);
+                    }
+                    // 0 → 100, +50 → ZOOM_PCT_MAX
+                    return 100 + (ZOOM_PCT_MAX - 100) * (sv / ZOOM_SLIDER_MAX);
                 }
 
                 function syncZoomUI(card) {
-                    const maxScale = card.minScale * ZOOM_MAX_MULT;
-                    const pct = maxScale <= card.minScale ? 0 : clamp(((card.scale - card.minScale) / (maxScale - card.minScale)) * 100, 0, 100);
-                    if (card.zoomSlider) card.zoomSlider.value = pct;
+                    if (!card.coverScale) card.coverScale = coverScaleFor(card);
                     const zp = zoomPercent(card);
-                    if (card.zoomVal) card.zoomVal.textContent = zp + "%";
+                    if (card.zoomSlider && document.activeElement !== card.zoomSlider) {
+                        card.zoomSlider.value = sliderFromPercent(zp);
+                    }
+                    if (card.zoomVal) {
+                        const shown = Math.round(zp * 10) / 10;
+                        card.zoomVal.textContent = shown + "%";
+                    }
                     if (card.zoomNum && document.activeElement !== card.zoomNum) {
-                        card.zoomNum.value = zp;
+                        card.zoomNum.value = Math.round(zp * 10) / 10;
                     }
                 }
 
                 function applyZoomFromSlider(card) {
-                    const maxScale = card.minScale * ZOOM_MAX_MULT;
-                    const pct = Number(card.zoomSlider.value) / 100;
-                    card.scale = card.minScale + pct * (maxScale - card.minScale);
+                    if (!card.coverScale) card.coverScale = coverScaleFor(card);
+                    const pct = percentFromSlider(card.zoomSlider.value);
+                    card.scale = card.coverScale * (pct / 100);
+                    card.scale = clamp(card.scale, floorScale(card), ceilScale(card));
                     syncZoomUI(card);
                     render(card);
                 }
 
                 function applyZoomFromPercent(card, pct) {
-                    pct = clamp(Number(pct) || 100, 100, 600);
-                    card.scale = card.minScale * (pct / 100);
-                    if (card.scale > card.minScale * ZOOM_MAX_MULT) card.scale = card.minScale * ZOOM_MAX_MULT;
+                    if (!card.coverScale) card.coverScale = coverScaleFor(card);
+                    pct = clamp(Number(pct) || 100, ZOOM_PCT_MIN, ZOOM_PCT_MAX);
+                    card.scale = card.coverScale * (pct / 100);
+                    card.scale = clamp(card.scale, floorScale(card), ceilScale(card));
                     syncZoomUI(card);
                     render(card);
                 }
@@ -1959,18 +2031,18 @@
                         });
                     }
 
-                    // Micro-zoom: hover over image + scroll wheel
+                    // Micro-zoom: hover over image + scroll wheel (allows zoom below cover)
                     card.wrap.addEventListener(
                         "wheel",
                         function (e) {
                             if (card.mode !== "crop" || !card.hasImage) return;
                             e.preventDefault();
                             setActiveCard(card);
+                            if (!card.coverScale) card.coverScale = coverScaleFor(card);
                             // Fine steps: ~3% per notch; Shift = coarser ~8%
                             const base = e.shiftKey ? 1.08 : 1.03;
                             const factor = e.deltaY < 0 ? base : 1 / base;
-                            const maxScale = card.minScale * ZOOM_MAX_MULT;
-                            card.scale = clamp(card.scale * factor, card.minScale, maxScale);
+                            card.scale = clamp(card.scale * factor, floorScale(card), ceilScale(card));
                             syncZoomUI(card);
                             render(card);
                         },
