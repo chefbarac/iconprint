@@ -913,6 +913,24 @@
                         <p style="margin-top: 3px; font-size: 0.68rem">JPG, PNG, WEBP · PNG transparency → white</p>
                     </div>
                     <input type="file" id="fileInput" accept="image/*" multiple hidden />
+                    <div class="row" style="margin: 8px 0 4px">
+                        <div>
+                            <label>Frame spacing</label>
+                            <input type="number" id="addAllGap" value="0" min="0" step="0.05" title="Gap between frames for Add All and Auto stack (0 = flush/side-by-side)" />
+                        </div>
+                        <div>
+                            <label>Unit</label>
+                            <select id="addAllGapUnit">
+                                <option value="in" selected>in</option>
+                                <option value="mm">mm</option>
+                                <option value="cm">cm</option>
+                            </select>
+                        </div>
+                    </div>
+                    <p class="hint" style="margin-bottom: 6px">Used by both Add All and Auto stack. 0 = flush/side-by-side (default).</p>
+                    <div class="row" style="margin: 0 0 8px">
+                        <button type="button" id="btnAddAll" style="width: 100%" title="Add every uploaded design to the page, cycling design 1 → last, repeating to fill the page">Add All</button>
+                    </div>
                     <div class="thumb-list" id="thumbList"></div>
                 </div>
 
@@ -1003,8 +1021,8 @@
                         <button type="button" id="btnAutoStack" title="Pack selected frames flush inside page margins, fill width, wrap rows">Auto stack</button>
                     </div>
                     <p class="hint" style="margin-bottom: 6px">
-                        Starts at the selection’s leftmost/topmost, packs flush left→right, wraps at paper right (minus page margin). New rows restart at that leftmost X. Select frames first
-                        (Ctrl/Cmd+A for all).
+                        Starts at the selection’s leftmost/topmost, packs left→right (gap set by "Frame spacing" in the Images panel, 0 = flush), wraps at paper right (minus page margin). New rows
+                        restart at that leftmost X. Select frames first (Ctrl/Cmd+A for all).
                     </p>
                     <div class="row" style="margin-top: 6px">
                         <button type="button" class="danger" id="btnDelete" style="width: 100%">Delete</button>
@@ -1994,6 +2012,151 @@
                     selectPlaced(pid);
                     var sizeNote = isFree && activePreset.w <= 0 && activePreset.h <= 0 ? " native @ 300 DPI" : "";
                     setStatus("Placed " + item.name + " as " + activePreset.name + " (" + Math.round(wMm * 10) / 10 + "x" + Math.round(hMm * 10) / 10 + " mm" + sizeNote + ")");
+                }
+
+                // Resolve the frame size (mm) that a new instance would use for the
+                // current preset, without needing a target position. Mirrors the
+                // sizing branch in placeImage() so grid math and single-add stay
+                // consistent. Returns null if a Free preset needs explicit dims.
+                function resolveSlotSize(sampleItem) {
+                    var wMm = activePreset.w;
+                    var hMm = activePreset.h;
+                    var isFree = activePreset.name === "Free" || (activePreset.name && activePreset.name.indexOf("Free") === 0);
+                    if (isFree && (wMm <= 0 || hMm <= 0)) {
+                        if (!sampleItem) return null;
+                        var aspect = sampleItem.naturalW / Math.max(1e-6, sampleItem.naturalH);
+                        if (wMm <= 0 && hMm <= 0) {
+                            wMm = (sampleItem.naturalW / 300) * 25.4;
+                            hMm = (sampleItem.naturalH / 300) * 25.4;
+                        } else if (wMm <= 0) {
+                            wMm = hMm * aspect;
+                        } else if (hMm <= 0) {
+                            hMm = wMm / aspect;
+                        }
+                    }
+                    if (!wMm || !hMm || wMm <= 0 || hMm <= 0) return null;
+                    return { w: wMm, h: hMm, isFree: isFree };
+                }
+
+                // Build a placed-instance object (same shape as placeImage's) at an
+                // explicit top-left mm position, without pushing/rendering it.
+                function buildInstAt(item, xMm, yMm, wMm, hMm, isFree) {
+                    var pid = "p" + nextId++;
+                    return {
+                        pid: pid,
+                        imageId: item.id,
+                        x: xMm,
+                        y: yMm,
+                        w: wMm,
+                        h: hMm,
+                        rotation: 0,
+                        imgRotation: item.imgRotation != null ? item.imgRotation : 0,
+                        flipH: !!item.flipH,
+                        flipV: !!item.flipV,
+                        cropScale: item.cropScale != null ? item.cropScale : 1,
+                        cropX: item.cropX || 0,
+                        cropY: item.cropY || 0,
+                        naturalW: item.naturalW,
+                        naturalH: item.naturalH,
+                        black: item.black != null ? item.black : 0,
+                        white: item.white != null ? item.white : 255,
+                        gamma: item.gamma != null ? item.gamma : 1,
+                        bright: item.bright != null ? item.bright : 0,
+                        contrast: item.contrast != null ? item.contrast : 0,
+                        src: item.src,
+                        originalDataURL: item.originalDataURL,
+                        name: item.name,
+                        presetName: activePreset.name,
+                        isFree: isFree,
+                        fitMode: item.fitMode || "fill",
+                    };
+                }
+
+                // "Add All": place every uploaded design onto the page at the
+                // current preset size, flush left→right / top→bottom starting at
+                // the page margin, cycling design 1 → last and repeating the
+                // sequence until the page is full. Every design is guaranteed to
+                // be added at least once even if that means overflowing the last
+                // row (matching Auto Stack's overflow behavior).
+                function addAllDesigns() {
+                    if (!images.length) {
+                        setStatus("Upload some designs first");
+                        return;
+                    }
+                    var slot = resolveSlotSize(images[0]);
+                    if (!slot) {
+                        setStatus("Set Free size width and height first (or leave both 0 for native size @ 300 DPI)");
+                        return;
+                    }
+                    var wMm = slot.w,
+                        hMm = slot.h;
+                    var gap = getAddAllGapMm(); // 0 = flush/side-by-side (default)
+                    var paper = getPaperDims();
+                    var margin = getPageMarginMm();
+                    var originX = margin,
+                        originY = margin;
+                    var maxRight = paper.w - margin;
+                    var maxBottom = paper.h - margin;
+                    var printableW = Math.max(0, maxRight - originX);
+
+                    var colPitch = wMm + gap;
+                    var rowPitch = hMm + gap;
+                    var cols = Math.max(1, Math.floor((printableW + gap + 0.01) / colPitch));
+
+                    var created = [];
+                    var overflow = 0;
+                    var i = 0;
+                    while (true) {
+                        var row = Math.floor(i / cols);
+                        var col = i % cols;
+                        var x = originX + col * colPitch;
+                        var y = originY + row * rowPitch;
+                        var fits = y + hMm <= maxBottom + 0.05;
+
+                        // Once every design has been placed at least once, stop as
+                        // soon as the next slot no longer fits on the page.
+                        if (!fits && i >= images.length) break;
+                        // Safety valve against runaway loops.
+                        if (i > 5000) break;
+
+                        var item = images[i % images.length];
+                        var inst = buildInstAt(item, x, y, wMm, hMm, slot.isFree);
+                        placed.push(inst);
+                        createPlacedEl(inst);
+                        created.push(inst);
+                        if (!fits) overflow++;
+                        i++;
+                    }
+
+                    if (!created.length) {
+                        setStatus("No room to add designs at the current preset size");
+                        return;
+                    }
+
+                    selectedIds = created.map(function (p) {
+                        return p.pid;
+                    });
+                    syncSelectionUI();
+
+                    var cycles = Math.ceil(created.length / images.length);
+                    var msg = "Added " + created.length + " frame" + (created.length === 1 ? "" : "s") + " from " + images.length + " design" + (images.length === 1 ? "" : "s") + (cycles > 1 ? " (repeated " + cycles + "x to fill page)" : "") + " at " + Math.round(wMm * 10) / 10 + "x" + Math.round(hMm * 10) / 10 + " mm";
+                    msg += gap > 0.001 ? " · " + Math.round(gap * 100) / 100 + " mm spacing" : " · flush";
+                    if (overflow) msg += " · " + overflow + " extend past printable height";
+                    setStatus(msg);
+                }
+                var btnAddAll = document.getElementById("btnAddAll");
+                if (btnAddAll) btnAddAll.addEventListener("click", addAllDesigns);
+
+                // mm value of the "Spacing" control next to Add All. 0 = flush.
+                function getAddAllGapMm() {
+                    var el = document.getElementById("addAllGap");
+                    var unitEl = document.getElementById("addAllGapUnit");
+                    var v = el ? parseFloat(el.value) : 0;
+                    if (isNaN(v) || v < 0) v = 0;
+                    var unit = unitEl ? unitEl.value : "in";
+                    if (unit === "in") return v * 25.4;
+                    if (unit === "cm") return v * 10;
+                    return v; // mm
                 }
 
                 function createPlacedEl(inst) {
@@ -3165,7 +3328,7 @@
                     }
                     var paper = getPaperDims();
                     var margin = getPageMarginMm(); // hardware margin — used for paper right (and bottom) limit
-                    var gap = 0; // frames flush for shared cut guides
+                    var gap = getAddAllGapMm(); // shared "Spacing" control — 0 = flush for shared cut guides
 
                     // Start from the selection's current leftmost / topmost (not always paper origin)
                     var originX = Infinity;
@@ -3259,7 +3422,9 @@
                         Math.round(originX * 10) / 10 +
                         ", " +
                         Math.round(originY * 10) / 10 +
-                        ") mm · flush · right margin " +
+                        ") mm · " +
+                        (gap > 0.001 ? Math.round(gap * 100) / 100 + " mm spacing" : "flush") +
+                        " · right margin " +
                         mTxt +
                         " mm";
                     if (overflow) {
