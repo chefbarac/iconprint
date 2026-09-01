@@ -827,6 +827,7 @@
                     <label>Size</label>
                     <select id="paperSelect">
                         <option value="A4" selected>A4 (210 x 297 mm)</option>
+                        <option value="A6">A6 (105 x 148 mm)</option>
                         <option value="Short">Short / Letter (216 x 279 mm)</option>
                         <option value="Long">Long (8.5 × 13 in)</option>
                     </select>
@@ -1087,6 +1088,7 @@
                     <label for="printPaper">Paper</label>
                     <select id="printPaper">
                         <option value="a4">A4</option>
+                        <option value="a6">A6</option>
                         <option value="short">Short / Letter</option>
                         <option value="long">Long — 8.5 × 13"</option>
                     </select>
@@ -1391,6 +1393,7 @@
                 function agentPaperKey(key) {
                     var map = {
                         A4: "a4",
+                        A6: "a6",
                         Short: "short",
                         Long: "long",
                     };
@@ -1399,6 +1402,7 @@
 
                 var PAPERS = {
                     A4: { w: 210, h: 297, name: "A4" },
+                    A6: { w: 105, h: 148, name: "A6" },
                     Short: { w: 216, h: 279, name: "Short / Letter" },
                     Long: { w: 216, h: 330, name: "Long" },
                 };
