@@ -3450,6 +3450,18 @@
                     return false;
                 }
 
+                // True only for fields where Delete/Backspace should edit text, not delete frames.
+                // Number/range/select stay usable for canvas Delete while focused.
+                function isTextEditTarget(el) {
+                    if (!el) return false;
+                    if (el.isContentEditable) return true;
+                    var tag = (el.tagName || "").toLowerCase();
+                    if (tag === "textarea") return true;
+                    if (tag !== "input") return false;
+                    var type = (el.type || "text").toLowerCase();
+                    return type === "text" || type === "search" || type === "email" || type === "password" || type === "url" || type === "tel";
+                }
+
                 function refreshSelInfo(inst) {
                     if (!inst) {
                         selInfo.textContent = "No selection";
@@ -3460,18 +3472,22 @@
                 }
 
                 document.addEventListener("keydown", function (e) {
-                    if (isTypingTarget(e.target)) return;
-
-                    var inst = getSelected();
                     var key = e.key;
 
-                    // Delete / Backspace
+                    // Delete / Backspace: remove selected frames even when a sidebar
+                    // number/range/select has focus. Only block when editing real text.
                     if (key === "Delete" || key === "Backspace") {
-                        if (!inst) return;
+                        if (isTextEditTarget(e.target)) return;
+                        var delInst = getSelected();
+                        if (!delInst) return;
                         e.preventDefault();
                         deleteSelected();
                         return;
                     }
+
+                    if (isTypingTarget(e.target)) return;
+
+                    var inst = getSelected();
 
                     // \ or | : hold-style compare — on keydown show original, keyup restores
                     if (key === "\\" || key === "|") {

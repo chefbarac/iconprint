@@ -32,7 +32,7 @@
                 --accent-dark: #144e40;
                 --danger: #b3452c;
                 --gap: 0in;
-                --pad: 0.2in;
+                --pad: 0.15in;
                 --guide-color: rgba(30, 40, 50, 0.186);
                 --sidebar-w: 360px;
             }
@@ -421,12 +421,22 @@
                 padding: var(--pad);
                 box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
                 border-radius: 2px;
+                overflow: hidden; /* never let grid/flex content bleed past the canvas edge */
             }
 
             .layout-row {
                 display: flex;
                 gap: var(--gap);
                 align-items: flex-start;
+            }
+            /* Narrow canvases (e.g. A6) can't fit both blocks side by side —
+               stack them vertically instead: 2×2 block on top, 1×1 block
+               below (DOM order already puts block A before block B). */
+            .layout-row.stacked {
+                flex-direction: column;
+            }
+            .layout-row.stacked .block.flex-fill {
+                width: 100%;
             }
             .block {
                 display: flex;
@@ -673,6 +683,7 @@
             }
 
             /* ---------- Print ---------- */
+            /* Default; printLayoutBrowser() injects a matching @page rule. */
             @page {
                 size: A4;
                 margin: 0;
@@ -714,10 +725,22 @@
                 .sheet {
                     box-shadow: none;
                     border-radius: 0;
-                    width: 210mm;
-                    min-height: 297mm;
                     margin: 0;
                     padding: var(--pad);
+                }
+                /* Landscape design (e.g. A6 canvas) rotated 90° CW onto portrait paper —
+                   mirrors rasterizeSheetPng() agent path so browser print matches agent print.
+                   rotate(90deg) + translateY(-100%) about top-left anchors the rotated
+                   sheet at the page top-left (padding inside the sheet is preserved). */
+                body.print-rotate-landscape .sheet-wrapper {
+                    display: block;
+                }
+                body.print-rotate-landscape .sheet {
+                    transform: rotate(90deg) translateY(-100%);
+                    transform-origin: top left;
+                    box-shadow: none;
+                    border-radius: 0;
+                    margin: 0;
                 }
                 iframe {
                     display: none !important;
@@ -866,6 +889,14 @@
                     </div>
 
                     <div class="field">
+                        <label for="canvasSizeSelect">Canvas / Sheet size</label>
+                        <select id="canvasSizeSelect">
+                            <option value="a4" selected>A4 (8.27 × 11.69 in)</option>
+                            <option value="a6">A6 Landscape (5.83 × 4.13 in)</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
                         <label for="idTypeSelect">ID type</label>
                         <select id="idTypeSelect">
                             <option value="combo">2×2 &amp; 1×1 (Set)</option>
@@ -892,7 +923,7 @@
                             <option value="solid" selected>Solid translucent</option>
                         </select>
                         <label for="marginInput" style="margin-top: 6px">Page margin (in)</label>
-                        <input type="number" id="marginInput" min="0" max="0.4" step="0.05" value="0.2" />
+                        <input type="number" id="marginInput" min="0" max="0.4" step="0.05" value="0.15" />
                         <button type="button" id="btnGenerate" class="primary-wide" style="margin-top: 8px">Update layout</button>
                     </div>
 
@@ -983,6 +1014,7 @@
                     <label for="printPaper">Paper</label>
                     <select id="printPaper">
                         <option value="a4" selected>A4</option>
+                        <option value="a6">A6</option>
                         <option value="short">Short / Letter</option>
                         <option value="long">Long — 8.5 × 13"</option>
                     </select>
@@ -1004,7 +1036,7 @@
                         <option value="high">High</option>
                     </select>
                 </div>
-                <div class="field-row">
+                <div class="field-row" style="display: none">
                     <label>Orientation</label>
                     <div class="radio-row">
                         <label><input type="radio" name="printOrient" value="portrait" checked /> Portrait</label>
@@ -1286,19 +1318,30 @@
 
                 ("use strict");
 
+                // ---------------- Canvas / sheet size presets ----------------
+                const CANVAS_SIZES = {
+                    a4: { wIn: 8.27, hIn: 11.69, label: "A4" },
+                    a6: { wIn: 5.83, hIn: 4.13, label: "A6 Landscape" },
+                };
+                let canvasPaper = "a4";
+
                 // ---------------- ID type presets ----------------
                 // wIn/hIn = physical cell size in inches. cols = grid columns.
+                // canvasDefaults overrides defaultCount for a specific canvas size
+                // (e.g. A6 has less room, so fewer default copies).
                 const ID_TYPES = {
                     combo: {
                         blocks: [
-                            { label: "2in × 2in", wIn: 2, hIn: 2, cols: 2, defaultCount: 4, countLabel: "Copies — 2in × 2in (left)" },
-                            { label: "1in × 1in", wIn: 1, hIn: 1, cols: 0, defaultCount: 12, countLabel: "Copies — 1in × 1in (right)" }, // cols:0 = auto-fill remaining width
+                            { label: "2in × 2in", wIn: 2, hIn: 2, cols: 2, defaultCount: 4, canvasDefaults: { a6: 2 }, countLabel: "Copies — 2in × 2in (left)" },
+                            { label: "1in × 1in", wIn: 1, hIn: 1, cols: 0, defaultCount: 12, canvasDefaults: { a6: 4 }, countLabel: "Copies — 1in × 1in (right)" }, // cols:0 = auto-fill remaining width
                         ],
                     },
                     passport: {
-                        blocks: [{ label: "Passport 3.5cm × 4.5cm", wIn: 1.38, hIn: 1.77, cols: 3, defaultCount: 10, countLabel: "Copies — Passport size" }],
+                        // A6 landscape: 6 pcs in a 3-column × 2-row grid
+                        blocks: [{ label: "Passport 3.5cm × 4.5cm", wIn: 1.38, hIn: 1.77, cols: 3, defaultCount: 10, canvasDefaults: { a6: 6 }, countLabel: "Copies — Passport size" }],
                     },
                     visa: {
+                        // Not offered on A6 landscape canvas (UI hides this option).
                         blocks: [
                             { label: "Visa 2in × 2in", wIn: 2, hIn: 2, cols: 3, defaultCount: 6, countLabel: "Copies — Visa 2in × 2in (left)" },
                             { label: "1in × 1in", wIn: 1, hIn: 1, cols: 0, defaultCount: 4, countLabel: "Copies — 1in × 1in (right)" }, // cols:0 = auto-fill
@@ -1340,6 +1383,7 @@
                 const nameVStretchVal = document.getElementById("nameVStretchVal");
 
                 const idTypeSelect = document.getElementById("idTypeSelect");
+                const canvasSizeSelect = document.getElementById("canvasSizeSelect");
                 const countALabel = document.getElementById("countALabel");
                 const countBLabel = document.getElementById("countBLabel");
                 const countNamesLabel = document.getElementById("countNamesLabel");
@@ -1652,20 +1696,111 @@
                     generateLayout();
                 });
 
-                // ---------------- ID type switching ----------------
-                idTypeSelect.addEventListener("change", () => {
+                // ---------------- Canvas / sheet size switching ----------------
+                // Resolve a block's default copy count for the current canvas —
+                // falls back to the base defaultCount when no override exists.
+                function getDefaultCount(blockCfg, canvasKey) {
+                    if (blockCfg.canvasDefaults && blockCfg.canvasDefaults[canvasKey] != null) return blockCfg.canvasDefaults[canvasKey];
+                    return blockCfg.defaultCount;
+                }
+
+                // Sets the label text for the count fields, flipping
+                // "(left)"/"(right)" to "(top)"/"(bottom)" when blocks are
+                // stacked vertically (narrow canvases like A6).
+                function updateCountLabels() {
                     const cfg = ID_TYPES[idTypeSelect.value];
-                    countALabel.textContent = cfg.blocks[0].countLabel;
-                    countA.value = cfg.blocks[0].defaultCount;
+                    const stacked = canvasPaper === "a6" && !!cfg.blocks[1];
+                    countALabel.textContent = stacked ? cfg.blocks[0].countLabel.replace("(left)", "(top)") : cfg.blocks[0].countLabel;
                     if (cfg.blocks[1]) {
                         countBLabel.style.display = "";
                         countB.style.display = "";
-                        countBLabel.textContent = cfg.blocks[1].countLabel;
-                        countB.value = cfg.blocks[1].defaultCount;
+                        countBLabel.textContent = stacked ? cfg.blocks[1].countLabel.replace("(right)", "(bottom)") : cfg.blocks[1].countLabel;
                     } else {
                         countBLabel.style.display = "none";
                         countB.style.display = "none";
                     }
+                }
+
+                function applyCanvasSize() {
+                    const size = CANVAS_SIZES[canvasPaper] || CANVAS_SIZES.a4;
+                    const canvasSheetEl = document.getElementById("sheet");
+                    if (canvasSheetEl) {
+                        canvasSheetEl.style.width = size.wIn + "in";
+                        canvasSheetEl.style.minHeight = size.hIn + "in";
+                    }
+
+                    // A6 landscape does not offer the Visa template — hide that option.
+                    const visaOpt = idTypeSelect.querySelector('option[value="visa"]');
+                    if (visaOpt) {
+                        if (canvasPaper === "a6") {
+                            visaOpt.hidden = true;
+                            visaOpt.disabled = true;
+                            if (idTypeSelect.value === "visa") {
+                                idTypeSelect.value = "combo";
+                            }
+                        } else {
+                            visaOpt.hidden = false;
+                            visaOpt.disabled = false;
+                        }
+                    }
+
+                    // A6 is too narrow to fit both blocks side by side —
+                    // stack them instead: 2×2 block on top, 1×1 block below.
+                    const cfg = ID_TYPES[idTypeSelect.value];
+                    const layoutRow = document.querySelector(".layout-row");
+                    if (layoutRow) layoutRow.classList.toggle("stacked", canvasPaper === "a6" && !!cfg.blocks[1]);
+
+                    // A6 + Passport 3×2 grid: raise page margin so the 6 cells clear
+                    // the edges (2×1.77in tall needs ~0.28in pad on 4.13in height).
+                    applyAutoPaddingForLayout();
+
+                    updateCountLabels();
+                    fitZoomToWidth();
+                }
+
+                // Remember the user's margin so we can restore it when leaving A6 passport.
+                let savedMarginBeforeAutoPad = null;
+                const A6_PASSPORT_PAD = 0.28;
+
+                function applyAutoPaddingForLayout() {
+                    if (!marginInput) return;
+                    const isA6Passport = canvasPaper === "a6" && idTypeSelect.value === "passport";
+                    if (isA6Passport) {
+                        const current = parseFloat(marginInput.value);
+                        if (savedMarginBeforeAutoPad === null) {
+                            savedMarginBeforeAutoPad = Number.isFinite(current) ? current : 0.15;
+                        }
+                        if (!(Number.isFinite(current) && current >= A6_PASSPORT_PAD - 0.001)) {
+                            marginInput.value = String(A6_PASSPORT_PAD);
+                        }
+                    } else if (savedMarginBeforeAutoPad !== null) {
+                        marginInput.value = String(savedMarginBeforeAutoPad);
+                        savedMarginBeforeAutoPad = null;
+                    }
+                }
+
+                if (canvasSizeSelect) {
+                    canvasSizeSelect.addEventListener("change", () => {
+                        canvasPaper = canvasSizeSelect.value;
+                        // applyCanvasSize may switch ID type away from Visa on A6 —
+                        // resolve counts only after that possible change.
+                        applyCanvasSize();
+                        const cfg = ID_TYPES[idTypeSelect.value];
+                        countA.value = getDefaultCount(cfg.blocks[0], canvasPaper);
+                        if (cfg.blocks[1]) countB.value = getDefaultCount(cfg.blocks[1], canvasPaper);
+                        else {
+                            countB.value = 0;
+                        }
+                        generateLayout();
+                    });
+                }
+
+                // ---------------- ID type switching ----------------
+                idTypeSelect.addEventListener("change", () => {
+                    const cfg = ID_TYPES[idTypeSelect.value];
+                    countA.value = getDefaultCount(cfg.blocks[0], canvasPaper);
+                    if (cfg.blocks[1]) countB.value = getDefaultCount(cfg.blocks[1], canvasPaper);
+                    applyCanvasSize();
                     generateLayout();
                 });
 
@@ -1685,7 +1820,14 @@
                 guidesCheck.addEventListener("change", generateLayout);
                 spacingCheck.addEventListener("change", generateLayout);
                 backdropSelect.addEventListener("change", generateLayout);
-                marginInput.addEventListener("change", generateLayout);
+                marginInput.addEventListener("change", () => {
+                    // User override while on A6 passport: keep their value as the new baseline
+                    if (canvasPaper === "a6" && idTypeSelect.value === "passport") {
+                        const v = parseFloat(marginInput.value);
+                        if (Number.isFinite(v)) savedMarginBeforeAutoPad = v;
+                    }
+                    generateLayout();
+                });
                 btnGenerate.addEventListener("click", generateLayout);
 
                 // ---------------- Layout generation ----------------
@@ -1738,13 +1880,34 @@
                     const blocks = cfg.blocks;
                     const namesCount = countNames.value;
 
+                    const margin = Math.max(0, Math.min(0.4, parseFloat(marginInput.value) || 0));
+                    const sheetWidthIn = (CANVAS_SIZES[canvasPaper] || CANVAS_SIZES.a4).wIn;
+                    const availableWidthIn = Math.max(0, sheetWidthIn - margin * 2);
+
                     // Block A
                     const nA = Math.max(0, parseInt(countA.value, 10) || 0);
                     const singleBlock = !blocks[1];
                     blockA.classList.toggle("full-width", singleBlock);
                     blockA.classList.remove("flex-fill");
                     sectionA.classList.toggle("full-width", singleBlock);
-                    sectionA.style.gridTemplateColumns = singleBlock ? `repeat(auto-fill, ${blocks[0].wIn}in)` : `repeat(${blocks[0].cols}, ${blocks[0].wIn}in)`;
+                    if (singleBlock) {
+                        sectionA.style.gridTemplateColumns = `repeat(auto-fill, ${blocks[0].wIn}in)`;
+                    } else {
+                        // Cap block A's fixed column count to what actually fits the
+                        // canvas width — e.g. a 2-column 2×2 block doesn't fit an
+                        // A6-wide canvas, so it falls back to 1 column there.
+                        // When blocks sit side-by-side (not stacked), reserve room
+                        // for block B's own minimum width + the gap between them so
+                        // block A alone can't claim the whole row and push block B
+                        // (or itself) past the canvas edge.
+                        const stacked = canvasPaper === "a6" && !!blocks[1];
+                        const gapIn = spacingCheck.checked ? 0.12 : 0;
+                        const reserveForB = stacked ? 0 : blocks[1].wIn + gapIn;
+                        const widthForA = Math.max(blocks[0].wIn, availableWidthIn - reserveForB);
+                        const fitCols = Math.max(1, Math.floor(widthForA / blocks[0].wIn));
+                        const colsA = Math.min(blocks[0].cols, fitCols);
+                        sectionA.style.gridTemplateColumns = `repeat(${colsA}, ${blocks[0].wIn}in)`;
+                    }
                     sectionA.style.gridAutoRows = `${blocks[0].hIn}in`;
                     sectionA.innerHTML = "";
                     for (let i = 0; i < nA; i++) sectionA.appendChild(buildCell(blocks[0], i < namesCount));
@@ -1774,8 +1937,6 @@
 
                     const sheetEl = document.getElementById("sheet");
                     sheetEl.style.setProperty("--gap", spacingCheck.checked ? "0.12in" : "0in");
-
-                    const margin = Math.max(0, Math.min(0.4, parseFloat(marginInput.value) || 0));
                     sheetEl.style.setProperty("--pad", margin + "in");
 
                     updateNameFontStyle();
@@ -1919,7 +2080,8 @@
 
                 function fitZoomToWidth() {
                     const ppi = pxPerInch();
-                    const sheetWidthPx = 8.27 * ppi;
+                    const sheetWidthIn = (CANVAS_SIZES[canvasPaper] || CANVAS_SIZES.a4).wIn;
+                    const sheetWidthPx = sheetWidthIn * ppi;
                     const available = zoomViewport.clientWidth - 64; // account for viewport padding
                     if (sheetWidthPx <= 0 || available <= 0) return;
                     applyZoom(available / sheetWidthPx);
@@ -1950,28 +2112,85 @@
 
                 // ---------------- Print / reset ----------------
                 function printLayoutBrowser() {
+                    // Match agent raster path: always send a portrait page; rotate
+                    // landscape designs (A6 canvas) 90° CW so content fits correctly
+                    // in the system print dialog as well as the local print agent.
+                    // Rotated result is anchored to the top-left of the page.
+                    const paperSel = document.getElementById("printPaper");
+                    const paper = (paperSel && paperSel.value) || canvasPaper || "a4";
+                    const PORTRAIT_CSS = {
+                        a4: "A4 portrait",
+                        a6: "A6 portrait",
+                        short: "letter portrait",
+                        long: "8.5in 13in portrait",
+                    };
+                    const pageCss = PORTRAIT_CSS[paper] || PORTRAIT_CSS.a4;
+
+                    let styleEl = document.getElementById("dynamicPrintPageStyle");
+                    if (!styleEl) {
+                        styleEl = document.createElement("style");
+                        styleEl.id = "dynamicPrintPageStyle";
+                        document.head.appendChild(styleEl);
+                    }
+                    styleEl.textContent = "@page { size: " + pageCss + "; margin: 0; }";
+
+                    const size = CANVAS_SIZES[canvasPaper] || CANVAS_SIZES.a4;
+                    const designLandscape = size.wIn > size.hIn;
+                    // Portrait paper is always taller than wide in our PORTRAIT sizes.
+                    const needsRotate = designLandscape;
+
+                    if (needsRotate) {
+                        document.body.classList.add("print-rotate-landscape");
+                    } else {
+                        document.body.classList.remove("print-rotate-landscape");
+                    }
+
+                    const cleanup = () => {
+                        document.body.classList.remove("print-rotate-landscape");
+                        window.removeEventListener("afterprint", cleanup);
+                    };
+                    window.addEventListener("afterprint", cleanup);
+
                     window.print();
+                    // Fallback cleanup if afterprint never fires (some browsers)
+                    setTimeout(cleanup, 2000);
                 }
 
-                async function rasterizeSheetPng() {
+                async function rasterizeSheetPng(opts) {
+                    opts = opts || {};
+                    const matchDesign = !!opts.matchDesign;
                     const sheetEl = document.getElementById("sheet");
                     if (!sheetEl) throw new Error("Sheet not found");
                     // Physical A4 (or selected) at 300 DPI
                     const paperSel = document.getElementById("printPaper");
                     const paper = (paperSel && paperSel.value) || "a4";
-                    const orient = (document.querySelector('input[name="printOrient"]:checked') || {}).value || "portrait";
-                    const sizesIn = {
+
+                    // Canonical physical paper sizes, always in their natural
+                    // portrait orientation. Printing is always portrait now —
+                    // a landscape-designed canvas (e.g. A6) gets its content
+                    // rotated to fit the portrait sheet instead of the paper
+                    // itself being rotated.
+                    const PORTRAIT_SIZES = {
                         a4: { w: 8.27, h: 11.69 },
+                        a6: { w: 4.13, h: 5.83 },
                         short: { w: 8.5, h: 11 },
                         long: { w: 8.5, h: 13 },
                     };
-                    let pageW = (sizesIn[paper] || sizesIn.a4).w;
-                    let pageH = (sizesIn[paper] || sizesIn.a4).h;
-                    if (orient === "landscape") {
-                        const t = pageW;
-                        pageW = pageH;
-                        pageH = t;
+
+                    let pageW, pageH;
+                    if (matchDesign) {
+                        // Export: match the working canvas's own design size and
+                        // shape exactly (may be landscape, e.g. A6) so the raster
+                        // matches what's on screen.
+                        const size = CANVAS_SIZES[canvasPaper] || CANVAS_SIZES.a4;
+                        pageW = size.wIn;
+                        pageH = size.hIn;
+                    } else {
+                        const size = PORTRAIT_SIZES[paper] || PORTRAIT_SIZES.a4;
+                        pageW = size.w;
+                        pageH = size.h;
                     }
+
                     const dpi = 300;
                     const outW = Math.round(pageW * dpi);
                     const outH = Math.round(pageH * dpi);
@@ -1985,7 +2204,16 @@
                     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
                     const layoutW = sheetEl.offsetWidth;
                     const layoutH = sheetEl.offsetHeight;
-                    const scale = outW / Math.max(1, layoutW);
+
+                    // If the design shape (landscape/portrait) doesn't match the
+                    // target page shape, rotate the drawn content 90° clockwise
+                    // so it fills the page cleanly instead of being squashed or clipped.
+                    // Anchored to the top-left of the portrait page (sheet padding preserved).
+                    const designLandscape = layoutW > layoutH;
+                    const pageLandscape = outW > outH;
+                    const needsRotate = !matchDesign && designLandscape !== pageLandscape;
+                    // CW: design height maps to page width, design width maps to page height.
+                    const scale = needsRotate ? outW / Math.max(1, layoutH) : outW / Math.max(1, layoutW);
 
                     const canvas = document.createElement("canvas");
                     canvas.width = outW;
@@ -1993,6 +2221,13 @@
                     const ctx = canvas.getContext("2d");
                     ctx.fillStyle = "#ffffff";
                     ctx.fillRect(0, 0, outW, outH);
+                    if (needsRotate) {
+                        ctx.save();
+                        // (x,y) -> (outW - y, x) after translate+rotate: design bottom-left
+                        // lands at page top-left; content grows down and right.
+                        ctx.translate(outW, 0);
+                        ctx.rotate(Math.PI / 2);
+                    }
 
                     // Draw each cell photo + overlays by walking DOM
                     const cells = sheetEl.querySelectorAll(".cell");
@@ -2117,6 +2352,7 @@
                     });
 
                     await Promise.all(drawJobs);
+                    if (needsRotate) ctx.restore();
                     zoomStage.style.zoom = prevZoom;
 
                     return new Promise((resolve, reject) => {
@@ -2125,6 +2361,11 @@
                 }
 
                 function openPrintModal() {
+                    // Keep print-paper selector in sync with the working canvas so both
+                    // the agent path and the browser dialog target the right sheet size.
+                    const paperSel = document.getElementById("printPaper");
+                    if (paperSel) paperSel.value = canvasPaper === "a6" ? "a6" : canvasPaper === "a4" ? "a4" : paperSel.value || "a4";
+
                     if (!agentConnectionEnabled || !agentOnline) {
                         printLayoutBrowser();
                         return;
@@ -2143,6 +2384,7 @@
                         filterInput.value = localStorage.getItem("iconprint_printer_filter") || "";
                     }
                     fillSelect(document.getElementById("printPrinter"), filterPrinters(agentDevices.printers), null);
+                    // printPaper already synced at the top of openPrintModal
                     // Default photo paper for Rush ID is common — leave plain; user can pick Photo
                     const st = document.getElementById("printStatus");
                     if (st) {
@@ -2173,7 +2415,10 @@
                         return;
                     }
                     const paperSize = document.getElementById("printPaper").value || "a4";
-                    const orient = (document.querySelector('input[name="printOrient"]:checked') || {}).value || "portrait";
+                    // Orientation is always portrait now — landscape-designed
+                    // canvases (e.g. A6) are rotated to fit inside
+                    // rasterizeSheetPng() instead of the paper being rotated.
+                    const orient = "portrait";
                     const colorMode = (document.querySelector('input[name="printColor"]:checked') || {}).value || "color";
                     let copies = parseInt(document.getElementById("printCopies").value || "1", 10);
                     if (!(copies >= 1 && copies <= 99)) copies = 1;
@@ -2248,14 +2493,10 @@
                     btn.disabled = true;
                     btn.textContent = "Exporting…";
                     try {
-                        // Prefer A4 portrait at 300 DPI for export (sheet design size)
-                        const paperSel = document.getElementById("printPaper");
-                        const savedPaper = paperSel ? paperSel.value : null;
-                        if (paperSel) paperSel.value = "a4";
-                        const portrait = document.querySelector('input[name="printOrient"][value="portrait"]');
-                        if (portrait) portrait.checked = true;
-                        const { blob } = await rasterizeSheetPng();
-                        if (paperSel && savedPaper != null) paperSel.value = savedPaper;
+                        // Export at the working canvas's own size/shape (design
+                        // size) so the raster matches what's on screen, whatever
+                        // the canvas is — no rotation, unlike physical printing.
+                        const { blob } = await rasterizeSheetPng({ matchDesign: true });
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement("a");
                         a.href = url;
@@ -2302,6 +2543,7 @@
                 });
 
                 // ---------------- Init ----------------
+                applyCanvasSize();
                 generateLayout();
                 fitZoomToWidth();
                 startAgentPolling();
