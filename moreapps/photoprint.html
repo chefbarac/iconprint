@@ -3116,37 +3116,52 @@
                     setResizeMode(!resizeMode);
                 });
                 function fitCover() {
-                    var inst = getSelected();
-                    if (!inst) return;
-                    inst.fitMode = "fill";
-                    inst.cropScale = 1;
-                    inst.cropX = 0;
-                    inst.cropY = 0;
-                    inst.imgRotation = 0;
-                    // keep frame rotation
-                    renderPlaced(inst);
-                    syncSourceTransforms(inst);
-                    updateFitModeUI(inst);
-                    setStatus("Reset to Fill (cover-fit)");
+                    var group = getSelectedAll();
+                    if (!group.length) return;
+                    var seen = {};
+                    group.forEach(function (inst) {
+                        inst.fitMode = "fill";
+                        inst.cropScale = 1;
+                        inst.cropX = 0;
+                        inst.cropY = 0;
+                        inst.imgRotation = 0;
+                        // keep frame rotation
+                        renderPlaced(inst);
+                        // sync other placements of same source once per imageId
+                        if (!seen[inst.imageId]) {
+                            seen[inst.imageId] = true;
+                            syncSourceTransforms(inst);
+                        }
+                    });
+                    updateFitModeUI(group[group.length - 1] || group[0]);
+                    setStatus("Reset to Fill (cover-fit)" + (group.length > 1 ? " · " + group.length + " frames" : ""));
                 }
                 document.getElementById("btnFitCover").addEventListener("click", fitCover);
 
                 function setFitMode(mode) {
-                    var inst = getSelected();
-                    if (!inst) {
+                    var group = getSelectedAll();
+                    if (!group.length) {
                         setStatus("Select an image first");
                         return;
                     }
                     if (mode !== "fill" && mode !== "contain" && mode !== "stretch") mode = "fill";
-                    inst.fitMode = mode;
-                    // reset pan/zoom when switching mode so framing is predictable
-                    inst.cropScale = 1;
-                    inst.cropX = 0;
-                    inst.cropY = 0;
-                    renderPlaced(inst);
-                    syncSourceTransforms(inst);
-                    updateFitModeUI(inst);
-                    setStatus("Image mode: " + (mode === "fill" ? "Fill (cover)" : mode === "contain" ? "Contain" : "Stretch"));
+                    var seen = {};
+                    group.forEach(function (inst) {
+                        inst.fitMode = mode;
+                        // reset pan/zoom when switching mode so framing is predictable
+                        inst.cropScale = 1;
+                        inst.cropX = 0;
+                        inst.cropY = 0;
+                        renderPlaced(inst);
+                        // sync other placements of same source once per imageId
+                        if (!seen[inst.imageId]) {
+                            seen[inst.imageId] = true;
+                            syncSourceTransforms(inst);
+                        }
+                    });
+                    updateFitModeUI(group[group.length - 1] || group[0]);
+                    var label = mode === "fill" ? "Fill (cover)" : mode === "contain" ? "Contain" : "Stretch";
+                    setStatus("Image mode: " + label + (group.length > 1 ? " · " + group.length + " frames" : ""));
                 }
                 function updateFitModeUI(inst) {
                     var mode = (inst && inst.fitMode) || "fill";
