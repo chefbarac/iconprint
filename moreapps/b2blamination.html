@@ -803,6 +803,15 @@
                 opacity: 1;
             }
 
+            .card-slot.active-card .frame {
+                outline: 2px solid var(--laminate);
+                outline-offset: -2px;
+            }
+            .card-slot.active-card .corner-label {
+                opacity: 1;
+                background: var(--laminate);
+            }
+
             /* fold line */
             .fold-line {
                 height: var(--gap);
@@ -1075,26 +1084,31 @@
                             </button>
                         </div>
 
-                        <div class="zoom-line">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="10" cy="10" r="6" />
-                                <path d="M21 21l-4.3-4.3" />
-                                <path d="M8 10h4" />
-                            </svg>
-                            <input type="range" data-role="zoom" min="-50" max="50" value="0" step="0.05" />
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="10" cy="10" r="6" />
-                                <path d="M21 21l-4.3-4.3" />
-                                <path d="M10 8v4M8 10h4" />
-                            </svg>
+                        <div class="field" style="margin-top: 8px">
+                            <label>Zoom <span class="mono" data-role="zoomVal" style="color: var(--ink-soft); font-weight: 400">100%</span></label>
+                            <div class="zoom-line">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="10" cy="10" r="6" />
+                                    <path d="M21 21l-4.3-4.3" />
+                                    <path d="M8 10h4" />
+                                </svg>
+                                <input type="range" data-role="zoom" min="0" max="100" value="0" step="0.1" />
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="10" cy="10" r="6" />
+                                    <path d="M21 21l-4.3-4.3" />
+                                    <path d="M10 8v4M8 10h4" />
+                                </svg>
+                                <input type="number" data-role="zoomNum" min="100" max="600" step="1" value="100" title="Zoom % (100% = fit cover)" style="width: 58px; flex: none; padding: 4px 6px; font-size: 12px" />
+                            </div>
                         </div>
 
                         <div class="field" style="margin-top: 10px">
                             <label>Straighten <span class="mono" data-role="finerotVal" style="color: var(--ink-soft); font-weight: 400">0°</span></label>
                             <div class="zoom-line">
                                 <span class="mono" style="font-size: 10px; color: var(--ink-soft)">-45°</span>
-                                <input type="range" data-role="finerot" min="-45" max="45" value="0" step="0.05" />
+                                <input type="range" data-role="finerot" min="-45" max="45" value="0" step="0.1" />
                                 <span class="mono" style="font-size: 10px; color: var(--ink-soft)">+45°</span>
+                                <input type="number" data-role="finerotNum" min="-180" max="180" step="0.1" value="0" title="Fine rotation degrees" style="width: 58px; flex: none; padding: 4px 6px; font-size: 12px" />
                             </div>
                         </div>
 
@@ -1144,18 +1158,32 @@
                             </button>
                         </div>
 
-                        <div class="zoom-line">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="10" cy="10" r="6" />
-                                <path d="M21 21l-4.3-4.3" />
-                                <path d="M8 10h4" />
-                            </svg>
-                            <input type="range" data-role="zoom" min="-50" max="50" value="0" step="0.05" />
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="10" cy="10" r="6" />
-                                <path d="M21 21l-4.3-4.3" />
-                                <path d="M10 8v4M8 10h4" />
-                            </svg>
+                        <div class="field" style="margin-top: 8px">
+                            <label>Zoom <span class="mono" data-role="zoomVal" style="color: var(--ink-soft); font-weight: 400">100%</span></label>
+                            <div class="zoom-line">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="10" cy="10" r="6" />
+                                    <path d="M21 21l-4.3-4.3" />
+                                    <path d="M8 10h4" />
+                                </svg>
+                                <input type="range" data-role="zoom" min="0" max="100" value="0" step="0.1" />
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="10" cy="10" r="6" />
+                                    <path d="M21 21l-4.3-4.3" />
+                                    <path d="M10 8v4M8 10h4" />
+                                </svg>
+                                <input type="number" data-role="zoomNum" min="100" max="600" step="1" value="100" title="Zoom % (100% = fit cover)" style="width: 58px; flex: none; padding: 4px 6px; font-size: 12px" />
+                            </div>
+                        </div>
+
+                        <div class="field" style="margin-top: 10px">
+                            <label>Straighten <span class="mono" data-role="finerotVal" style="color: var(--ink-soft); font-weight: 400">0°</span></label>
+                            <div class="zoom-line">
+                                <span class="mono" style="font-size: 10px; color: var(--ink-soft)">-45°</span>
+                                <input type="range" data-role="finerot" min="-45" max="45" value="0" step="0.1" />
+                                <span class="mono" style="font-size: 10px; color: var(--ink-soft)">+45°</span>
+                                <input type="number" data-role="finerotNum" min="-180" max="180" step="0.1" value="0" title="Fine rotation degrees" style="width: 58px; flex: none; padding: 4px 6px; font-size: 12px" />
+                            </div>
                         </div>
 
                         <div class="toggle-row">
@@ -1168,19 +1196,10 @@
                             ></label>
                         </div>
 
-                        <div class="field" style="margin-top: 10px">
-                            <label>Straighten <span class="mono" data-role="finerotVal" style="color: var(--ink-soft); font-weight: 400">0°</span></label>
-                            <div class="zoom-line">
-                                <span class="mono" style="font-size: 10px; color: var(--ink-soft)">-45°</span>
-                                <input type="range" data-role="finerot" min="-45" max="45" value="0" step="0.05" />
-                                <span class="mono" style="font-size: 10px; color: var(--ink-soft)">+45°</span>
-                            </div>
-                        </div>
-
                         <input type="file" accept="image/*" data-role="file" hidden />
                     </div>
 
-                    <div class="hint">Drag inside an uploaded image to reposition it. Scroll, or use the slider, to zoom. Rotation snaps in 90° steps.</div>
+                    <div class="hint">Drag to pan · hover + scroll to zoom · arrow keys to micro-nudge (Shift = larger). Type exact zoom % or rotation in the number boxes. 90° buttons snap orientation.</div>
                 </div>
 
                 <!-- Guides -->
@@ -1644,8 +1663,11 @@
                         fileInput: ctrl.querySelector('[data-role="file"]'),
                         filenameEl: ctrl.querySelector('[data-role="filename"]'),
                         zoomSlider: ctrl.querySelector('[data-role="zoom"]'),
+                        zoomNum: ctrl.querySelector('[data-role="zoomNum"]'),
+                        zoomVal: ctrl.querySelector('[data-role="zoomVal"]'),
                         stretchToggle: ctrl.querySelector('[data-role="stretch"]'),
                         fineRotSlider: ctrl.querySelector('[data-role="finerot"]'),
+                        fineRotNum: ctrl.querySelector('[data-role="finerotNum"]'),
                         fineRotVal: ctrl.querySelector('[data-role="finerotVal"]'),
                         natW: 0,
                         natH: 0,
@@ -1666,6 +1688,17 @@
                 }
 
                 const cards = { front: makeCard("front"), back: makeCard("back") };
+                let activeCard = null;
+
+                function setActiveCard(card) {
+                    if (activeCard && activeCard.slot) {
+                        activeCard.slot.classList.remove("active-card");
+                    }
+                    activeCard = card;
+                    if (card && card.slot && card.hasImage && card.mode === "crop") {
+                        card.slot.classList.add("active-card");
+                    }
+                }
 
                 function frameLocalSize(card) {
                     return { w: card.wrap.offsetWidth, h: card.wrap.offsetHeight };
@@ -1708,24 +1741,79 @@
                     }
                 }
 
+                const ZOOM_MAX_MULT = 6; // max scale = minScale * this
+
                 function fitCover(card) {
                     card.minScale = minScaleFor(card);
                     card.scale = card.minScale;
                     card.tx = 0;
                     card.ty = 0;
-                    syncZoomSlider(card);
+                    syncZoomUI(card);
                 }
 
-                function syncZoomSlider(card) {
-                    const maxScale = card.minScale * 6;
-                    const pct = card.minScale >= maxScale ? 0 : clamp(((card.scale - card.minScale) / (maxScale - card.minScale)) * 100, 0, 100);
-                    card.zoomSlider.value = pct;
+                /** Keep current relative zoom when minScale changes (e.g. after rotate). */
+                function reclampScale(card) {
+                    const prevMin = card.minScale;
+                    const rel = prevMin > 0 ? card.scale / prevMin : 1;
+                    card.minScale = minScaleFor(card);
+                    card.scale = clamp(card.minScale * rel, card.minScale, card.minScale * ZOOM_MAX_MULT);
+                    syncZoomUI(card);
+                }
+
+                function zoomPercent(card) {
+                    if (!card.minScale) return 100;
+                    return Math.round((card.scale / card.minScale) * 100);
+                }
+
+                function syncZoomUI(card) {
+                    const maxScale = card.minScale * ZOOM_MAX_MULT;
+                    const pct = maxScale <= card.minScale ? 0 : clamp(((card.scale - card.minScale) / (maxScale - card.minScale)) * 100, 0, 100);
+                    if (card.zoomSlider) card.zoomSlider.value = pct;
+                    const zp = zoomPercent(card);
+                    if (card.zoomVal) card.zoomVal.textContent = zp + "%";
+                    if (card.zoomNum && document.activeElement !== card.zoomNum) {
+                        card.zoomNum.value = zp;
+                    }
                 }
 
                 function applyZoomFromSlider(card) {
-                    const maxScale = card.minScale * 6;
+                    const maxScale = card.minScale * ZOOM_MAX_MULT;
                     const pct = Number(card.zoomSlider.value) / 100;
                     card.scale = card.minScale + pct * (maxScale - card.minScale);
+                    syncZoomUI(card);
+                    render(card);
+                }
+
+                function applyZoomFromPercent(card, pct) {
+                    pct = clamp(Number(pct) || 100, 100, 600);
+                    card.scale = card.minScale * (pct / 100);
+                    if (card.scale > card.minScale * ZOOM_MAX_MULT) card.scale = card.minScale * ZOOM_MAX_MULT;
+                    syncZoomUI(card);
+                    render(card);
+                }
+
+                function syncFineRotUI(card) {
+                    const v = Number(card.fineRot) || 0;
+                    if (card.fineRotSlider && document.activeElement !== card.fineRotSlider) {
+                        // slider only covers ±45; clamp display value for slider
+                        card.fineRotSlider.value = clamp(v, -45, 45);
+                    }
+                    if (card.fineRotVal) {
+                        card.fineRotVal.textContent = (v > 0 ? "+" : "") + (Math.round(v * 10) / 10) + "°";
+                    }
+                    if (card.fineRotNum && document.activeElement !== card.fineRotNum) {
+                        card.fineRotNum.value = Math.round(v * 10) / 10;
+                    }
+                    if (card.fineRotSlider) card.fineRotSlider.disabled = card.mode !== "crop";
+                    if (card.fineRotNum) card.fineRotNum.disabled = card.mode !== "crop";
+                    if (card.zoomSlider) card.zoomSlider.disabled = card.mode !== "crop";
+                    if (card.zoomNum) card.zoomNum.disabled = card.mode !== "crop";
+                }
+
+                function applyFineRot(card, deg) {
+                    card.fineRot = clamp(Number(deg) || 0, -180, 180);
+                    reclampScale(card);
+                    syncFineRotUI(card);
                     render(card);
                 }
 
@@ -1740,21 +1828,18 @@
                             card.img.src = e.target.result;
                             card.hasImage = true;
                             card.baseRot = 0;
+                            card.fineRot = 0;
                             card.mode = card.stretchToggle.checked ? "stretch" : "crop";
                             card.slot.classList.add("has-image");
                             fitCover(card);
+                            syncFineRotUI(card);
                             render(card);
+                            if (card.mode === "crop") setActiveCard(card);
                         };
                         img.src = e.target.result;
                     };
                     reader.readAsDataURL(file);
                     card.filenameEl.textContent = file.name.length > 18 ? file.name.slice(0, 15) + "…" : file.name;
-                }
-
-                function syncFineRotUI(card) {
-                    card.fineRotSlider.value = card.fineRot;
-                    card.fineRotVal.textContent = (card.fineRot > 0 ? "+" : "") + card.fineRot + "°";
-                    card.fineRotSlider.disabled = card.mode !== "crop";
                 }
 
                 function resetCard(card) {
@@ -1763,19 +1848,20 @@
                     card.mode = "crop";
                     card.stretchToggle.checked = false;
                     syncFineRotUI(card);
-                    if (card.hasImage) fitCover(card);
+                    if (card.hasImage) {
+                        fitCover(card);
+                        setActiveCard(card);
+                    }
                     render(card);
                 }
 
                 function rotateCard(card, dir) {
                     card.baseRot = (((card.baseRot + dir * 90) % 360) + 360) % 360;
                     if (card.mode === "crop") {
-                        const ms = minScaleFor(card);
-                        card.minScale = ms;
-                        if (card.scale < ms) card.scale = ms;
+                        // Preserve relative zoom; only reset pan on 90° snaps (frame axes change)
+                        reclampScale(card);
                         card.tx = 0;
                         card.ty = 0;
-                        syncZoomSlider(card);
                     }
                     render(card);
                 }
@@ -1825,9 +1911,14 @@
 
                     card.stretchToggle.addEventListener("change", function () {
                         card.mode = card.stretchToggle.checked ? "stretch" : "crop";
-                        card.fineRotSlider.disabled = card.mode !== "crop";
+                        syncFineRotUI(card);
                         if (card.hasImage) {
-                            if (card.mode === "crop") fitCover(card);
+                            if (card.mode === "crop") {
+                                fitCover(card);
+                                setActiveCard(card);
+                            } else if (activeCard === card) {
+                                setActiveCard(null);
+                            }
                             render(card);
                         }
                     });
@@ -1837,33 +1928,58 @@
                         applyZoomFromSlider(card);
                     });
 
+                    if (card.zoomNum) {
+                        card.zoomNum.addEventListener("change", function () {
+                            if (card.mode !== "crop" || !card.hasImage) return;
+                            applyZoomFromPercent(card, card.zoomNum.value);
+                        });
+                        card.zoomNum.addEventListener("keydown", function (e) {
+                            if (e.key === "Enter") {
+                                e.preventDefault();
+                                card.zoomNum.blur();
+                            }
+                        });
+                    }
+
                     card.fineRotSlider.addEventListener("input", function () {
-                        card.fineRot = Number(card.fineRotSlider.value);
-                        card.fineRotVal.textContent = (card.fineRot > 0 ? "+" : "") + card.fineRot + "°";
                         if (card.mode !== "crop" || !card.hasImage) return;
-                        const ms = minScaleFor(card);
-                        card.minScale = ms;
-                        if (card.scale < ms) card.scale = ms;
-                        syncZoomSlider(card);
-                        render(card);
+                        applyFineRot(card, card.fineRotSlider.value);
                     });
 
-                    /* card.wrap.addEventListener(
+                    if (card.fineRotNum) {
+                        card.fineRotNum.addEventListener("change", function () {
+                            if (card.mode !== "crop" || !card.hasImage) return;
+                            applyFineRot(card, card.fineRotNum.value);
+                        });
+                        card.fineRotNum.addEventListener("keydown", function (e) {
+                            if (e.key === "Enter") {
+                                e.preventDefault();
+                                card.fineRotNum.blur();
+                            }
+                        });
+                    }
+
+                    // Micro-zoom: hover over image + scroll wheel
+                    card.wrap.addEventListener(
                         "wheel",
                         function (e) {
                             if (card.mode !== "crop" || !card.hasImage) return;
                             e.preventDefault();
-                            const factor = e.deltaY < 0 ? 1.08 : 0.93;
-                            const maxScale = card.minScale * 6;
+                            setActiveCard(card);
+                            // Fine steps: ~3% per notch; Shift = coarser ~8%
+                            const base = e.shiftKey ? 1.08 : 1.03;
+                            const factor = e.deltaY < 0 ? base : 1 / base;
+                            const maxScale = card.minScale * ZOOM_MAX_MULT;
                             card.scale = clamp(card.scale * factor, card.minScale, maxScale);
-                            syncZoomSlider(card);
+                            syncZoomUI(card);
                             render(card);
                         },
                         { passive: false },
-                    ); */
+                    );
 
                     card.wrap.addEventListener("pointerdown", function (e) {
                         if (card.mode !== "crop" || !card.hasImage) return;
+                        setActiveCard(card);
                         card.dragging = true;
                         card.startX = e.clientX;
                         card.startY = e.clientY;
@@ -1871,6 +1987,10 @@
                         card.startTy = card.ty;
                         card.wrap.setPointerCapture(e.pointerId);
                         card.wrap.style.cursor = "grabbing";
+                    });
+                    // Click (without drag) also focuses for keyboard micro-adjust
+                    card.wrap.addEventListener("click", function () {
+                        if (card.hasImage && card.mode === "crop") setActiveCard(card);
                     });
                     card.wrap.addEventListener("pointermove", function (e) {
                         if (!card.dragging) return;
@@ -1884,6 +2004,47 @@
                             card.wrap.style.cursor = "grab";
                         });
                     });
+                });
+
+                /* ---------------- keyboard micro-adjust (arrow keys) ---------------- */
+                const NUDGE_STEP = 1; // px in local image coords
+                const NUDGE_STEP_SHIFT = 8;
+                document.addEventListener("keydown", function (e) {
+                    if (!activeCard || !activeCard.hasImage || activeCard.mode !== "crop") return;
+                    // Ignore when typing in inputs/selects/textareas
+                    const tag = (e.target && e.target.tagName) || "";
+                    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || e.target.isContentEditable) return;
+
+                    let dx = 0,
+                        dy = 0;
+                    const step = e.shiftKey ? NUDGE_STEP_SHIFT : NUDGE_STEP;
+                    switch (e.key) {
+                        case "ArrowLeft":
+                            dx = -step;
+                            break;
+                        case "ArrowRight":
+                            dx = step;
+                            break;
+                        case "ArrowUp":
+                            dy = -step;
+                            break;
+                        case "ArrowDown":
+                            dy = step;
+                            break;
+                        default:
+                            return;
+                    }
+                    e.preventDefault();
+                    activeCard.tx += dx;
+                    activeCard.ty += dy;
+                    render(activeCard);
+                });
+
+                // Click outside card slots clears active selection
+                document.addEventListener("pointerdown", function (e) {
+                    if (!activeCard) return;
+                    const inSlot = e.target.closest && e.target.closest(".card-slot");
+                    if (!inSlot) setActiveCard(null);
                 });
 
                 /* ---------------- dimension controls ---------------- */
@@ -1901,10 +2062,7 @@
                     requestAnimationFrame(function () {
                         Object.values(cards).forEach(function (card) {
                             if (card.hasImage && card.mode === "crop") {
-                                const ms = minScaleFor(card);
-                                card.minScale = ms;
-                                if (card.scale < ms) card.scale = ms;
-                                syncZoomSlider(card);
+                                reclampScale(card);
                             }
                             render(card);
                         });
