@@ -1,5 +1,5 @@
 const PREFIX = "iconprint-cache";
-const CACHE_NAME = PREFIX + "-v2.1.13";
+const CACHE_NAME = PREFIX + "-v2.1.14";
 const PRECACHE_URLS = ["./"];
 
 // Local print/scan agent — never intercept or cache these.

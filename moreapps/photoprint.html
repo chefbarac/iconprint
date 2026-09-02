@@ -288,10 +288,18 @@
             .thumb-item img {
                 width: 44px;
                 height: 44px;
-                object-fit: cover;
+                object-fit: contain;
                 border-radius: 4px;
                 background: #333;
                 flex-shrink: 0;
+            }
+            .thumb-item .actions button.rotate {
+                background: transparent;
+                color: var(--text);
+                border: 1px solid var(--border);
+            }
+            .thumb-item .actions button.rotate:hover {
+                background: var(--border);
             }
             .thumb-item .info {
                 flex: 1;
@@ -479,6 +487,22 @@
                 max-width: none;
                 pointer-events: none;
                 transform-origin: center center;
+            }
+            /* Contain-mode "blur fill": a scaled, blurred copy of the same
+               image drawn behind the letterboxed photo so empty frame
+               whitespace is covered instead of showing plain white. */
+            .placed .img-clip .blur-bg {
+                position: absolute;
+                left: 0;
+                top: 0;
+                max-width: none;
+                pointer-events: none;
+                transform-origin: center center;
+                filter: blur(16px) brightness(0.9);
+                display: none;
+            }
+            .placed .img-clip.blur-fill-active .blur-bg {
+                display: block;
             }
             /* Yellow handle = image rotate, only in crop mode */
             .placed .handle-rotate {
@@ -985,6 +1009,12 @@
                         <button type="button" class="secondary" id="btnFitContain" title="Fit inside frame, letterbox">Contain</button>
                         <button type="button" class="secondary" id="btnFitStretch" title="Stretch to fill frame, ignore aspect">Stretch</button>
                     </div>
+                    <div class="row" style="margin-bottom: 8px; align-items: center">
+                        <label style="display: flex; align-items: center; gap: 6px; margin: 0; cursor: pointer; font-size: 0.78rem; color: var(--text)">
+                            <input type="checkbox" id="chkBlurFill" style="width: auto" />
+                            <span>Blur-fill whitespace (Contain mode)</span>
+                        </label>
+                    </div>
                     <div class="row">
                         <button type="button" class="secondary" id="btnRotateL" title="Rotate whole frame 90° CCW">↺ 90° frame</button>
                         <button type="button" class="secondary" id="btnRotateR" title="Rotate whole frame 90° CW">↻ 90° frame</button>
@@ -1029,9 +1059,9 @@
                         <button type="button" class="danger" id="btnDelete" style="width: 100%">Delete</button>
                     </div>
                     <p class="hint">
-                        Image mode: Fill (cover/crop), Contain (fit inside), Stretch (distort). Drag empty paper to marquee-select · Shift/Ctrl+click multi-select · drag group. Ctrl/Cmd+A select all.
-                        Align needs 2+ frames. Arrows nudge. Del = delete. Esc = deselect. C = crop. S = resize. R = rotate frame. F = fit cover. Ctrl/Cmd+wheel = canvas zoom (crop mode: wheel = photo
-                        zoom).
+                        Image mode: Fill (cover/crop), Contain (fit inside), Stretch (distort). Blur-fill covers Contain's letterbox whitespace with a blurred, scaled copy of the same photo. Drag
+                        empty paper to marquee-select · Shift/Ctrl+click multi-select · drag group. Ctrl/Cmd+A select all. Align needs 2+ frames. Arrows nudge. Del = delete. Esc = deselect. C = crop.
+                        S = resize. R = rotate frame (works on every selected frame at once). F = fit cover. Ctrl/Cmd+wheel = canvas zoom (crop mode: wheel = photo zoom).
                     </p>
                 </div>
             </aside>
@@ -1847,6 +1877,63 @@
                     });
                 }
 
+                // Rotates a dataURL's pixels 90° and returns a Promise<dataURL>.
+                // dir: 1 = clockwise, -1 = counter-clockwise.
+                function rotateDataURL90(dataURL, dir) {
+                    return new Promise(function (resolve, reject) {
+                        var img = new Image();
+                        img.onload = function () {
+                            var w = img.naturalWidth,
+                                h = img.naturalHeight;
+                            var c = document.createElement("canvas");
+                            c.width = h;
+                            c.height = w;
+                            var ctx = c.getContext("2d");
+                            ctx.save();
+                            if (dir > 0) {
+                                ctx.translate(h, 0);
+                                ctx.rotate(Math.PI / 2);
+                            } else {
+                                ctx.translate(0, w);
+                                ctx.rotate(-Math.PI / 2);
+                            }
+                            ctx.drawImage(img, 0, 0);
+                            ctx.restore();
+                            resolve(c.toDataURL("image/jpeg", 0.97));
+                        };
+                        img.onerror = reject;
+                        img.src = dataURL;
+                    });
+                }
+
+                // Pre-rotates a library image (before it's dragged/added to the canvas).
+                // Bakes the rotation into both the working src and the original (so tonal
+                // adjustments made afterwards still apply correctly), and swaps the
+                // recorded natural dimensions so aspect-ratio/size logic stays correct.
+                function rotateLibraryImage(item, dir) {
+                    Promise.all([rotateDataURL90(item.src, dir), rotateDataURL90(item.originalDataURL, dir)])
+                        .then(function (res) {
+                            item.src = res[0];
+                            item.originalDataURL = res[1];
+                            var nw = item.naturalH,
+                                nh = item.naturalW;
+                            item.naturalW = nw;
+                            item.naturalH = nh;
+
+                            var thumb = thumbList.querySelector('.thumb-item[data-id="' + item.id + '"]');
+                            if (thumb) {
+                                var im = thumb.querySelector("img");
+                                if (im) im.src = item.src;
+                                var sm = thumb.querySelector(".info small");
+                                if (sm) sm.textContent = item.naturalW + "x" + item.naturalH + "px";
+                            }
+                            setStatus('Rotated "' + item.name + '" — will apply when added to canvas');
+                        })
+                        .catch(function () {
+                            setStatus("Failed to rotate image");
+                        });
+                }
+
                 function isSourceOnCanvas(imageId) {
                     for (var i = 0; i < placed.length; i++) {
                         if (placed[i].imageId === imageId) return true;
@@ -1898,6 +1985,15 @@
                         e.stopPropagation();
                         placeImage(item);
                     });
+                    var rotBtn = document.createElement("button");
+                    rotBtn.type = "button";
+                    rotBtn.className = "rotate";
+                    rotBtn.textContent = "⟳";
+                    rotBtn.title = "Rotate photo 90° (before adding to canvas)";
+                    rotBtn.addEventListener("click", function (e) {
+                        e.stopPropagation();
+                        rotateLibraryImage(item, 1);
+                    });
                     var rmBtn = document.createElement("button");
                     rmBtn.type = "button";
                     rmBtn.className = "rm";
@@ -1908,6 +2004,7 @@
                         removeSourceImage(item.id);
                     });
                     actions.appendChild(addBtn);
+                    actions.appendChild(rotBtn);
                     actions.appendChild(rmBtn);
 
                     div.appendChild(im);
@@ -2010,6 +2107,7 @@
                         presetName: activePreset.name,
                         isFree: isFree,
                         fitMode: item.fitMode || "fill",
+                        blurFill: !!item.blurFill,
                     };
                     placed.push(inst);
                     createPlacedEl(inst);
@@ -2073,6 +2171,7 @@
                         presetName: activePreset.name,
                         isFree: isFree,
                         fitMode: item.fitMode || "fill",
+                        blurFill: !!item.blurFill,
                     };
                 }
 
@@ -2170,6 +2269,12 @@
 
                     var clip = document.createElement("div");
                     clip.className = "img-clip";
+                    var blurImg = document.createElement("img");
+                    blurImg.className = "blur-bg";
+                    blurImg.src = inst.src;
+                    blurImg.draggable = false;
+                    blurImg.alt = "";
+                    clip.appendChild(blurImg);
                     var img = document.createElement("img");
                     img.src = inst.src;
                     img.draggable = false;
@@ -2242,10 +2347,21 @@
                     el.classList.toggle("crop-active", cropMode && selectedId === inst.pid);
                     el.classList.toggle("resize-active", resizeMode && selectedId === inst.pid && !!inst.isFree);
 
-                    var img = el.querySelector(".img-clip img");
+                    var clipEl = el.querySelector(".img-clip");
+                    var img = el.querySelector(".img-clip img:not(.blur-bg)");
                     if (img) {
                         if (img.getAttribute("src") !== inst.src) img.src = inst.src;
                         layoutImageInFrame(img, inst, fw, fh);
+                    }
+
+                    var blurActive = (inst.fitMode || "fill") === "contain" && !!inst.blurFill;
+                    if (clipEl) clipEl.classList.toggle("blur-fill-active", blurActive);
+                    var blurImg = el.querySelector(".img-clip .blur-bg");
+                    if (blurImg) {
+                        if (blurActive) {
+                            if (blurImg.getAttribute("src") !== inst.src) blurImg.src = inst.src;
+                            layoutBlurBg(blurImg, inst, fw, fh);
+                        }
                     }
 
                     var badge = el.querySelector(".size-badge");
@@ -2317,6 +2433,41 @@
                     var sx = inst.flipH ? -1 : 1;
                     var sy = inst.flipV ? -1 : 1;
                     img.style.transform = "rotate(" + inst.imgRotation + "deg) scale(" + sx + "," + sy + ")";
+                }
+
+                // Cover-fit + oversize layout for the blurred whitespace-filler
+                // behind a Contain-mode photo. Centered, ignores crop pan/zoom
+                // (the blur is just a soft backdrop, not the focal image), but
+                // follows the same photo rotation so it stays visually aligned.
+                function layoutBlurBg(img, inst, fwPx, fhPx) {
+                    var natW = inst.naturalW;
+                    var natH = inst.naturalH;
+                    var rot = ((inst.imgRotation % 360) + 360) % 360;
+                    var swap = rot === 90 || rot === 270;
+                    var effW = swap ? natH : natW;
+                    var effH = swap ? natW : natH;
+                    var imgAspect = effW / Math.max(1e-6, effH);
+                    var frameAspect = fwPx / Math.max(1e-6, fhPx);
+
+                    // cover-fit (same math as Fill mode)
+                    var baseW, baseH;
+                    if (imgAspect > frameAspect) {
+                        baseH = fhPx;
+                        baseW = baseH * imgAspect;
+                    } else {
+                        baseW = fwPx;
+                        baseH = baseW / imgAspect;
+                    }
+                    // oversize a bit so the blurred edges never show inside the frame
+                    var pad = 1.25;
+                    var dispW = baseW * pad;
+                    var dispH = baseH * pad;
+
+                    img.style.width = dispW + "px";
+                    img.style.height = dispH + "px";
+                    img.style.left = (fwPx - dispW) / 2 + "px";
+                    img.style.top = (fhPx - dispH) / 2 + "px";
+                    img.style.transform = "rotate(" + inst.imgRotation + "deg)";
                 }
 
                 function isSelected(pid) {
@@ -2417,6 +2568,7 @@
                         flipH: !!fromInst.flipH,
                         flipV: !!fromInst.flipV,
                         fitMode: fromInst.fitMode || "fill",
+                        blurFill: !!fromInst.blurFill,
                     };
                     for (var i = 0; i < placed.length; i++) {
                         var p = placed[i];
@@ -2428,6 +2580,7 @@
                         p.flipH = props.flipH;
                         p.flipV = props.flipV;
                         p.fitMode = props.fitMode;
+                        p.blurFill = props.blurFill;
                         renderPlaced(p);
                     }
                     for (var j = 0; j < images.length; j++) {
@@ -2439,6 +2592,7 @@
                             images[j].flipH = props.flipH;
                             images[j].flipV = props.flipV;
                             images[j].fitMode = props.fitMode;
+                            images[j].blurFill = props.blurFill;
                             break;
                         }
                     }
@@ -3171,7 +3325,32 @@
                     if (fillBtn) fillBtn.classList.toggle("active-mode", mode === "fill");
                     if (containBtn) containBtn.classList.toggle("active-mode", mode === "contain");
                     if (stretchBtn) stretchBtn.classList.toggle("active-mode", mode === "stretch");
+                    var blurChk = document.getElementById("chkBlurFill");
+                    if (blurChk) {
+                        blurChk.checked = !!(inst && inst.blurFill);
+                        blurChk.disabled = !inst;
+                    }
                 }
+                function setBlurFill(on) {
+                    var group = getSelectedAll();
+                    if (!group.length) {
+                        setStatus("Select an image first");
+                        return;
+                    }
+                    var seen = {};
+                    group.forEach(function (inst) {
+                        inst.blurFill = !!on;
+                        renderPlaced(inst);
+                        if (!seen[inst.imageId]) {
+                            seen[inst.imageId] = true;
+                            syncSourceTransforms(inst);
+                        }
+                    });
+                    setStatus((on ? "Blur-fill enabled" : "Blur-fill disabled") + (group.length > 1 ? " · " + group.length + " frames" : "") + " (applies in Contain mode)");
+                }
+                document.getElementById("chkBlurFill").addEventListener("change", function (e) {
+                    setBlurFill(e.target.checked);
+                });
                 document.getElementById("btnFitFill").addEventListener("click", function () {
                     setFitMode("fill");
                 });
@@ -3182,16 +3361,27 @@
                     setFitMode("stretch");
                 });
 
-                // 90° frame rotation = swap width/height, keep center, rotate image content 90°
+                // 90° frame rotation = swap width/height, keep center, rotate image content 90°.
+                // Applies to every selected frame individually (each rotates in place
+                // around its own center), so it works the same for one image or a
+                // multi-selected group.
                 function rotateFrame90(dir) {
-                    var inst = getSelected();
-                    if (!inst) return;
-                    // rotate whole frame in 90° steps — keep exact print size (no w/h swap)
-                    inst.rotation = ((inst.rotation || 0) + dir * 90) % 360;
-                    if (inst.rotation < 0) inst.rotation += 360;
-                    renderPlaced(inst);
-                    selectPlaced(inst.pid);
-                    setStatus("Frame rotated to " + inst.rotation + "° · size " + Math.round(inst.w) + "x" + Math.round(inst.h) + " mm");
+                    var group = getSelectedAll();
+                    if (!group.length) return;
+                    group.forEach(function (inst) {
+                        inst.rotation = ((inst.rotation || 0) + dir * 90) % 360;
+                        if (inst.rotation < 0) inst.rotation += 360;
+                        renderPlaced(inst);
+                    });
+                    // Refresh selection info / badges without collapsing a multi-selection.
+                    syncSelectionUI();
+                    var last = group[group.length - 1];
+                    setStatus(
+                        "Frame rotated to " +
+                            last.rotation +
+                            "°" +
+                            (group.length > 1 ? " · " + group.length + " frames" : " · size " + Math.round(last.w) + "x" + Math.round(last.h) + " mm"),
+                    );
                 }
                 document.getElementById("btnRotateL").addEventListener("click", function () {
                     rotateFrame90(-1);
@@ -3382,9 +3572,32 @@
                     var rows = 1;
                     var overflow = 0;
 
+                    // Frame rotation is always a 0/90/180/270 step and rotates around the
+                    // frame's *center* (see renderPlaced). So for 90°/270° a frame's actual
+                    // on-paper footprint is h × w, not w × h, and that footprint's top-left
+                    // is not the same point as the stored (unrotated) x/y. Pack using the
+                    // rotated footprint, then convert back to top-left x/y around the same center.
+                    function footprint(p) {
+                        var r = Math.abs(Math.round(p.rotation || 0)) % 180;
+                        var swapped = r === 90;
+                        return {
+                            w: swapped ? p.h : p.w,
+                            h: swapped ? p.w : p.h,
+                        };
+                    }
+                    function placeAt(p, foot, left, top) {
+                        // (left, top) is the footprint's top-left; convert to the
+                        // unrotated box's top-left, keeping the center fixed.
+                        var cx = left + foot.w / 2;
+                        var cy = top + foot.h / 2;
+                        p.x = Math.round((cx - p.w / 2) * 1000) / 1000;
+                        p.y = Math.round((cy - p.h / 2) * 1000) / 1000;
+                    }
+
                     items.forEach(function (p) {
-                        var fw = Math.max(0.1, p.w);
-                        var fh = Math.max(0.1, p.h);
+                        var foot = footprint(p);
+                        var fw = Math.max(0.1, foot.w);
+                        var fh = Math.max(0.1, foot.h);
 
                         function advanceX() {
                             cursorX += fw + gap;
@@ -3400,11 +3613,10 @@
                         // Frame wider than remaining printable width: pin to leftmost, own row
                         if (fw > printableW + 0.01) {
                             if (rowH > 0) advanceRow();
-                            p.x = Math.round(originX * 1000) / 1000;
-                            p.y = Math.round(cursorY * 1000) / 1000;
+                            placeAt(p, foot, originX, cursorY);
+                            if (cursorY + fh > maxBottom + 0.05) overflow++;
                             rowH = fh;
                             advanceRow();
-                            if (p.y + fh > maxBottom + 0.05) overflow++;
                             renderPlaced(p);
                             return;
                         }
@@ -3414,12 +3626,11 @@
                             advanceRow();
                         }
 
-                        p.x = Math.round(cursorX * 1000) / 1000;
-                        p.y = Math.round(cursorY * 1000) / 1000;
+                        placeAt(p, foot, cursorX, cursorY);
                         if (fh > rowH) rowH = fh;
                         advanceX();
 
-                        if (p.y + fh > maxBottom + 0.05) overflow++;
+                        if (cursorY + fh > maxBottom + 0.05) overflow++;
                         renderPlaced(p);
                     });
 
@@ -3830,8 +4041,10 @@
                         if (p.imageId !== comparingSid) continue;
                         var el = paperStage.querySelector('[data-pid="' + p.pid + '"]');
                         if (!el) continue;
-                        var img = el.querySelector(".img-clip img");
+                        var img = el.querySelector(".img-clip img:not(.blur-bg)");
                         if (img) img.src = p.originalDataURL;
+                        var blurImg = el.querySelector(".img-clip .blur-bg");
+                        if (blurImg) blurImg.src = p.originalDataURL;
                     }
                     setThumbCompareHighlight(comparingSid);
                     var btn = document.getElementById("btnCompare");
@@ -3862,8 +4075,10 @@
                         if (p.imageId !== sid) continue;
                         var el = paperStage.querySelector('[data-pid="' + p.pid + '"]');
                         if (!el) continue;
-                        var img = el.querySelector(".img-clip img");
+                        var img = el.querySelector(".img-clip img:not(.blur-bg)");
                         if (img) img.src = p.src;
+                        var blurImg = el.querySelector(".img-clip .blur-bg");
+                        if (blurImg) blurImg.src = p.src;
                     }
                     setStatus("Compare: adjusted");
                 }
@@ -4060,6 +4275,29 @@
                                     baseH = baseW / imgAspect;
                                 }
                             }
+                            // Contain-mode blur fill: draw a cover-fit, blurred, slightly
+                            // oversized copy of the same image first so it covers the
+                            // letterbox whitespace, then the sharp contained image goes on top.
+                            if (mode === "contain" && inst.blurFill) {
+                                var bgW, bgH;
+                                if (imgAspect > frameAspect) {
+                                    bgH = fh;
+                                    bgW = bgH * imgAspect;
+                                } else {
+                                    bgW = fw;
+                                    bgH = bgW / imgAspect;
+                                }
+                                var bgPad = 1.25;
+                                bgW *= bgPad;
+                                bgH *= bgPad;
+                                ctx.save();
+                                var blurPx = Math.max(2, Math.min(fw, fh) * 0.045);
+                                ctx.filter = "blur(" + blurPx + "px) brightness(0.9)";
+                                ctx.rotate(((inst.imgRotation || 0) * Math.PI) / 180);
+                                ctx.drawImage(img, -bgW / 2, -bgH / 2, bgW, bgH);
+                                ctx.restore();
+                            }
+
                             var s = inst.cropScale || 1;
                             var dispW = baseW * s;
                             var dispH = baseH * s;
