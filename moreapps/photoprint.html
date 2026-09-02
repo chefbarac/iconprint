@@ -4148,119 +4148,265 @@
                     btn.addEventListener("touchcancel", showAdjustedPreview);
                 })();
 
+                /**
+                 * Subject-aware auto levels for one source image.
+                 * Returns Promise<{black, white, gamma, bright, contrast, subjectMean}> or rejects
+                 * if there are not enough subject pixels.
+                 */
+                function computeAutoLevels(originalDataURL) {
+                    return new Promise(function (resolve, reject) {
+                        var img = new Image();
+                        img.onload = function () {
+                            var maxSide = 640;
+                            var sc = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+                            var c = document.createElement("canvas");
+                            c.width = Math.max(1, Math.round(img.naturalWidth * sc));
+                            c.height = Math.max(1, Math.round(img.naturalHeight * sc));
+                            var ctx = c.getContext("2d");
+                            ctx.drawImage(img, 0, 0, c.width, c.height);
+                            var idata = ctx.getImageData(0, 0, c.width, c.height);
+                            var d = idata.data;
+
+                            var hist = new Array(256);
+                            for (var i = 0; i < 256; i++) hist[i] = 0;
+                            var total = 0;
+                            var subjectSum = 0;
+                            var subjectCount = 0;
+
+                            for (var i = 0; i < d.length; i += 4) {
+                                var r = d[i],
+                                    g = d[i + 1],
+                                    b = d[i + 2];
+                                var lum = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+
+                                // skip near-white / pure background (and filled transparency)
+                                if (lum >= 245 && r >= 240 && g >= 240 && b >= 240) continue;
+                                // skip pure black outliers
+                                if (lum <= 3) continue;
+
+                                hist[lum]++;
+                                total++;
+
+                                // soft "subject" weight: mid tones + skin-ish hues get more influence
+                                var isSkin = r > 60 && g > 30 && b > 20 && r > g && r > b && Math.abs(r - g) > 10 && r - b > 15 && lum > 40 && lum < 220;
+                                var isMid = lum > 35 && lum < 210;
+                                if (isSkin || isMid) {
+                                    var w = isSkin ? 3 : 1;
+                                    subjectSum += lum * w;
+                                    subjectCount += w;
+                                }
+                            }
+
+                            if (total < 50) {
+                                reject(new Error("not enough subject pixels"));
+                                return;
+                            }
+
+                            // percentiles on subject-filtered histogram
+                            var loCount = total * 0.02;
+                            var hiCount = total * 0.98;
+                            var cum = 0,
+                                black = 0,
+                                white = 255;
+                            for (var i = 0; i < 256; i++) {
+                                cum += hist[i];
+                                if (cum >= loCount) {
+                                    black = i;
+                                    break;
+                                }
+                            }
+                            cum = 0;
+                            for (var i = 0; i < 256; i++) {
+                                cum += hist[i];
+                                if (cum >= hiCount) {
+                                    white = i;
+                                    break;
+                                }
+                            }
+
+                            // gentle limits — avoid crushing / washing
+                            black = Math.min(black, 35);
+                            white = Math.max(white, 220);
+                            if (white - black < 80) {
+                                var mid = (black + white) / 2;
+                                black = Math.max(0, Math.floor(mid - 40));
+                                white = Math.min(255, Math.ceil(mid + 40));
+                            }
+
+                            // gamma from subject mean — lift if subject is dark
+                            var subjectMean = subjectCount > 0 ? subjectSum / subjectCount : 128;
+                            var gamma = 1;
+                            if (subjectMean < 90) gamma = 1.12;
+                            else if (subjectMean < 110) gamma = 1.06;
+                            else if (subjectMean > 170) gamma = 0.96;
+                            else gamma = 1.02; // slight lift by default so auto doesn't darken
+
+                            resolve({
+                                black: black,
+                                white: white,
+                                gamma: gamma,
+                                bright: subjectMean < 100 ? 4 : 0,
+                                contrast: 0,
+                                subjectMean: subjectMean,
+                            });
+                        };
+                        img.onerror = function () {
+                            reject(new Error("image load failed"));
+                        };
+                        img.src = originalDataURL;
+                    });
+                }
+
+                // Process + write levels onto every placement (and library entry) for one imageId.
+                function applyLevelsParamsToSource(imageId, originalDataURL, black, white, gamma, bright, contrast) {
+                    return processImage(originalDataURL, black, white, gamma, bright, contrast).then(function (url) {
+                        for (var i = 0; i < placed.length; i++) {
+                            var p = placed[i];
+                            if (p.imageId !== imageId) continue;
+                            p.black = black;
+                            p.white = white;
+                            p.gamma = gamma;
+                            p.bright = bright;
+                            p.contrast = contrast;
+                            p.src = url;
+                            renderPlaced(p);
+                        }
+                        for (var j = 0; j < images.length; j++) {
+                            if (images[j].id === imageId) {
+                                images[j].src = url;
+                                images[j].black = black;
+                                images[j].white = white;
+                                images[j].gamma = gamma;
+                                images[j].bright = bright;
+                                images[j].contrast = contrast;
+                                var thumb = thumbList.querySelector('.thumb-item[data-id="' + imageId + '"] img');
+                                if (thumb) thumb.src = url;
+                                break;
+                            }
+                        }
+                        return url;
+                    });
+                }
+
                 document.getElementById("btnAuto").addEventListener("click", function () {
-                    var inst = getSelected();
-                    if (!inst) {
+                    var group = getSelectedAll();
+                    if (!group.length) {
                         setStatus("Select an image first");
                         return;
                     }
-                    var img = new Image();
-                    img.onload = function () {
-                        var maxSide = 640;
-                        var sc = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
-                        var c = document.createElement("canvas");
-                        c.width = Math.max(1, Math.round(img.naturalWidth * sc));
-                        c.height = Math.max(1, Math.round(img.naturalHeight * sc));
-                        var ctx = c.getContext("2d");
-                        ctx.drawImage(img, 0, 0, c.width, c.height);
-                        var idata = ctx.getImageData(0, 0, c.width, c.height);
-                        var d = idata.data;
 
-                        var hist = new Array(256);
-                        for (var i = 0; i < 256; i++) hist[i] = 0;
-                        var total = 0;
-                        var subjectSum = 0;
-                        var subjectCount = 0;
-
-                        for (var i = 0; i < d.length; i += 4) {
-                            var r = d[i],
-                                g = d[i + 1],
-                                b = d[i + 2];
-                            var lum = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
-
-                            // skip near-white / pure background (and filled transparency)
-                            if (lum >= 245 && r >= 240 && g >= 240 && b >= 240) continue;
-                            // skip pure black outliers
-                            if (lum <= 3) continue;
-
-                            hist[lum]++;
-                            total++;
-
-                            // soft "subject" weight: mid tones + skin-ish hues get more influence
-                            var isSkin = r > 60 && g > 30 && b > 20 && r > g && r > b && Math.abs(r - g) > 10 && r - b > 15 && lum > 40 && lum < 220;
-                            var isMid = lum > 35 && lum < 210;
-                            if (isSkin || isMid) {
-                                var w = isSkin ? 3 : 1;
-                                subjectSum += lum * w;
-                                subjectCount += w;
-                            }
+                    // One auto-levels pass per unique source (shared imageId)
+                    var bySource = {};
+                    group.forEach(function (inst) {
+                        if (!bySource[inst.imageId]) {
+                            bySource[inst.imageId] = inst;
                         }
+                    });
+                    var sources = Object.keys(bySource).map(function (k) {
+                        return bySource[k];
+                    });
+                    var primary = getSelected() || sources[sources.length - 1];
 
-                        if (total < 50) {
-                            setStatus("Auto levels: not enough subject pixels");
+                    setStatus("Auto levels on " + sources.length + " source" + (sources.length === 1 ? "" : "s") + "…");
+
+                    var ok = 0;
+                    var failed = 0;
+                    var lastParams = null;
+                    var chain = Promise.resolve();
+                    sources.forEach(function (inst) {
+                        chain = chain.then(function () {
+                            return computeAutoLevels(inst.originalDataURL)
+                                .then(function (params) {
+                                    lastParams = params;
+                                    return applyLevelsParamsToSource(
+                                        inst.imageId,
+                                        inst.originalDataURL,
+                                        params.black,
+                                        params.white,
+                                        params.gamma,
+                                        params.bright,
+                                        params.contrast,
+                                    ).then(function () {
+                                        ok++;
+                                        // Keep slider UI in sync with the primary selection's result
+                                        if (primary && inst.imageId === primary.imageId) {
+                                            document.getElementById("lvlBlack").value = params.black;
+                                            document.getElementById("lvlWhite").value = params.white;
+                                            document.getElementById("lvlGamma").value = Math.round(params.gamma * 100);
+                                            document.getElementById("lvlBright").value = params.bright;
+                                            document.getElementById("lvlContrast").value = params.contrast;
+                                            syncNumbersFromSliders();
+                                        }
+                                    });
+                                })
+                                .catch(function () {
+                                    failed++;
+                                });
+                        });
+                    });
+                    chain.then(function () {
+                        if (!ok) {
+                            setStatus("Auto levels: not enough subject pixels" + (sources.length > 1 ? " on any selected source" : ""));
                             return;
                         }
-
-                        // percentiles on subject-filtered histogram
-                        var loCount = total * 0.02;
-                        var hiCount = total * 0.98;
-                        var cum = 0,
-                            black = 0,
-                            white = 255;
-                        for (var i = 0; i < 256; i++) {
-                            cum += hist[i];
-                            if (cum >= loCount) {
-                                black = i;
-                                break;
-                            }
+                        var msg =
+                            "Auto levels (subject) on " +
+                            ok +
+                            " source" +
+                            (ok === 1 ? "" : "s") +
+                            " · " +
+                            group.length +
+                            " frame" +
+                            (group.length === 1 ? "" : "s");
+                        if (failed) msg += " · " + failed + " skipped";
+                        if (ok === 1 && lastParams) {
+                            msg +=
+                                ": black=" +
+                                lastParams.black +
+                                ", white=" +
+                                lastParams.white +
+                                ", gamma=" +
+                                lastParams.gamma.toFixed(2) +
+                                ", subj≈" +
+                                Math.round(lastParams.subjectMean);
                         }
-                        cum = 0;
-                        for (var i = 0; i < 256; i++) {
-                            cum += hist[i];
-                            if (cum >= hiCount) {
-                                white = i;
-                                break;
-                            }
-                        }
-
-                        // gentle limits — avoid crushing / washing
-                        black = Math.min(black, 35);
-                        white = Math.max(white, 220);
-                        if (white - black < 80) {
-                            var mid = (black + white) / 2;
-                            black = Math.max(0, Math.floor(mid - 40));
-                            white = Math.min(255, Math.ceil(mid + 40));
-                        }
-
-                        // gamma from subject mean — lift if subject is dark
-                        var subjectMean = subjectCount > 0 ? subjectSum / subjectCount : 128;
-                        var gamma = 1;
-                        if (subjectMean < 90) gamma = 1.12;
-                        else if (subjectMean < 110) gamma = 1.06;
-                        else if (subjectMean > 170) gamma = 0.96;
-                        else gamma = 1.02; // slight lift by default so auto doesn't darken
-
-                        document.getElementById("lvlBlack").value = black;
-                        document.getElementById("lvlWhite").value = white;
-                        document.getElementById("lvlGamma").value = Math.round(gamma * 100);
-                        document.getElementById("lvlBright").value = subjectMean < 100 ? 4 : 0;
-                        document.getElementById("lvlContrast").value = 0;
-                        syncNumbersFromSliders();
-                        applyLevelsFromUI();
-                        setStatus("Auto levels (subject): black=" + black + ", white=" + white + ", gamma=" + gamma.toFixed(2) + ", subj≈" + Math.round(subjectMean));
-                    };
-                    img.src = inst.originalDataURL;
+                        setStatus(msg);
+                    });
                 });
 
                 document.getElementById("btnResetAdj").addEventListener("click", function () {
+                    var group = getSelectedAll();
+                    if (!group.length) {
+                        setStatus("Select an image first");
+                        return;
+                    }
                     document.getElementById("lvlBlack").value = 0;
                     document.getElementById("lvlWhite").value = 255;
                     document.getElementById("lvlGamma").value = 100;
                     document.getElementById("lvlBright").value = 0;
                     document.getElementById("lvlContrast").value = 0;
                     syncNumbersFromSliders();
-                    applyLevelsFromUI();
-                    setStatus("Adjustments reset");
+
+                    // Reset every unique source in the multi-selection
+                    var bySource = {};
+                    group.forEach(function (inst) {
+                        if (!bySource[inst.imageId]) bySource[inst.imageId] = inst;
+                    });
+                    var sources = Object.keys(bySource).map(function (k) {
+                        return bySource[k];
+                    });
+                    var chain = Promise.resolve();
+                    sources.forEach(function (inst) {
+                        chain = chain.then(function () {
+                            return applyLevelsParamsToSource(inst.imageId, inst.originalDataURL, 0, 255, 1, 0, 0);
+                        });
+                    });
+                    chain.then(function () {
+                        setStatus(
+                            "Adjustments reset" +
+                                (sources.length > 1 ? " · " + sources.length + " sources · " + group.length + " frames" : ""),
+                        );
+                    });
                 });
 
                 // ----- Export -----
