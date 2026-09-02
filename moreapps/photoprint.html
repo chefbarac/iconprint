@@ -953,8 +953,9 @@
                         </div>
                     </div>
                     <p class="hint" style="margin-bottom: 6px">Used by both Add All and Auto stack. 0 = flush/side-by-side (default).</p>
-                    <div class="row" style="margin: 0 0 8px">
-                        <button type="button" id="btnAddAll" style="width: 100%" title="Add every uploaded design to the page, cycling design 1 → last, repeating to fill the page">Add All</button>
+                    <div class="row" style="margin: 0 0 8px; gap: 6px">
+                        <button type="button" id="btnAddAll" style="flex: 1" title="Add every uploaded design to the page, cycling design 1 → last, repeating to fill the page">Add All</button>
+                        <button type="button" class="secondary" id="btnRotateAllSources" style="flex: 1" title="Rotate every library image 90° clockwise (before adding to canvas)">Rotate All ⟳</button>
                     </div>
                     <div class="thumb-list" id="thumbList"></div>
                 </div>
@@ -1910,8 +1911,9 @@
                 // Bakes the rotation into both the working src and the original (so tonal
                 // adjustments made afterwards still apply correctly), and swaps the
                 // recorded natural dimensions so aspect-ratio/size logic stays correct.
-                function rotateLibraryImage(item, dir) {
-                    Promise.all([rotateDataURL90(item.src, dir), rotateDataURL90(item.originalDataURL, dir)])
+                // Returns a Promise so callers (including Rotate All) can await completion.
+                function rotateLibraryImage(item, dir, quiet) {
+                    return Promise.all([rotateDataURL90(item.src, dir), rotateDataURL90(item.originalDataURL, dir)])
                         .then(function (res) {
                             item.src = res[0];
                             item.originalDataURL = res[1];
@@ -1927,11 +1929,45 @@
                                 var sm = thumb.querySelector(".info small");
                                 if (sm) sm.textContent = item.naturalW + "x" + item.naturalH + "px";
                             }
-                            setStatus('Rotated "' + item.name + '" — will apply when added to canvas');
+                            if (!quiet) {
+                                setStatus('Rotated "' + item.name + '" — will apply when added to canvas');
+                            }
                         })
                         .catch(function () {
-                            setStatus("Failed to rotate image");
+                            if (!quiet) setStatus("Failed to rotate image");
+                            throw new Error("rotate failed");
                         });
+                }
+
+                // Rotate every library source 90° (dir: 1 = CW, -1 = CCW).
+                // Does not touch frames already on the canvas — only the source library.
+                function rotateAllLibraryImages(dir) {
+                    if (!images.length) {
+                        setStatus("Upload some designs first");
+                        return;
+                    }
+                    var total = images.length;
+                    setStatus("Rotating " + total + " source" + (total === 1 ? "" : "s") + "…");
+                    var chain = Promise.resolve();
+                    var ok = 0;
+                    var failed = 0;
+                    images.forEach(function (item) {
+                        chain = chain.then(function () {
+                            return rotateLibraryImage(item, dir, true)
+                                .then(function () {
+                                    ok++;
+                                })
+                                .catch(function () {
+                                    failed++;
+                                });
+                        });
+                    });
+                    chain.then(function () {
+                        var msg = "Rotated " + ok + " source" + (ok === 1 ? "" : "s") + " 90°";
+                        if (failed) msg += " · " + failed + " failed";
+                        msg += " — applies when added to canvas";
+                        setStatus(msg);
+                    });
                 }
 
                 function isSourceOnCanvas(imageId) {
@@ -2249,6 +2285,12 @@
                 }
                 var btnAddAll = document.getElementById("btnAddAll");
                 if (btnAddAll) btnAddAll.addEventListener("click", addAllDesigns);
+                var btnRotateAllSources = document.getElementById("btnRotateAllSources");
+                if (btnRotateAllSources) {
+                    btnRotateAllSources.addEventListener("click", function () {
+                        rotateAllLibraryImages(1);
+                    });
+                }
 
                 // mm value of the "Spacing" control next to Add All. 0 = flush.
                 function getAddAllGapMm() {
