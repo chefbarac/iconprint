@@ -32,7 +32,8 @@
                 --accent-dark: #144e40;
                 --danger: #b3452c;
                 --gap: 0in;
-                --pad: 0.15in;
+                --pad-x: 0.15in;
+                --pad-y: 0.15in;
                 --guide-color: rgba(30, 40, 50, 0.186);
                 --sidebar-w: 360px;
             }
@@ -418,7 +419,7 @@
                 width: 8.27in;
                 min-height: 11.69in;
                 background: #fff;
-                padding: var(--pad);
+                padding: var(--pad-y) var(--pad-x);
                 box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
                 border-radius: 2px;
                 overflow: hidden; /* never let grid/flex content bleed past the canvas edge */
@@ -726,7 +727,7 @@
                     box-shadow: none;
                     border-radius: 0;
                     margin: 0;
-                    padding: var(--pad);
+                    padding: var(--pad-y) var(--pad-x);
                 }
                 /* Landscape design (e.g. A6 canvas) rotated 90° CW onto portrait paper —
                    mirrors rasterizeSheetPng() agent path so browser print matches agent print.
@@ -907,7 +908,7 @@
                         <label id="countALabel" for="countA" style="margin-top: 6px">Copies — 2in × 2in (left)</label>
                         <input type="number" id="countA" min="0" max="30" value="4" />
                         <label id="countBLabel" for="countB" style="margin-top: 6px">Copies — 1in × 1in (right)</label>
-                        <input type="number" id="countB" min="0" max="40" value="12" />
+                        <input type="number" id="countB" min="0" max="40" value="8" />
 
                         <label id="countNamesLabel" for="countNames" style="margin-top: 6px">With names count</label>
                         <input type="number" id="countNames" min="0" max="12" value="2" />
@@ -922,8 +923,10 @@
                             <option value="gradient">Soft gradient</option>
                             <option value="solid" selected>Solid translucent</option>
                         </select>
-                        <label for="marginInput" style="margin-top: 6px">Page margin (in)</label>
-                        <input type="number" id="marginInput" min="0" max="0.4" step="0.05" value="0.15" />
+                        <label for="marginHInput" style="margin-top: 6px">Margin left / right (in)</label>
+                        <input type="number" id="marginHInput" min="0" max="1.5" step="0.05" value="1.135" />
+                        <label for="marginVInput" style="margin-top: 6px">Margin top / bottom (in)</label>
+                        <input type="number" id="marginVInput" min="0" max="0.8" step="0.05" value="0.15" />
                         <button type="button" id="btnGenerate" class="primary-wide" style="margin-top: 8px">Update layout</button>
                     </div>
 
@@ -1333,7 +1336,7 @@
                     combo: {
                         blocks: [
                             { label: "2in × 2in", wIn: 2, hIn: 2, cols: 2, defaultCount: 4, canvasDefaults: { a6: 2 }, countLabel: "Copies — 2in × 2in (left)" },
-                            { label: "1in × 1in", wIn: 1, hIn: 1, cols: 0, defaultCount: 12, canvasDefaults: { a6: 4 }, countLabel: "Copies — 1in × 1in (right)" }, // cols:0 = auto-fill remaining width
+                            { label: "1in × 1in", wIn: 1, hIn: 1, cols: 0, defaultCount: 8, canvasDefaults: { a6: 4 }, countLabel: "Copies — 1in × 1in (right)" }, // cols:0 = auto-fill; A4 L/R margin limits this to 2 columns by default
                         ],
                     },
                     passport: {
@@ -1394,7 +1397,8 @@
                 const guidesCheck = document.getElementById("guidesCheck");
                 const spacingCheck = document.getElementById("spacingCheck");
                 const backdropSelect = document.getElementById("backdropSelect");
-                const marginInput = document.getElementById("marginInput");
+                const marginHInput = document.getElementById("marginHInput");
+                const marginVInput = document.getElementById("marginVInput");
 
                 const btnGenerate = document.getElementById("btnGenerate");
                 const btnPrint = document.getElementById("btnPrint");
@@ -1758,24 +1762,35 @@
                     fitZoomToWidth();
                 }
 
-                // Remember the user's margin so we can restore it when leaving A6 passport.
-                let savedMarginBeforeAutoPad = null;
+                // Remember the user's vertical margin so we can restore it when leaving A6 passport.
+                let savedMarginVBeforeAutoPad = null;
                 const A6_PASSPORT_PAD = 0.28;
+                // A4 combo (2×2 + 1×1): L/R margin sized so content is exactly
+                // 4in (2×2) + 2in (1×1) = 6in → (8.27 − 6) / 2 ≈ 1.135in each side.
+                const A4_COMBO_MARGIN_H = 1.135;
 
                 function applyAutoPaddingForLayout() {
-                    if (!marginInput) return;
+                    if (!marginVInput || !marginHInput) return;
                     const isA6Passport = canvasPaper === "a6" && idTypeSelect.value === "passport";
                     if (isA6Passport) {
-                        const current = parseFloat(marginInput.value);
-                        if (savedMarginBeforeAutoPad === null) {
-                            savedMarginBeforeAutoPad = Number.isFinite(current) ? current : 0.15;
+                        const current = parseFloat(marginVInput.value);
+                        if (savedMarginVBeforeAutoPad === null) {
+                            savedMarginVBeforeAutoPad = Number.isFinite(current) ? current : 0.15;
                         }
                         if (!(Number.isFinite(current) && current >= A6_PASSPORT_PAD - 0.001)) {
-                            marginInput.value = String(A6_PASSPORT_PAD);
+                            marginVInput.value = String(A6_PASSPORT_PAD);
                         }
-                    } else if (savedMarginBeforeAutoPad !== null) {
-                        marginInput.value = String(savedMarginBeforeAutoPad);
-                        savedMarginBeforeAutoPad = null;
+                    } else if (savedMarginVBeforeAutoPad !== null) {
+                        marginVInput.value = String(savedMarginVBeforeAutoPad);
+                        savedMarginVBeforeAutoPad = null;
+                    }
+                    // A4 + combo: L/R margin sized so only 2 columns of 1×1 fit beside the 2×2 block.
+                    if (canvasPaper === "a4" && idTypeSelect.value === "combo") {
+                        marginHInput.value = String(A4_COMBO_MARGIN_H);
+                    } else if (canvasPaper === "a6") {
+                        // A6 is narrow — keep a modest horizontal pad.
+                        const h = parseFloat(marginHInput.value);
+                        if (!Number.isFinite(h) || h > 0.4) marginHInput.value = "0.15";
                     }
                 }
 
@@ -1820,11 +1835,12 @@
                 guidesCheck.addEventListener("change", generateLayout);
                 spacingCheck.addEventListener("change", generateLayout);
                 backdropSelect.addEventListener("change", generateLayout);
-                marginInput.addEventListener("change", () => {
+                marginHInput.addEventListener("change", generateLayout);
+                marginVInput.addEventListener("change", () => {
                     // User override while on A6 passport: keep their value as the new baseline
                     if (canvasPaper === "a6" && idTypeSelect.value === "passport") {
-                        const v = parseFloat(marginInput.value);
-                        if (Number.isFinite(v)) savedMarginBeforeAutoPad = v;
+                        const v = parseFloat(marginVInput.value);
+                        if (Number.isFinite(v)) savedMarginVBeforeAutoPad = v;
                     }
                     generateLayout();
                 });
@@ -1880,9 +1896,10 @@
                     const blocks = cfg.blocks;
                     const namesCount = countNames.value;
 
-                    const margin = Math.max(0, Math.min(0.4, parseFloat(marginInput.value) || 0));
+                    const marginH = Math.max(0, Math.min(1.5, parseFloat(marginHInput.value) || 0));
+                    const marginV = Math.max(0, Math.min(0.8, parseFloat(marginVInput.value) || 0));
                     const sheetWidthIn = (CANVAS_SIZES[canvasPaper] || CANVAS_SIZES.a4).wIn;
-                    const availableWidthIn = Math.max(0, sheetWidthIn - margin * 2);
+                    const availableWidthIn = Math.max(0, sheetWidthIn - marginH * 2);
 
                     // Block A
                     const nA = Math.max(0, parseInt(countA.value, 10) || 0);
@@ -1937,7 +1954,8 @@
 
                     const sheetEl = document.getElementById("sheet");
                     sheetEl.style.setProperty("--gap", spacingCheck.checked ? "0.12in" : "0in");
-                    sheetEl.style.setProperty("--pad", margin + "in");
+                    sheetEl.style.setProperty("--pad-x", marginH + "in");
+                    sheetEl.style.setProperty("--pad-y", marginV + "in");
 
                     updateNameFontStyle();
                     applyLabelFonts();
