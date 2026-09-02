@@ -1756,42 +1756,30 @@
 
                     // A6 + Passport 3×2 grid: raise page margin so the 6 cells clear
                     // the edges (2×1.77in tall needs ~0.28in pad on 4.13in height).
-                    applyAutoPaddingForLayout();
+                    applyMarginsForLayout();
 
                     updateCountLabels();
                     fitZoomToWidth();
                 }
 
-                // Remember the user's vertical margin so we can restore it when leaving A6 passport.
-                let savedMarginVBeforeAutoPad = null;
-                const A6_PASSPORT_PAD = 0.28;
-                // A4 combo (2×2 + 1×1): L/R margin sized so content is exactly
-                // 4in (2×2) + 2in (1×1) = 6in → (8.27 − 6) / 2 ≈ 1.135in each side.
-                const A4_COMBO_MARGIN_H = 1.135;
+                // Initial margins per canvas size × ID type.
+                // A4 combo: L/R = 1.135 so remaining width is 6in → 2 cols of 1×1 beside 2×2.
+                // A6 passport: T/B = 0.28 so the 3×2 passport grid clears the short edge.
+                const MARGIN_PRESETS = {
+                    "a4|combo": { h: 1.135, v: 0.15 },
+                    "a4|passport": { h: 0.15, v: 0.15 },
+                    "a4|visa": { h: 0.15, v: 0.15 },
+                    "a6|combo": { h: 0.15, v: 0.15 },
+                    "a6|passport": { h: 0.15, v: 0.28 },
+                };
+                const MARGIN_DEFAULT = { h: 0.15, v: 0.15 };
 
-                function applyAutoPaddingForLayout() {
+                function applyMarginsForLayout() {
                     if (!marginVInput || !marginHInput) return;
-                    const isA6Passport = canvasPaper === "a6" && idTypeSelect.value === "passport";
-                    if (isA6Passport) {
-                        const current = parseFloat(marginVInput.value);
-                        if (savedMarginVBeforeAutoPad === null) {
-                            savedMarginVBeforeAutoPad = Number.isFinite(current) ? current : 0.15;
-                        }
-                        if (!(Number.isFinite(current) && current >= A6_PASSPORT_PAD - 0.001)) {
-                            marginVInput.value = String(A6_PASSPORT_PAD);
-                        }
-                    } else if (savedMarginVBeforeAutoPad !== null) {
-                        marginVInput.value = String(savedMarginVBeforeAutoPad);
-                        savedMarginVBeforeAutoPad = null;
-                    }
-                    // A4 + combo: L/R margin sized so only 2 columns of 1×1 fit beside the 2×2 block.
-                    if (canvasPaper === "a4" && idTypeSelect.value === "combo") {
-                        marginHInput.value = String(A4_COMBO_MARGIN_H);
-                    } else if (canvasPaper === "a6") {
-                        // A6 is narrow — keep a modest horizontal pad.
-                        const h = parseFloat(marginHInput.value);
-                        if (!Number.isFinite(h) || h > 0.4) marginHInput.value = "0.15";
-                    }
+                    const key = canvasPaper + "|" + idTypeSelect.value;
+                    const preset = MARGIN_PRESETS[key] || MARGIN_DEFAULT;
+                    marginHInput.value = String(preset.h);
+                    marginVInput.value = String(preset.v);
                 }
 
                 if (canvasSizeSelect) {
@@ -1836,14 +1824,7 @@
                 spacingCheck.addEventListener("change", generateLayout);
                 backdropSelect.addEventListener("change", generateLayout);
                 marginHInput.addEventListener("change", generateLayout);
-                marginVInput.addEventListener("change", () => {
-                    // User override while on A6 passport: keep their value as the new baseline
-                    if (canvasPaper === "a6" && idTypeSelect.value === "passport") {
-                        const v = parseFloat(marginVInput.value);
-                        if (Number.isFinite(v)) savedMarginVBeforeAutoPad = v;
-                    }
-                    generateLayout();
-                });
+                marginVInput.addEventListener("change", generateLayout);
                 btnGenerate.addEventListener("click", generateLayout);
 
                 // ---------------- Layout generation ----------------
