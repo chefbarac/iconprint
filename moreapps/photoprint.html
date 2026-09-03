@@ -3758,8 +3758,9 @@
                     var inst = getSelected();
 
                     // \ or | : hold-style compare — on keydown show original, keyup restores
+                    // (works across every selected frame, not just the primary one)
                     if (key === "\\" || key === "|") {
-                        if (!inst) return;
+                        if (!getCompareSourceIds().length) return;
                         e.preventDefault();
                         if (!comparing) showOriginalPreview();
                         return;
@@ -4062,25 +4063,45 @@
                  */
                 // ----- Compare (before / after levels) -----
                 var comparing = false;
-                var comparingSid = null;
+                var comparingSids = []; // unique source imageIds currently shown as "original"
 
-                function setThumbCompareHighlight(sid) {
+                function setThumbCompareHighlight(sids) {
                     var thumbs = thumbList.querySelectorAll(".thumb-item");
                     for (var t = 0; t < thumbs.length; t++) {
                         var tid = parseInt(thumbs[t].getAttribute("data-id"), 10);
-                        thumbs[t].classList.toggle("compare-highlight", sid != null && tid === sid);
+                        thumbs[t].classList.toggle("compare-highlight", !!sids && sids.length && sids.indexOf(tid) >= 0);
                     }
                 }
 
+                // Unique source imageIds across every currently-selected frame (falls back to
+                // the single primary selection if nothing is multi-selected).
+                function getCompareSourceIds() {
+                    var group = getSelectedAll();
+                    if (!group.length) {
+                        var inst = getSelected();
+                        if (inst) group = [inst];
+                    }
+                    var seen = {};
+                    var ids = [];
+                    for (var i = 0; i < group.length; i++) {
+                        var sid = group[i].imageId;
+                        if (!seen[sid]) {
+                            seen[sid] = true;
+                            ids.push(sid);
+                        }
+                    }
+                    return ids;
+                }
+
                 function showOriginalPreview() {
-                    var inst = getSelected();
-                    if (!inst) return;
+                    var sids = getCompareSourceIds();
+                    if (!sids.length) return;
                     comparing = true;
-                    comparingSid = inst.imageId;
-                    // Show original on every placement that shares this source
+                    comparingSids = sids;
+                    // Show original on every placement that shares any of the selected sources
                     for (var i = 0; i < placed.length; i++) {
                         var p = placed[i];
-                        if (p.imageId !== comparingSid) continue;
+                        if (comparingSids.indexOf(p.imageId) < 0) continue;
                         var el = paperStage.querySelector('[data-pid="' + p.pid + '"]');
                         if (!el) continue;
                         var img = el.querySelector(".img-clip img:not(.blur-bg)");
@@ -4088,13 +4109,16 @@
                         var blurImg = el.querySelector(".img-clip .blur-bg");
                         if (blurImg) blurImg.src = p.originalDataURL;
                     }
-                    setThumbCompareHighlight(comparingSid);
+                    setThumbCompareHighlight(comparingSids);
                     var btn = document.getElementById("btnCompare");
                     if (btn) {
                         btn.classList.add("active-mode");
                         btn.textContent = "Showing original…";
                     }
-                    setStatus("Compare: original (before levels) · all copies of this image");
+                    setStatus(
+                        "Compare: original (before levels) · " +
+                            (sids.length > 1 ? sids.length + " selected sources" : "all copies of this image"),
+                    );
                 }
 
                 function showAdjustedPreview() {
@@ -4104,17 +4128,14 @@
                         btn.classList.remove("active-mode");
                         btn.textContent = "Compare (hold)";
                     }
-                    var sid = comparingSid;
-                    comparingSid = null;
+                    var sids = comparingSids;
+                    comparingSids = [];
                     setThumbCompareHighlight(null);
-                    if (sid == null) {
-                        var inst = getSelected();
-                        if (inst) sid = inst.imageId;
-                    }
-                    if (sid == null) return;
+                    if (!sids.length) sids = getCompareSourceIds();
+                    if (!sids.length) return;
                     for (var i = 0; i < placed.length; i++) {
                         var p = placed[i];
-                        if (p.imageId !== sid) continue;
+                        if (sids.indexOf(p.imageId) < 0) continue;
                         var el = paperStage.querySelector('[data-pid="' + p.pid + '"]');
                         if (!el) continue;
                         var img = el.querySelector(".img-clip img:not(.blur-bg)");
