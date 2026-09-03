@@ -1977,18 +1977,75 @@
                     return false;
                 }
 
+                // Remove every placed frame that uses this source imageId — from both the
+                // canvas DOM and the placed[] model — and clear it out of the selection.
+                function removePlacementsForSource(imageId) {
+                    var toRemove = placed.filter(function (p) {
+                        return p.imageId === imageId;
+                    });
+                    if (!toRemove.length) return 0;
+                    toRemove.forEach(function (inst) {
+                        var el = paperStage.querySelector('[data-pid="' + inst.pid + '"]');
+                        if (el) el.remove();
+                    });
+                    var ids = {};
+                    toRemove.forEach(function (inst) {
+                        ids[inst.pid] = true;
+                    });
+                    placed = placed.filter(function (p) {
+                        return !ids[p.pid];
+                    });
+                    selectedIds = selectedIds.filter(function (pid) {
+                        return !ids[pid];
+                    });
+                    if (selectedId != null && ids[selectedId]) selectedId = null;
+                    return toRemove.length;
+                }
+
                 function removeSourceImage(imageId) {
+                    var framesDeleted = 0;
                     if (isSourceOnCanvas(imageId)) {
-                        setStatus("This image is on the canvas — delete it from the canvas first");
-                        alert("This image is placed on the canvas.\nDelete it from the canvas first to avoid accidental removal.");
-                        return;
+                        var item = null;
+                        for (var i = 0; i < images.length; i++) {
+                            if (images[i].id === imageId) {
+                                item = images[i];
+                                break;
+                            }
+                        }
+                        var name = item ? item.name : "This image";
+                        var count = 0;
+                        for (var j = 0; j < placed.length; j++) {
+                            if (placed[j].imageId === imageId) count++;
+                        }
+                        var ok = confirm(
+                            '"' +
+                                name +
+                                '" is placed on the canvas (' +
+                                count +
+                                (count === 1 ? " frame" : " frames") +
+                                ").\nDelete it from the library and remove " +
+                                (count === 1 ? "that frame" : "all of those frames") +
+                                " from the canvas too?",
+                        );
+                        if (!ok) {
+                            setStatus("Removal cancelled");
+                            return;
+                        }
+                        framesDeleted = removePlacementsForSource(imageId);
+                        setCropMode(false);
+                        setResizeMode(false);
+                        syncSelectionUI();
                     }
                     images = images.filter(function (img) {
                         return img.id !== imageId;
                     });
                     var thumb = thumbList.querySelector('.thumb-item[data-id="' + imageId + '"]');
                     if (thumb) thumb.remove();
-                    setStatus("Removed from library");
+                    setStatus(
+                        framesDeleted
+                            ? "Removed from library · deleted " + framesDeleted + (framesDeleted === 1 ? " frame" : " frames") + " from canvas"
+                            : "Removed from library",
+                    );
                 }
 
                 function addThumb(item) {
