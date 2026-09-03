@@ -954,7 +954,11 @@
                     </div>
                     <p class="hint" style="margin-bottom: 6px">Used by both Add All and Auto stack. 0 = flush/side-by-side (default).</p>
                     <div class="row" style="margin: 0 0 8px; gap: 6px">
-                        <button type="button" id="btnAddAll" style="flex: 1" title="Add every uploaded design to the page, cycling design 1 → last, repeating to fill the page">Add All</button>
+                        <select id="addAllMode" style="flex: 0 0 112px" title="Fill canvas: repeat designs to fill the page. 1 pc each: add every design exactly once, no repeats.">
+                            <option value="fill" selected>Fill canvas</option>
+                            <option value="once">1 pc each</option>
+                        </select>
+                        <button type="button" id="btnAddAll" style="flex: 1" title="Add every uploaded design to the page at the current preset size">Add All</button>
                         <button type="button" class="secondary" id="btnRotateAllSources" style="flex: 1" title="Rotate every library image 90° clockwise (before adding to canvas)">Rotate All ⟳</button>
                     </div>
                     <div class="thumb-list" id="thumbList"></div>
@@ -2270,10 +2274,12 @@
 
                 // "Add All": place every uploaded design onto the page at the
                 // current preset size, flush left→right / top→bottom starting at
-                // the page margin, cycling design 1 → last and repeating the
-                // sequence until the page is full. Every design is guaranteed to
-                // be added at least once even if that means overflowing the last
-                // row (matching Auto Stack's overflow behavior).
+                // the page margin.
+                // Mode "fill" (default): cycles design 1 → last, repeating the
+                // sequence until the page is full (every design guaranteed at
+                // least once, even if that means overflowing the last row).
+                // Mode "once": adds every design exactly one time, no repeats,
+                // stopping as soon as each design has been placed once.
                 function addAllDesigns() {
                     if (!images.length) {
                         setStatus("Upload some designs first");
@@ -2284,6 +2290,9 @@
                         setStatus("Set Free size width and height first (or leave both 0 for native size @ 300 DPI)");
                         return;
                     }
+                    var modeEl = document.getElementById("addAllMode");
+                    var mode = modeEl ? modeEl.value : "fill";
+                    var onceOnly = mode === "once";
                     var wMm = slot.w,
                         hMm = slot.h;
                     var gap = getAddAllGapMm(); // 0 = flush/side-by-side (default)
@@ -2309,9 +2318,15 @@
                         var y = originY + row * rowPitch;
                         var fits = y + hMm <= maxBottom + 0.05;
 
-                        // Once every design has been placed at least once, stop as
-                        // soon as the next slot no longer fits on the page.
-                        if (!fits && i >= images.length) break;
+                        if (onceOnly) {
+                            // Stop the moment every design has been placed once,
+                            // regardless of remaining page space.
+                            if (i >= images.length) break;
+                        } else {
+                            // Once every design has been placed at least once, stop as
+                            // soon as the next slot no longer fits on the page.
+                            if (!fits && i >= images.length) break;
+                        }
                         // Safety valve against runaway loops.
                         if (i > 5000) break;
 
@@ -2335,7 +2350,7 @@
                     syncSelectionUI();
 
                     var cycles = Math.ceil(created.length / images.length);
-                    var msg = "Added " + created.length + " frame" + (created.length === 1 ? "" : "s") + " from " + images.length + " design" + (images.length === 1 ? "" : "s") + (cycles > 1 ? " (repeated " + cycles + "x to fill page)" : "") + " at " + Math.round(wMm * 10) / 10 + "x" + Math.round(hMm * 10) / 10 + " mm";
+                    var msg = "Added " + created.length + " frame" + (created.length === 1 ? "" : "s") + " from " + images.length + " design" + (images.length === 1 ? "" : "s") + (onceOnly ? " · 1 pc each" : cycles > 1 ? " (repeated " + cycles + "x to fill page)" : "") + " at " + Math.round(wMm * 10) / 10 + "x" + Math.round(hMm * 10) / 10 + " mm";
                     msg += gap > 0.001 ? " · " + Math.round(gap * 100) / 100 + " mm spacing" : " · flush";
                     if (overflow) msg += " · " + overflow + " extend past printable height";
                     setStatus(msg);
