@@ -34,7 +34,7 @@
                 --gap: 0in;
                 --pad-x: 0.15in;
                 --pad-y: 0.15in;
-                --guide-color: rgba(30, 40, 50, 0.186);
+                --guide-color: rgba(20, 28, 36, 0.65);
                 --sidebar-w: 360px;
             }
             * {
@@ -467,8 +467,8 @@
             }
 
             .cell {
-                border-top-width: 0.1px;
-                border-left-width: 0.1px;
+                border-top-width: 1px;
+                border-left-width: 1px;
                 border-right-width: 0;
                 border-bottom-width: 0;
                 border-style: dashed;
@@ -1035,8 +1035,8 @@
                 <div class="field-row agent-only">
                     <label for="printQuality">Quality</label>
                     <select id="printQuality">
-                        <option value="standard" selected>Standard</option>
-                        <option value="high">High</option>
+                        <option value="high" selected>High</option>
+                        <option value="standard">Standard</option>
                     </select>
                 </div>
                 <div class="field-row" style="display: none">
@@ -1680,8 +1680,12 @@
 
                     // Export at a high resolution so the photo still looks sharp when the
                     // customer zooms in on the preview to inspect it before printing.
-                    const OUT_W = 1400;
-                    const OUT_H = Math.round(OUT_W / cropRatio);
+                    // Never upscale the crop past its natural resolution — blowing
+                    // up a small crop region and re-encoding it amplifies noise
+                    // ("dots") in flat ID backgrounds. Cap at 1400 px wide to keep
+                    // the sheet fast to render and upload.
+                    const OUT_W = Math.min(1400, Math.max(1, Math.round(sw)));
+                    const OUT_H = Math.max(1, Math.round(OUT_W / cropRatio));
                     const canvas = document.createElement("canvas");
                     canvas.width = OUT_W;
                     canvas.height = OUT_H;
@@ -1690,7 +1694,9 @@
                     ctx.imageSmoothingQuality = "high";
                     ctx.drawImage(cropImg, sx, sy, sw, sh, 0, 0, OUT_W, OUT_H);
 
-                    currentPhoto = canvas.toDataURL("image/jpeg", 0.95);
+                    // Lossless PNG avoids JPEG chroma sub-sampling, which prints
+                    // back as dotting/banding on solid-color ID backgrounds.
+                    currentPhoto = canvas.toDataURL("image/png");
                     photoThumb.src = currentPhoto;
                     photoThumb.style.display = "block";
                     thumbPlaceholder.style.display = "none";
@@ -2160,7 +2166,7 @@
                     const matchDesign = !!opts.matchDesign;
                     const sheetEl = document.getElementById("sheet");
                     if (!sheetEl) throw new Error("Sheet not found");
-                    // Physical A4 (or selected) at 300 DPI
+                    // Physical A6 (or smaller) at 600 DPI, larger sheets at 300 DPI
                     const paperSel = document.getElementById("printPaper");
                     const paper = (paperSel && paperSel.value) || "a4";
 
@@ -2190,7 +2196,7 @@
                         pageH = size.h;
                     }
 
-                    const dpi = 300;
+                    const dpi = Math.min(pageW, pageH) < 5 ? 600 : 300;
                     const outW = Math.round(pageW * dpi);
                     const outH = Math.round(pageH * dpi);
 
@@ -2232,6 +2238,7 @@
                     const cells = sheetEl.querySelectorAll(".cell");
                     const sheetRect = sheetEl.getBoundingClientRect();
                     const drawJobs = [];
+                    const guideRects = [];
 
                     cells.forEach((cell) => {
                         const cr = cell.getBoundingClientRect();
@@ -2339,18 +2346,30 @@
                             );
                         }
 
-                        // cut guides
+                        // remember cut-guide rects; drawn on top after photos load
                         if (!cell.classList.contains("no-guides")) {
-                            ctx.save();
-                            ctx.strokeStyle = "rgba(30, 40, 50, 0.186)";
-                            ctx.setLineDash([4, 3]);
-                            ctx.lineWidth = 1;
-                            ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
-                            ctx.restore();
+                            guideRects.push({ x: x, y: y, w: w, h: h });
                         }
                     });
 
                     await Promise.all(drawJobs);
+
+                    // Cut guides must be painted AFTER the photos: the cover-fitted
+                    // photo overpaints everything beneath it inside the cell, so
+                    // guides drawn earlier were hidden on the printed sheet. Line
+                    // weight and dash scale with output DPI so the guides stay
+                    // clearly visible on small sheets like A6.
+                    ctx.save();
+                    const guideLw = Math.max(2, Math.round(0.3 * (dpi / 25.4)));
+                    ctx.strokeStyle = "rgba(20, 28, 36, 0.72)";
+                    ctx.setLineDash([
+                        Math.max(4, Math.round(0.6 * (dpi / 25.4))),
+                        Math.max(3, Math.round(0.45 * (dpi / 25.4))),
+                    ]);
+                    ctx.lineWidth = guideLw;
+                    guideRects.forEach((r) => ctx.strokeRect(r.x, r.y, r.w, r.h));
+                    ctx.restore();
+
                     if (needsRotate) ctx.restore();
                     zoomStage.style.zoom = prevZoom;
 
@@ -2425,7 +2444,7 @@
                     const scaling = document.getElementById("printScaling").value || "actual";
                     const margins = document.getElementById("printMargins").value || "none";
                     const mediaType = document.getElementById("printMedia").value || "plain";
-                    const quality = (document.getElementById("printQuality") && document.getElementById("printQuality").value) || "standard";
+                    const quality = (document.getElementById("printQuality") && document.getElementById("printQuality").value) || "high";
 
                     const st = document.getElementById("printStatus");
                     const submitBtn = document.getElementById("printSubmitBtn");
@@ -2448,7 +2467,7 @@
                         fd.append("scaling", scaling);
                         fd.append("margins", margins);
                         fd.append("media_type", mediaType);
-                        fd.append("quality", (document.getElementById("printQuality") && document.getElementById("printQuality").value) || "standard");
+                        fd.append("quality", (document.getElementById("printQuality") && document.getElementById("printQuality").value) || "high");
                         fd.append("page_width_inches", String(pageW));
                         fd.append("page_height_inches", String(pageH));
                         const res = await fetch(LOCAL_AGENT + "/print", { method: "POST", body: fd });
