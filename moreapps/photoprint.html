@@ -3563,21 +3563,27 @@
                         setStatus("Select 2 or more frames to align (Shift/Ctrl+click)");
                         return;
                     }
+                    // Use each frame's true rotated bounding box (not raw x/y/w/h,
+                    // which are the *unrotated* origin/size) so alignment lines up
+                    // what's actually visible on the page, including for rotated frames.
                     var minX = Infinity,
                         minY = Infinity,
                         maxR = -Infinity,
                         maxB = -Infinity;
-                    group.forEach(function (p) {
-                        if (p.x < minX) minX = p.x;
-                        if (p.y < minY) minY = p.y;
-                        if (p.x + p.w > maxR) maxR = p.x + p.w;
-                        if (p.y + p.h > maxB) maxB = p.y + p.h;
+                    var boxes = group.map(function (p) {
+                        var b = frameAabbMm(p);
+                        if (b.x < minX) minX = b.x;
+                        if (b.y < minY) minY = b.y;
+                        if (b.x + b.w > maxR) maxR = b.x + b.w;
+                        if (b.y + b.h > maxB) maxB = b.y + b.h;
+                        return b;
                     });
-                    group.forEach(function (p) {
-                        if (edge === "left") p.x = minX;
-                        else if (edge === "right") p.x = maxR - p.w;
-                        else if (edge === "top") p.y = minY;
-                        else if (edge === "bottom") p.y = maxB - p.h;
+                    group.forEach(function (p, i) {
+                        var b = boxes[i];
+                        if (edge === "left") p.x += minX - b.x;
+                        else if (edge === "right") p.x += maxR - (b.x + b.w);
+                        else if (edge === "top") p.y += minY - b.y;
+                        else if (edge === "bottom") p.y += maxB - (b.y + b.h);
                         p.x = Math.round(p.x * 1000) / 1000;
                         p.y = Math.round(p.y * 1000) / 1000;
                         renderPlaced(p);
