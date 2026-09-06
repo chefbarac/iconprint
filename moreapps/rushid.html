@@ -34,7 +34,7 @@
                 --gap: 0in;
                 --pad-x: 0.15in;
                 --pad-y: 0.15in;
-                --guide-color: rgba(20, 28, 36, 0.65);
+                --guide-color: rgba(96, 106, 116, 0.45);
                 --sidebar-w: 360px;
             }
             * {
@@ -2117,48 +2117,54 @@
 
                 // ---------------- Print / reset ----------------
                 function printLayoutBrowser() {
-                    // Match agent raster path: always send a portrait page; rotate
-                    // landscape designs (A6 canvas) 90° CW so content fits correctly
-                    // in the system print dialog as well as the local print agent.
-                    // Rotated result is anchored to the top-left of the page.
+                    // Browser print must match the agent path exactly: rasterize the
+                    // sheet to the physical portrait page, then print the PNG full-
+                    // bleed. The old @media-print DOM-transform approach relied on the
+                    // browser honoring `@page { size: A6 portrait }` and was printing
+                    // the design much smaller than the page.
                     const paperSel = document.getElementById("printPaper");
                     const paper = (paperSel && paperSel.value) || canvasPaper || "a4";
-                    const PORTRAIT_CSS = {
-                        a4: "A4 portrait",
-                        a6: "A6 portrait",
-                        short: "letter portrait",
-                        long: "8.5in 13in portrait",
-                    };
-                    const pageCss = PORTRAIT_CSS[paper] || PORTRAIT_CSS.a4;
-
-                    let styleEl = document.getElementById("dynamicPrintPageStyle");
-                    if (!styleEl) {
-                        styleEl = document.createElement("style");
-                        styleEl.id = "dynamicPrintPageStyle";
-                        document.head.appendChild(styleEl);
-                    }
-                    styleEl.textContent = "@page { size: " + pageCss + "; margin: 0; }";
-
-                    const size = CANVAS_SIZES[canvasPaper] || CANVAS_SIZES.a4;
-                    const designLandscape = size.wIn > size.hIn;
-                    // Portrait paper is always taller than wide in our PORTRAIT sizes.
-                    const needsRotate = designLandscape;
-
-                    if (needsRotate) {
-                        document.body.classList.add("print-rotate-landscape");
-                    } else {
-                        document.body.classList.remove("print-rotate-landscape");
-                    }
-
-                    const cleanup = () => {
-                        document.body.classList.remove("print-rotate-landscape");
-                        window.removeEventListener("afterprint", cleanup);
-                    };
-                    window.addEventListener("afterprint", cleanup);
-
-                    window.print();
-                    // Fallback cleanup if afterprint never fires (some browsers)
-                    setTimeout(cleanup, 2000);
+                    rasterizeSheetPng()
+                        .then(({ blob, pageW, pageH }) => {
+                            const mmW = Math.round(pageW * 25.4 * 10) / 10;
+                            const mmH = Math.round(pageH * 25.4 * 10) / 10;
+                            const dataUrl = URL.createObjectURL(blob);
+                            const win = window.open("", "_blank");
+                            if (!win) {
+                                alert("Allow pop-ups to print");
+                                URL.revokeObjectURL(dataUrl);
+                                return;
+                            }
+                            const doc = win.document;
+                            doc.open();
+                            doc.write("<!DOCTYPE html><html><head><title>Print</title>");
+                            doc.write("<style>@page{size:" + mmW + "mm " + mmH + "mm;margin:0}");
+                            doc.write("html,body{margin:0;padding:0}");
+                            doc.write("img{width:" + mmW + "mm;height:" + mmH + "mm;display:block}</style></head><body>");
+                            doc.write('<img src="' + dataUrl + '" />');
+                            doc.write("</body></html>");
+                            doc.close();
+                            let closed = false;
+                            function closeWin() {
+                                if (closed) return;
+                                closed = true;
+                                try {
+                                    win.close();
+                                } catch (e) {}
+                                URL.revokeObjectURL(dataUrl);
+                            }
+                            win.onafterprint = closeWin;
+                            setTimeout(function () {
+                                try {
+                                    win.focus();
+                                    win.print();
+                                } catch (e) {}
+                                setTimeout(closeWin, 1500);
+                            }, 400);
+                        })
+                        .catch((err) => {
+                            alert("Print failed: " + ((err && err.message) || err));
+                        });
                 }
 
                 async function rasterizeSheetPng(opts) {
@@ -2360,11 +2366,13 @@
                     // weight and dash scale with output DPI so the guides stay
                     // clearly visible on small sheets like A6.
                     ctx.save();
-                    const guideLw = Math.max(2, Math.round(0.3 * (dpi / 25.4)));
-                    ctx.strokeStyle = "rgba(20, 28, 36, 0.72)";
+                    // Thin (~0.15mm printed) light guides: clearly visible for cutting
+                    // but leave no noticeable residue on the trimmed pieces.
+                    const guideLw = Math.max(1, Math.round(0.15 * (dpi / 25.4)));
+                    ctx.strokeStyle = "rgba(110, 120, 130, 0.5)";
                     ctx.setLineDash([
-                        Math.max(4, Math.round(0.6 * (dpi / 25.4))),
-                        Math.max(3, Math.round(0.45 * (dpi / 25.4))),
+                        Math.max(3, Math.round(0.4 * (dpi / 25.4))),
+                        Math.max(2, Math.round(0.3 * (dpi / 25.4))),
                     ]);
                     ctx.lineWidth = guideLw;
                     guideRects.forEach((r) => ctx.strokeRect(r.x, r.y, r.w, r.h));
