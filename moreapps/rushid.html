@@ -2331,9 +2331,8 @@
                 const measureCanvas = document.createElement("canvas");
                 const measureCtx = measureCanvas.getContext("2d");
 
-                function fitFontForLabel(label, cellWidthPx, maxPx, minPx) {
-                    const text = label.textContent;
-                    if (!text) return;
+                function fitFontSize(text, cellWidthPx, maxPx, minPx) {
+                    if (!text) return maxPx;
                     // Leave a little breathing room inside the cell for the gradient + padding
                     const available = Math.max(20, cellWidthPx - 8);
                     let size = maxPx;
@@ -2343,7 +2342,11 @@
                         if (w <= available) break;
                         size -= 0.5;
                     }
-                    label.style.fontSize = size + "px";
+                    return size;
+                }
+
+                function fitFontForLabel(label, cellWidthPx, maxPx, minPx) {
+                    label.style.fontSize = fitFontSize(label.textContent, cellWidthPx, maxPx, minPx) + "px";
                 }
 
                 function applyLabelFonts() {
@@ -2378,6 +2381,29 @@
                         const scale = wIn / (cfg.blocks[0].wIn || 1);
                         const manualSize = Math.max(4.5, Math.round(manualSizeMax * Math.min(1, scale)));
 
+                        // ASA: person A and B names must have the SAME height — both so the two
+                        // photos look balanced and so the white footer backing behind
+                        // each name is identical. Fit every distinct name in the section,
+                        // then apply the smallest size to all of them. (Manual mode already
+                        // uses one identical formula per section, so only auto-fit needs it.)
+                        let asaSharedSize = null;
+                        if (!manual && idTypeSelect.value === "asa") {
+                            const seen = {};
+                            section.querySelectorAll(".name-label").forEach((lb) => {
+                                const t = (lb.textContent || "").trim();
+                                if (t) seen[t] = true;
+                            });
+                            const names = Object.keys(seen);
+                            if (names.length) {
+                                let best = maxPx;
+                                names.forEach((t) => {
+                                    const s = fitFontSize(t, cellPx, maxPx, minPx);
+                                    if (s < best) best = s;
+                                });
+                                asaSharedSize = best;
+                            }
+                        }
+
                         // Vertical stretch applies ONLY to the name label — signature stays unscaled
                         section.querySelectorAll(".name-label").forEach((label) => {
                             const footer = label.closest(".id-footer");
@@ -2391,6 +2417,8 @@
 
                             if (manual) {
                                 label.style.fontSize = `${manualSize}px`;
+                            } else if (asaSharedSize != null) {
+                                label.style.fontSize = `${asaSharedSize}px`;
                             } else {
                                 fitFontForLabel(label, cellPx, maxPx, minPx);
                             }
