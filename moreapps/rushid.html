@@ -223,7 +223,10 @@
                 gap: 10px;
             }
             #photoThumb,
-            #sigThumb {
+            #sigThumb,
+            #photoBThumb,
+            #sigBThumb,
+            #asaLogoThumb {
                 width: 52px;
                 height: 52px;
                 border-radius: 6px;
@@ -232,9 +235,23 @@
                 background: #e9ecee;
                 display: none;
             }
-            #sigThumb {
+            #sigThumb,
+            #sigBThumb,
+            #asaLogoThumb {
                 object-fit: contain;
                 background: #fff;
+            }
+            .asa-panel {
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                padding: 10px;
+                margin-bottom: 10px;
+                background: rgba(255, 255, 255, 0.35);
+            }
+            .asa-panel h4 {
+                margin: 0 0 6px;
+                font-size: 12px;
+                color: var(--text);
             }
             .thumb-placeholder {
                 width: 52px;
@@ -542,6 +559,46 @@
                 font-family: var(--name-font, "Segoe UI", Arial, Helvetica, sans-serif);
                 padding: 0 1px;
                 flex-shrink: 0;
+            }
+
+            /* ---------- ASA template ---------- */
+            #fileInputB,
+            #sigFileInputB,
+            #asaLogoFileInput {
+                display: none;
+            }
+            .cell.asa-card {
+                display: flex;
+                align-items: stretch;
+                background: #fff;
+            }
+            .cell.asa-card .asa-photo-slot {
+                position: relative;
+                overflow: hidden;
+                flex: 0 0 2in;
+                width: 2in;
+                height: 2in;
+                background: #eef1f2;
+            }
+            .cell.asa-card .asa-logo-badge {
+                position: absolute;
+                top: var(--asa-logo-top, 0);
+                left: calc(50% + var(--asa-logo-left, 0));
+                transform: translateX(-50%);
+                background: #fff;
+                padding: 1px 5px 0;
+                border: 1px solid #dfe3e6;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+                z-index: 3;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .cell.asa-card .asa-logo {
+                max-width: 1.4in;
+                max-height: var(--asa-logo-h, 0.45in);
+                object-fit: contain;
+                display: block;
             }
 
             /* ---------- Responsive: stack sidebar above canvas on narrow screens ---------- */
@@ -903,6 +960,7 @@
                             <option value="combo">2×2 &amp; 1×1 (Set)</option>
                             <option value="passport">Passport Size (Set)</option>
                             <option value="visa">Visa (Set)</option>
+                            <option value="asa">ASA — 2 people / landscape (A4)</option>
                         </select>
 
                         <label id="countALabel" for="countA" style="margin-top: 6px">Copies — 2in × 2in (left)</label>
@@ -912,6 +970,59 @@
 
                         <label id="countNamesLabel" for="countNames" style="margin-top: 6px">With names count</label>
                         <input type="number" id="countNames" min="0" max="12" value="2" />
+                    </div>
+
+                    <div class="field" id="asaExtras" style="display: none">
+                        <div class="asa-panel">
+                            <h4>Person B (ASA)</h4>
+                            <label>Person B photo</label>
+                            <div class="thumb-wrap">
+                                <img id="photoBThumb" alt="Person B photo" />
+                                <div class="thumb-placeholder" id="photoBPlaceholder">No<br />photo</div>
+                                <div class="btnrow" style="flex-direction: column">
+                                    <button type="button" id="btnUploadB">Upload photo B</button>
+                                    <button type="button" id="btnCameraB" class="ghost">Capture photo B</button>
+                                </div>
+                            </div>
+                            <input type="file" id="fileInputB" accept="image/*" />
+                            <button type="button" id="btnRecropB" class="ghost" disabled>Re-crop photo B</button>
+
+                            <label for="nameInputB" style="margin-top: 6px">Person B name</label>
+                            <input type="text" id="nameInputB" placeholder="Maria Clara" maxlength="40" />
+
+                            <label style="margin-top: 6px">Person B signature (optional)</label>
+                            <div class="thumb-wrap">
+                                <img id="sigBThumb" alt="Person B signature" />
+                                <div class="thumb-placeholder" id="sigBPlaceholder">No<br />sig</div>
+                                <button type="button" id="btnUploadSigB" class="ghost">Upload signature B</button>
+                            </div>
+                            <input type="file" id="sigFileInputB" accept="image/*" />
+                            <button type="button" id="btnClearSigB" class="ghost" disabled>Remove signature B</button>
+                        </div>
+
+                        <div class="asa-panel">
+                            <h4>ASA logo</h4>
+                            <label>Logo at top of card</label>
+                            <div class="thumb-wrap">
+                                <img id="asaLogoThumb" alt="ASA logo" />
+                                <div class="thumb-placeholder" id="asaLogoPlaceholder">No<br />logo</div>
+                                <button type="button" id="btnUploadLogo" class="ghost">Upload logo</button>
+                            </div>
+                            <input type="file" id="asaLogoFileInput" accept="image/*" />
+                            <button type="button" id="btnClearLogo" class="ghost" disabled>Remove logo</button>
+
+                            <label for="asaLogoSizeSlider" style="margin-top: 6px">Logo size</label>
+                            <input type="range" id="asaLogoSizeSlider" min="0.15" max="0.9" step="0.05" value="0.45" />
+                            <div class="rangeval"><span id="asaLogoSizeVal">0.45</span>in tall</div>
+
+                            <label for="asaLogoTopSlider" style="margin-top: 6px">Vertical position</label>
+                            <input type="range" id="asaLogoTopSlider" min="0" max="1.2" step="0.05" value="0" />
+                            <div class="rangeval"><span id="asaLogoTopVal">0</span>in from top</div>
+
+                            <label for="asaLogoLeftSlider" style="margin-top: 6px">Horizontal position</label>
+                            <input type="range" id="asaLogoLeftSlider" min="-0.6" max="0.6" step="0.05" value="0" />
+                            <div class="rangeval"><span id="asaLogoLeftVal">0</span>in from center</div>
+                        </div>
                     </div>
 
                     <div class="field">
@@ -1350,6 +1461,16 @@
                             { label: "1in × 1in", wIn: 1, hIn: 1, cols: 0, defaultCount: 4, countLabel: "Copies — 1in × 1in (right)" }, // cols:0 = auto-fill
                         ],
                     },
+                    asa: {
+                        // A4 only (not offered on A6 landscape canvas — UI hides this option).
+                        // Block A = landscape 2-person cards (two 2×2 photos + logo between,
+                        // name/signature under each photo). Block B = 1×1 repeats, split evenly
+                        // between person A and person B photos.
+                        blocks: [
+                            { label: "ASA 2-person 2×2", wIn: 4, hIn: 2, cols: 1, defaultCount: 2, countLabel: "Cards — ASA landscape (left)" },
+                            { label: "1in × 1in", wIn: 1, hIn: 1, cols: 0, defaultCount: 8, countLabel: "Copies — 1in × 1in (right)" }, // cols:0 = auto-fill
+                        ],
+                    },
                 };
 
                 // ---------------- State ----------------
@@ -1358,6 +1479,17 @@
                 let currentSignature = null; // signature dataURL
                 let stream = null; // camera MediaStream
 
+                // ASA person B + logo
+                let photoB = null;
+                let rawPhotoB = null;
+                let sigB = null;
+                let asaLogo = null;
+                let asaLogoSize = 0.45; // logo max-height in inches
+                let asaLogoTop = 0; // badge top offset in inches
+                let asaLogoLeft = 0; // badge horizontal offset from center in inches (positive = right)
+                let cropTarget = "a"; // which slot the open crop modal targets: "a" | "b"
+                let camTarget = "a"; // which slot capture targets
+
                 // ---------------- Elements ----------------
                 const fileInput = document.getElementById("fileInput");
                 const btnUpload = document.getElementById("btnUpload");
@@ -1365,6 +1497,33 @@
                 const btnRecrop = document.getElementById("btnRecrop");
                 const photoThumb = document.getElementById("photoThumb");
                 const thumbPlaceholder = document.getElementById("thumbPlaceholder");
+
+                const fileInputB = document.getElementById("fileInputB");
+                const btnUploadB = document.getElementById("btnUploadB");
+                const btnCameraB = document.getElementById("btnCameraB");
+                const btnRecropB = document.getElementById("btnRecropB");
+                const photoBThumb = document.getElementById("photoBThumb");
+                const photoBPlaceholder = document.getElementById("photoBPlaceholder");
+
+                const sigFileInputB = document.getElementById("sigFileInputB");
+                const btnUploadSigB = document.getElementById("btnUploadSigB");
+                const btnClearSigB = document.getElementById("btnClearSigB");
+                const sigBThumb = document.getElementById("sigBThumb");
+                const sigBPlaceholder = document.getElementById("sigBPlaceholder");
+                const nameInputB = document.getElementById("nameInputB");
+
+                const asaLogoFileInput = document.getElementById("asaLogoFileInput");
+                const btnUploadLogo = document.getElementById("btnUploadLogo");
+                const btnClearLogo = document.getElementById("btnClearLogo");
+                const asaLogoThumb = document.getElementById("asaLogoThumb");
+                const asaLogoPlaceholder = document.getElementById("asaLogoPlaceholder");
+                const asaExtras = document.getElementById("asaExtras");
+                const asaLogoSizeSlider = document.getElementById("asaLogoSizeSlider");
+                const asaLogoSizeVal = document.getElementById("asaLogoSizeVal");
+                const asaLogoTopSlider = document.getElementById("asaLogoTopSlider");
+                const asaLogoTopVal = document.getElementById("asaLogoTopVal");
+                const asaLogoLeftSlider = document.getElementById("asaLogoLeftSlider");
+                const asaLogoLeftVal = document.getElementById("asaLogoLeftVal");
 
                 const sigFileInput = document.getElementById("sigFileInput");
                 const btnUploadSig = document.getElementById("btnUploadSig");
@@ -1465,13 +1624,28 @@
                     const file = e.target.files && e.target.files[0];
                     if (!file) return;
                     const reader = new FileReader();
-                    reader.onload = (ev) => openCropModal(ev.target.result);
+                    reader.onload = (ev) => openCropModal(ev.target.result, "a");
                     reader.readAsDataURL(file);
                     fileInput.value = "";
                 });
 
                 btnRecrop.addEventListener("click", () => {
-                    if (rawPhoto) openCropModal(rawPhoto);
+                    if (rawPhoto) openCropModal(rawPhoto, "a");
+                });
+
+                // ---------------- Upload photo B (ASA) ----------------
+                btnUploadB.addEventListener("click", () => fileInputB.click());
+                fileInputB.addEventListener("change", (e) => {
+                    const file = e.target.files && e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => openCropModal(ev.target.result, "b");
+                    reader.readAsDataURL(file);
+                    fileInputB.value = "";
+                });
+
+                btnRecropB.addEventListener("click", () => {
+                    if (rawPhotoB) openCropModal(rawPhotoB, "b");
                 });
 
                 sigHeightSlider.addEventListener("input", () => {
@@ -1535,8 +1709,74 @@
                     generateLayout();
                 });
 
+                // ---------------- Signature B (ASA) ----------------
+                btnUploadSigB.addEventListener("click", () => sigFileInputB.click());
+                sigFileInputB.addEventListener("change", (e) => {
+                    const file = e.target.files && e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        sigB = ev.target.result;
+                        sigBThumb.src = sigB;
+                        sigBThumb.style.display = "block";
+                        sigBPlaceholder.style.display = "none";
+                        btnClearSigB.disabled = false;
+                        generateLayout();
+                    };
+                    reader.readAsDataURL(file);
+                    sigFileInputB.value = "";
+                });
+
+                btnClearSigB.addEventListener("click", () => {
+                    sigB = null;
+                    sigBThumb.style.display = "none";
+                    sigBPlaceholder.style.display = "flex";
+                    btnClearSigB.disabled = true;
+                    generateLayout();
+                });
+
+                // ---------------- ASA logo ----------------
+                btnUploadLogo.addEventListener("click", () => asaLogoFileInput.click());
+                asaLogoFileInput.addEventListener("change", (e) => {
+                    const file = e.target.files && e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        asaLogo = ev.target.result;
+                        asaLogoThumb.src = asaLogo;
+                        asaLogoThumb.style.display = "block";
+                        asaLogoPlaceholder.style.display = "none";
+                        btnClearLogo.disabled = false;
+                        generateLayout();
+                    };
+                    reader.readAsDataURL(file);
+                    asaLogoFileInput.value = "";
+                });
+
+                btnClearLogo.addEventListener("click", () => {
+                    asaLogo = null;
+                    asaLogoThumb.style.display = "none";
+                    asaLogoPlaceholder.style.display = "flex";
+                    btnClearLogo.disabled = true;
+                    generateLayout();
+                });
+
+                // ---------------- ASA logo size & position ----------------
+                function setAsaLogoPos() {
+                    asaLogoSize = parseFloat(asaLogoSizeSlider.value);
+                    asaLogoTop = parseFloat(asaLogoTopSlider.value);
+                    asaLogoLeft = parseFloat(asaLogoLeftSlider.value);
+                    asaLogoSizeVal.textContent = asaLogoSize.toFixed(2);
+                    asaLogoTopVal.textContent = asaLogoTop.toFixed(2);
+                    asaLogoLeftVal.textContent = (asaLogoLeft > 0 ? "+" : "") + asaLogoLeft.toFixed(2);
+                    generateLayout();
+                }
+                asaLogoSizeSlider.addEventListener("input", setAsaLogoPos);
+                asaLogoTopSlider.addEventListener("input", setAsaLogoPos);
+                asaLogoLeftSlider.addEventListener("input", setAsaLogoPos);
+
                 // ---------------- Camera ----------------
-                btnCamera.addEventListener("click", async () => {
+                async function startCam() {
                     try {
                         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                         cameraVideo.srcObject = stream;
@@ -1544,6 +1784,14 @@
                     } catch (err) {
                         alert("Could not access the camera. You can upload a photo instead.\n\n(" + err.message + ")");
                     }
+                }
+                btnCamera.addEventListener("click", () => {
+                    camTarget = "a";
+                    startCam();
+                });
+                btnCameraB.addEventListener("click", () => {
+                    camTarget = "b";
+                    startCam();
                 });
 
                 function stopCamera() {
@@ -1562,7 +1810,7 @@
                     canvas.getContext("2d").drawImage(cameraVideo, 0, 0);
                     const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
                     stopCamera();
-                    openCropModal(dataUrl);
+                    openCropModal(dataUrl, camTarget);
                 });
 
                 // ---------------- Crop modal ----------------
@@ -1573,12 +1821,18 @@
 
                 function currentCropRatio() {
                     const cfg = ID_TYPES[idTypeSelect.value];
+                    if (idTypeSelect.value === "asa") return 1; // ASA photos are square 2×2
                     const b = cfg.blocks[0];
                     return b.wIn / b.hIn;
                 }
 
-                function openCropModal(src) {
-                    rawPhoto = src;
+                function openCropModal(src, target) {
+                    cropTarget = target || "a";
+                    if (cropTarget === "b") {
+                        rawPhotoB = src;
+                    } else {
+                        rawPhoto = src;
+                    }
                     cropRatio = currentCropRatio();
                     // Reset stale sizing from a previous session, then show the modal
                     // BEFORE measuring the image. While display:none, clientWidth/Height
@@ -1696,11 +1950,19 @@
 
                     // Lossless PNG avoids JPEG chroma sub-sampling, which prints
                     // back as dotting/banding on solid-color ID backgrounds.
-                    currentPhoto = canvas.toDataURL("image/png");
-                    photoThumb.src = currentPhoto;
-                    photoThumb.style.display = "block";
-                    thumbPlaceholder.style.display = "none";
-                    btnRecrop.disabled = false;
+                    if (cropTarget === "b") {
+                        photoB = canvas.toDataURL("image/png");
+                        photoBThumb.src = photoB;
+                        photoBThumb.style.display = "block";
+                        photoBPlaceholder.style.display = "none";
+                        btnRecropB.disabled = false;
+                    } else {
+                        currentPhoto = canvas.toDataURL("image/png");
+                        photoThumb.src = currentPhoto;
+                        photoThumb.style.display = "block";
+                        thumbPlaceholder.style.display = "none";
+                        btnRecrop.disabled = false;
+                    }
 
                     cropModal.classList.add("hidden");
                     generateLayout();
@@ -1731,6 +1993,11 @@
                     }
                 }
 
+                function updateAsaUI() {
+                    const on = idTypeSelect.value === "asa";
+                    if (asaExtras) asaExtras.style.display = on ? "" : "none";
+                }
+
                 function applyCanvasSize() {
                     const size = CANVAS_SIZES[canvasPaper] || CANVAS_SIZES.a4;
                     const canvasSheetEl = document.getElementById("sheet");
@@ -1754,6 +2021,22 @@
                         }
                     }
 
+                    // A6 landscape also does not offer the ASA template.
+                    const asaOpt = idTypeSelect.querySelector('option[value="asa"]');
+                    if (asaOpt) {
+                        if (canvasPaper === "a6") {
+                            asaOpt.hidden = true;
+                            asaOpt.disabled = true;
+                            if (idTypeSelect.value === "asa") {
+                                idTypeSelect.value = "combo";
+                            }
+                        } else {
+                            asaOpt.hidden = false;
+                            asaOpt.disabled = false;
+                        }
+                    }
+                    updateAsaUI();
+
                     // A6 is too narrow to fit both blocks side by side —
                     // stack them instead: 2×2 block on top, 1×1 block below.
                     const cfg = ID_TYPES[idTypeSelect.value];
@@ -1775,6 +2058,7 @@
                     "a4|combo": { h: 1.135, v: 0.15 },
                     "a4|passport": { h: 0.15, v: 0.15 },
                     "a4|visa": { h: 0.15, v: 0.15 },
+                    "a4|asa": { h: 1.135, v: 0.15 },
                     "a6|combo": { h: 0.15, v: 0.15 },
                     "a6|passport": { h: 0.75, v: 0.28 },
                 };
@@ -1809,6 +2093,11 @@
                     const cfg = ID_TYPES[idTypeSelect.value];
                     countA.value = getDefaultCount(cfg.blocks[0], canvasPaper);
                     if (cfg.blocks[1]) countB.value = getDefaultCount(cfg.blocks[1], canvasPaper);
+                    // ASA 1×1 copies are split between person A and B — show names on all
+                    // of them by default so B's copies aren't left nameless.
+                    if (idTypeSelect.value === "asa" && cfg.blocks[1]) {
+                        countNames.value = String(getDefaultCount(cfg.blocks[1], canvasPaper));
+                    }
                     applyCanvasSize();
                     generateLayout();
                 });
@@ -1823,6 +2112,7 @@
                     applyLabelFonts();
                 });
                 nameInput.addEventListener("input", generateLayout);
+                nameInputB.addEventListener("input", generateLayout);
                 countA.addEventListener("change", generateLayout);
                 countB.addEventListener("change", generateLayout);
                 countNames.addEventListener("change", generateLayout);
@@ -1834,16 +2124,20 @@
                 btnGenerate.addEventListener("click", generateLayout);
 
                 // ---------------- Layout generation ----------------
-                function buildCell(blockCfg, renderName) {
+                function buildCell(blockCfg, renderName, opts) {
+                    opts = opts || {};
+                    const photo = opts.photo !== undefined ? opts.photo : currentPhoto;
+                    const sigSrc = opts.sig !== undefined ? opts.sig : currentSignature;
+                    const name = opts.name !== undefined ? opts.name : (nameInput.value || "").trim();
                     const cell = document.createElement("div");
                     cell.className = "cell" + (guidesCheck.checked ? "" : " no-guides");
                     cell.style.width = blockCfg.wIn + "in";
                     cell.style.height = blockCfg.hIn + "in";
 
-                    if (currentPhoto) {
+                    if (photo) {
                         const img = document.createElement("img");
                         img.className = "photo-img";
-                        img.src = currentPhoto;
+                        img.src = photo;
                         cell.appendChild(img);
                     } else {
                         const ph = document.createElement("div");
@@ -1854,15 +2148,14 @@
 
                     if (!renderName) return cell;
 
-                    const name = (nameInput.value || "").trim();
-                    if (name || currentSignature) {
+                    if (name || sigSrc) {
                         const footer = document.createElement("div");
                         footer.className = "id-footer";
 
-                        if (currentSignature) {
+                        if (sigSrc) {
                             const sig = document.createElement("img");
                             sig.className = "signature-img";
-                            sig.src = currentSignature;
+                            sig.src = sigSrc;
                             sig.dataset.hIn = blockCfg.hIn;
                             sig.dataset.wIn = blockCfg.wIn;
                             footer.appendChild(sig);
@@ -1876,6 +2169,74 @@
                         cell.appendChild(footer);
                     }
                     return cell;
+                }
+
+                // ASA: a 2×2 photo slot inside a landscape 2-person card.
+                // Same footer mechanics as a normal cell so names/signatures
+                // print identically on photo copies and on cards.
+                function makeAsaSlot(photo, sigSrc, name) {
+                    const slot = document.createElement("div");
+                    slot.className = "asa-photo-slot";
+                    if (photo) {
+                        const img = document.createElement("img");
+                        img.className = "photo-img";
+                        img.src = photo;
+                        slot.appendChild(img);
+                    } else {
+                        const ph = document.createElement("div");
+                        ph.className = "placeholder-icon";
+                        ph.textContent = "Add a photo";
+                        slot.appendChild(ph);
+                    }
+                    if (name || sigSrc) {
+                        const footer = document.createElement("div");
+                        footer.className = "id-footer";
+                        if (sigSrc) {
+                            const sig = document.createElement("img");
+                            sig.className = "signature-img";
+                            sig.src = sigSrc;
+                            sig.dataset.hIn = 2;
+                            sig.dataset.wIn = 2;
+                            footer.appendChild(sig);
+                        }
+                        if (name) {
+                            const label = document.createElement("div");
+                            label.className = "name-label";
+                            label.textContent = name;
+                            footer.appendChild(label);
+                        }
+                        slot.appendChild(footer);
+                    }
+                    return slot;
+                }
+
+                function buildAsaCard() {
+                    const card = document.createElement("div");
+                    card.className = "cell asa-card" + (guidesCheck.checked ? "" : " no-guides");
+                    card.style.width = "4in";
+                    card.style.height = "2in";
+
+                    const nameA = (nameInput.value || "").trim();
+                    const nameB = (nameInputB.value || "").trim();
+
+                    card.appendChild(makeAsaSlot(currentPhoto, currentSignature, nameA));
+                    card.appendChild(makeAsaSlot(photoB, sigB, nameB));
+
+                    // ASA logo badge printed at the top of the card, centered over the two photos.
+                    // Size/position come from the sidebar sliders.
+                    if (asaLogo) {
+                        const badge = document.createElement("div");
+                        badge.className = "asa-logo-badge";
+                        badge.style.setProperty("--asa-logo-h", asaLogoSize + "in");
+                        badge.style.setProperty("--asa-logo-top", asaLogoTop + "in");
+                        badge.style.setProperty("--asa-logo-left", asaLogoLeft + "in");
+                        const logo = document.createElement("img");
+                        logo.className = "asa-logo";
+                        logo.src = asaLogo;
+                        badge.appendChild(logo);
+                        card.appendChild(badge);
+                    }
+                    return card;
                 }
 
                 function generateLayout() {
@@ -1914,7 +2275,11 @@
                     }
                     sectionA.style.gridAutoRows = `${blocks[0].hIn}in`;
                     sectionA.innerHTML = "";
-                    for (let i = 0; i < nA; i++) sectionA.appendChild(buildCell(blocks[0], i < namesCount));
+                    if (idTypeSelect.value === "asa") {
+                        for (let i = 0; i < nA; i++) sectionA.appendChild(buildAsaCard());
+                    } else {
+                        for (let i = 0; i < nA; i++) sectionA.appendChild(buildCell(blocks[0], i < namesCount));
+                    }
                     blockA.classList.remove("hidden-block");
 
                     // Block B (optional)
@@ -1931,7 +2296,23 @@
                         }
                         sectionB.style.gridAutoRows = `${blocks[1].hIn}in`;
                         sectionB.innerHTML = "";
-                        for (let i = 0; i < nB; i++) sectionB.appendChild(buildCell(blocks[1], i < namesCount));
+                        if (idTypeSelect.value === "asa") {
+                            // Split the 1×1 copies evenly: first half = person A, second half = person B.
+                            const half = Math.max(1, Math.ceil(nB / 2));
+                            const nameBText = (nameInputB.value || "").trim();
+                            for (let i = 0; i < nB; i++) {
+                                const isA = i < half;
+                                sectionB.appendChild(
+                                    buildCell(blocks[1], i < namesCount, {
+                                        photo: isA ? currentPhoto : photoB,
+                                        name: isA ? nameInput.value.trim() : nameBText,
+                                        sig: isA ? currentSignature : sigB,
+                                    })
+                                );
+                            }
+                        } else {
+                            for (let i = 0; i < nB; i++) sectionB.appendChild(buildCell(blocks[1], i < namesCount));
+                        }
                         blockB.classList.remove("hidden-block");
                     } else {
                         sectionB.innerHTML = "";
@@ -1986,13 +2367,18 @@
                         [sectionB, cfg.blocks[1]],
                     ].forEach(([section, blockCfg]) => {
                         if (!blockCfg) return;
-                        const cellPx = ppi * blockCfg.wIn;
-                        const isSmall = blockCfg.hIn <= 1.2;
+                        // Name/signature labels inside ASA cards sit in 2×2 photo slots,
+                        // so they size as 2×2 cells regardless of the card's overall shape.
+                        const inAsaCard = section.querySelector(".asa-card") != null;
+                        const wIn = inAsaCard ? 2 : blockCfg.wIn;
+                        const hIn = inAsaCard ? 2 : blockCfg.hIn;
+                        const cellPx = ppi * wIn;
+                        const isSmall = hIn <= 1.2;
                         // Tighter max size on narrow cells (1×1) so the name doesn’t look cramped or overflow
-                        const sizeFactor = blockCfg.wIn <= 1.1 ? 7.2 : 9;
-                        const maxPx = Math.max(5.5, Math.min(17, Math.round(blockCfg.wIn * sizeFactor)));
+                        const sizeFactor = wIn <= 1.1 ? 7.2 : 9;
+                        const maxPx = Math.max(5.5, Math.min(17, Math.round(wIn * sizeFactor)));
                         const minPx = Math.max(4.5, Math.round(maxPx * 0.38));
-                        const scale = blockCfg.wIn / (cfg.blocks[0].wIn || 1);
+                        const scale = wIn / (cfg.blocks[0].wIn || 1);
                         const manualSize = Math.max(4.5, Math.round(manualSizeMax * Math.min(1, scale)));
 
                         // Vertical stretch applies ONLY to the name label — signature stays unscaled
@@ -2244,20 +2630,15 @@
                     const cells = sheetEl.querySelectorAll(".cell");
                     const sheetRect = sheetEl.getBoundingClientRect();
                     const drawJobs = [];
+                    const logoJobs = [];
                     const guideRects = [];
 
-                    cells.forEach((cell) => {
-                        const cr = cell.getBoundingClientRect();
-                        const x = (cr.left - sheetRect.left) * scale;
-                        const y = (cr.top - sheetRect.top) * scale;
-                        const w = cr.width * scale;
-                        const h = cr.height * scale;
-
-                        // cell background
+                    // Draw a photo slot (an ordinary cell, or a 2×2 slot inside an ASA
+                    // card) plus its footer overlay, clipped to the slot rect.
+                    function drawSlot(slotEl, sx, sy, sw, sh) {
                         ctx.fillStyle = "#eef1f2";
-                        ctx.fillRect(x, y, w, h);
-
-                        const photo = cell.querySelector("img.photo-img");
+                        ctx.fillRect(sx, sy, sw, sh);
+                        const photo = slotEl.querySelector("img.photo-img");
                         if (photo && photo.src) {
                             drawJobs.push(
                                 new Promise((res) => {
@@ -2265,26 +2646,26 @@
                                     im.onload = () => {
                                         // cover fit
                                         const ir = im.naturalWidth / Math.max(1, im.naturalHeight);
-                                        const fr = w / Math.max(1e-6, h);
+                                        const fr = sw / Math.max(1e-6, sh);
                                         let dw, dh, dx, dy;
                                         if (ir > fr) {
-                                            dh = h;
-                                            dw = h * ir;
-                                            dx = x - (dw - w) / 2;
-                                            dy = y;
+                                            dh = sh;
+                                            dw = sh * ir;
+                                            dx = sx - (dw - sw) / 2;
+                                            dy = sy;
                                         } else {
-                                            dw = w;
-                                            dh = w / ir;
-                                            dx = x;
-                                            dy = y - (dh - h) / 2;
+                                            dw = sw;
+                                            dh = sw / ir;
+                                            dx = sx;
+                                            dy = sy - (dh - sh) / 2;
                                         }
                                         ctx.save();
                                         ctx.beginPath();
-                                        ctx.rect(x, y, w, h);
+                                        ctx.rect(sx, sy, sw, sh);
                                         ctx.clip();
                                         ctx.drawImage(im, dx, dy, dw, dh);
 
-                                        const footer = cell.querySelector(".id-footer");
+                                        const footer = slotEl.querySelector(".id-footer");
                                         if (footer) {
                                             // approximate footer strip
                                             const fr2 = footer.getBoundingClientRect();
@@ -2293,26 +2674,26 @@
                                             const solid = footer.classList.contains("solid");
                                             if (solid) {
                                                 ctx.fillStyle = "rgba(255,255,255,0.9)";
-                                                ctx.fillRect(x, fy, w, fh);
+                                                ctx.fillRect(sx, fy, sw, fh);
                                             } else {
-                                                const g = ctx.createLinearGradient(x, fy, x, fy + fh);
+                                                const g = ctx.createLinearGradient(sx, fy, sx, fy + fh);
                                                 g.addColorStop(0, "rgba(255,255,255,0)");
                                                 g.addColorStop(0.25, "rgba(255,255,255,0.25)");
                                                 g.addColorStop(0.55, "rgba(255,255,255,0.78)");
                                                 g.addColorStop(1, "rgba(255,255,255,0.95)");
                                                 ctx.fillStyle = g;
-                                                ctx.fillRect(x, fy, w, fh);
+                                                ctx.fillRect(sx, fy, sw, fh);
                                             }
                                             const sig = footer.querySelector(".signature-img");
                                             if (sig && sig.src) {
                                                 const sr = sig.getBoundingClientRect();
-                                                const sx = (sr.left - sheetRect.left) * scale;
-                                                const sy = (sr.top - sheetRect.top) * scale;
-                                                const sw = sr.width * scale;
-                                                const sh = sr.height * scale;
+                                                const sxl = (sr.left - sheetRect.left) * scale;
+                                                const syl = (sr.top - sheetRect.top) * scale;
+                                                const swl = sr.width * scale;
+                                                const shl = sr.height * scale;
                                                 const sim = new Image();
                                                 sim.onload = () => {
-                                                    ctx.drawImage(sim, sx, sy, sw, sh);
+                                                    ctx.drawImage(sim, sxl, syl, swl, shl);
                                                     res();
                                                 };
                                                 sim.onerror = () => res();
@@ -2351,6 +2732,70 @@
                                 }),
                             );
                         }
+                    }
+
+                    // Draw the ASA logo badge that sits at the top of a 2-person card —
+                    // white backing first (like the on-screen badge), then the logo itself.
+                    // Pushed to logoJobs so it always paints AFTER every photo.
+                    function drawLogo(logoEl) {
+                        if (!logoEl || !logoEl.src) return;
+                        logoJobs.push(
+                            new Promise((res) => {
+                                const im = new Image();
+                                im.onload = () => {
+                                    const badge = logoEl.closest(".asa-logo-badge");
+                                    if (badge) {
+                                        const br = badge.getBoundingClientRect();
+                                        const bx = (br.left - sheetRect.left) * scale;
+                                        const by = (br.top - sheetRect.top) * scale;
+                                        const bw = br.width * scale;
+                                        const bh = br.height * scale;
+                                        ctx.save();
+                                        ctx.fillStyle = "#ffffff";
+                                        ctx.fillRect(bx, by, bw, bh);
+                                        ctx.strokeStyle = "rgba(205, 210, 214, 0.9)";
+                                        ctx.lineWidth = Math.max(1, Math.round(0.3 * (dpi / 25.4)));
+                                        ctx.strokeRect(bx, by, bw, bh);
+                                        ctx.restore();
+                                    }
+                                    const r = logoEl.getBoundingClientRect();
+                                    const lx = (r.left - sheetRect.left) * scale;
+                                    const ly = (r.top - sheetRect.top) * scale;
+                                    const lw = r.width * scale;
+                                    const lh = r.height * scale;
+                                    ctx.drawImage(im, lx, ly, lw, lh);
+                                    res();
+                                };
+                                im.onerror = () => res();
+                                im.src = logoEl.src;
+                            }),
+                        );
+                    }
+
+                    cells.forEach((cell) => {
+                        const cr = cell.getBoundingClientRect();
+                        const x = (cr.left - sheetRect.left) * scale;
+                        const y = (cr.top - sheetRect.top) * scale;
+                        const w = cr.width * scale;
+                        const h = cr.height * scale;
+
+                        if (cell.classList.contains("asa-card")) {
+                            // White card body; each 2×2 photo slot (photo + footer)
+                            // is drawn like a standalone cell, then the logo between them.
+                            ctx.fillStyle = "#ffffff";
+                            ctx.fillRect(x, y, w, h);
+                            cell.querySelectorAll(".asa-photo-slot").forEach((slot) => {
+                                const sr = slot.getBoundingClientRect();
+                                const sx = (sr.left - sheetRect.left) * scale;
+                                const sy = (sr.top - sheetRect.top) * scale;
+                                const sw = sr.width * scale;
+                                const sh = sr.height * scale;
+                                drawSlot(slot, sx, sy, sw, sh);
+                            });
+                            drawLogo(cell.querySelector("img.asa-logo"));
+                        } else {
+                            drawSlot(cell, x, y, w, h);
+                        }
 
                         // remember cut-guide rects; drawn on top after photos load
                         if (!cell.classList.contains("no-guides")) {
@@ -2359,6 +2804,8 @@
                     });
 
                     await Promise.all(drawJobs);
+                    // Logos paint on top: every slot's photo+footer job completes first.
+                    await Promise.all(logoJobs);
 
                     // Cut guides must be painted AFTER the photos: the cover-fitted
                     // photo overpaints everything beneath it inside the cell, so
@@ -2565,6 +3012,22 @@
                     sigPlaceholder.style.display = "flex";
                     btnClearSig.disabled = true;
                     nameInput.value = "";
+
+                    photoB = null;
+                    rawPhotoB = null;
+                    sigB = null;
+                    asaLogo = null;
+                    photoBThumb.style.display = "none";
+                    photoBPlaceholder.style.display = "flex";
+                    btnRecropB.disabled = true;
+                    sigBThumb.style.display = "none";
+                    sigBPlaceholder.style.display = "flex";
+                    btnClearSigB.disabled = true;
+                    nameInputB.value = "";
+                    asaLogoThumb.style.display = "none";
+                    asaLogoPlaceholder.style.display = "flex";
+                    btnClearLogo.disabled = true;
+
                     generateLayout();
                 });
 
