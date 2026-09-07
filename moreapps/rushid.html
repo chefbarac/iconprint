@@ -585,14 +585,11 @@
                 top: var(--asa-logo-top, 0);
                 left: calc(50% + var(--asa-logo-left, 0));
                 transform: translateX(-50%);
-                background: #fff;
-                padding: 1px 5px 0;
-                border: 1px solid #dfe3e6;
-                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
                 z-index: 3;
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                line-height: 0;
             }
             .cell.asa-card .asa-logo {
                 max-width: 1.4in;
@@ -2734,30 +2731,16 @@
                         }
                     }
 
-                    // Draw the ASA logo badge that sits at the top of a 2-person card —
-                    // white backing first (like the on-screen badge), then the logo itself.
-                    // Pushed to logoJobs so it always paints AFTER every photo.
+                    // Draw the ASA logo at the top of a 2-person card. The logo is a PNG
+                    // (circles/transparency are common), so it's drawn as-is with no
+                    // backing box, border, or shadow. Pushed to logoJobs so it always
+                    // paints AFTER every photo.
                     function drawLogo(logoEl) {
                         if (!logoEl || !logoEl.src) return;
                         logoJobs.push(
                             new Promise((res) => {
                                 const im = new Image();
                                 im.onload = () => {
-                                    const badge = logoEl.closest(".asa-logo-badge");
-                                    if (badge) {
-                                        const br = badge.getBoundingClientRect();
-                                        const bx = (br.left - sheetRect.left) * scale;
-                                        const by = (br.top - sheetRect.top) * scale;
-                                        const bw = br.width * scale;
-                                        const bh = br.height * scale;
-                                        ctx.save();
-                                        ctx.fillStyle = "#ffffff";
-                                        ctx.fillRect(bx, by, bw, bh);
-                                        ctx.strokeStyle = "rgba(205, 210, 214, 0.9)";
-                                        ctx.lineWidth = Math.max(1, Math.round(0.3 * (dpi / 25.4)));
-                                        ctx.strokeRect(bx, by, bw, bh);
-                                        ctx.restore();
-                                    }
                                     const r = logoEl.getBoundingClientRect();
                                     const lx = (r.left - sheetRect.left) * scale;
                                     const ly = (r.top - sheetRect.top) * scale;
