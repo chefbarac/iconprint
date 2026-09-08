@@ -379,42 +379,48 @@
                 box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
             }
 
-            /* Landscape rectangular loupe (hover inspect) */
-            .loupe {
-                position: fixed;
-                width: 320px;
-                height: 200px;
-                border-radius: 6px;
-                border: 2.5px solid var(--cyan);
-                box-shadow:
-                    0 0 0 1px rgba(255, 255, 255, 0.85),
-                    0 12px 32px rgba(0, 0, 0, 0.28);
-                overflow: hidden;
-                pointer-events: none;
-                z-index: 950;
-                display: none;
-                background: #fff;
-            }
-            .loupe.visible {
-                display: block;
-            }
-            .loupe canvas {
-                display: block;
-                width: 100%;
-                height: 100%;
-            }
-            .loupe .loupe-label {
+            /* Selection overlay: crisp highlight drawn in screen space (NOT scaled with page),
+               so the selected layer stays obvious at any zoom level. */
+            .sel-box {
                 position: absolute;
-                bottom: 6px;
-                right: 8px;
+                top: 0;
+                left: 0;
+                pointer-events: none;
+                z-index: 900;
+                display: none;
+                border: 1.5px solid var(--cyan);
+                box-shadow:
+                    0 0 0 3px rgba(255, 255, 255, 0.92),
+                    0 0 0 4.5px var(--cyan),
+                    0 2px 10px rgba(0, 0, 0, 0.22);
+            }
+            .sel-box.visible {
+                display: block;
+            }
+            .sel-box .sel-tag {
+                position: absolute;
+                top: -23px;
+                left: -1px;
                 font-family: var(--font-mono);
-                font-size: 10px;
+                font-size: 11px;
+                font-weight: 600;
                 color: #fff;
-                background: rgba(23, 123, 134, 0.88);
+                background: var(--cyan);
                 padding: 2px 7px;
                 border-radius: 3px;
                 white-space: nowrap;
-                pointer-events: none;
+                letter-spacing: 0.02em;
+            }
+
+            /* Canvas zoom controls in the toolbar */
+            .zoom-controls .btn {
+                min-width: 30px;
+                justify-content: center;
+                padding: 5px 8px;
+            }
+            .zoom-controls .zoom-pct {
+                min-width: 56px;
+                font-family: var(--font-mono);
             }
 
             .layer {
@@ -430,8 +436,7 @@
                 pointer-events: none;
             }
             .layer.selected {
-                outline: 1.5px solid var(--cyan);
-                outline-offset: 0;
+                outline: none;
             }
             .layer .tag {
                 position: absolute;
@@ -448,7 +453,7 @@
                 white-space: nowrap;
             }
             .layer.selected .tag {
-                opacity: 1;
+                opacity: 0;
             }
             .handle {
                 position: absolute;
@@ -1179,6 +1184,13 @@
 
                     <div class="toolbar-spacer"></div>
 
+                    <div class="toolbar-group zoom-controls">
+                        <button class="btn small" id="zoomOut" title="Zoom out (Ctrl+scroll also works)">−</button>
+                        <button class="btn small zoom-pct" id="zoomPct" title="Current zoom · use Ctrl+scroll or the buttons to zoom">100%</button>
+                        <button class="btn small" id="zoomIn" title="Zoom in (Ctrl+scroll also works)">+</button>
+                        <button class="btn small" id="zoomFit" title="Fit page to window">Fit</button>
+                    </div>
+
                     <button class="btn primary small" id="saveLayoutBtn">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
                             <path d="M3 2h8l2 2v10H3V2z" />
@@ -1234,13 +1246,9 @@
                             </div>
                             <div class="seam-guide" id="seamGuide"><span id="seamLabel">seam</span></div>
                         </div>
-                    </div>
-                </section>
-                <div class="loupe" id="loupe" aria-hidden="true">
-                    <canvas id="loupeCanvas" width="320" height="200"></canvas>
-                    <span class="loupe-label">2×</span>
+                    <div class="sel-box" id="selBox" aria-hidden="true"><span class="sel-tag" id="selTag"></span></div>
                 </div>
-                <!-- add near .loupe in the HTML, inside <main> -->
+            </section>
 <div class="stitch-overlay" id="stitchOverlay">
     <div class="stitch-overlay-card">
         <div class="stitch-spinner"></div>
@@ -1303,7 +1311,7 @@
 
                 <div class="divider"></div>
                 <p class="hint">Nudge selected layer with arrow keys (<kbd>Shift</kbd> = 10px). Press <kbd>Delete</kbd> to remove it.</p>
-                <p class="hint" style="margin-top: 10px">Hover the page for a 2× landscape magnifier (includes ghost overlay when enabled).</p>
+                <p class="hint" style="margin-top: 10px">Zoom the canvas with <kbd>Ctrl</kbd>+scroll or the zoom buttons in the toolbar; the currently selected layer is highlighted with a cyan box on the page.</p>
             </aside>
         </div>
 
@@ -2001,6 +2009,10 @@ document.getElementById("stitchCancelBtn").addEventListener("click", () => {
                     downloadBtn: document.getElementById("downloadBtn"),
                     workspace: document.getElementById("workspace"),
                     pageScaler: document.getElementById("pageScaler"),
+                    zoomOut: document.getElementById("zoomOut"),
+                    zoomPct: document.getElementById("zoomPct"),
+                    zoomIn: document.getElementById("zoomIn"),
+                    zoomFit: document.getElementById("zoomFit"),
                     page: document.getElementById("page"),
                     emptyHint: document.getElementById("emptyHint"),
                     seamGuide: document.getElementById("seamGuide"),
@@ -2024,8 +2036,8 @@ document.getElementById("stitchCancelBtn").addEventListener("click", () => {
                     historyGrid: document.getElementById("historyGrid"),
                     printBtn: document.getElementById("printBtn"),
                     printArea: document.getElementById("printArea"),
-                    loupe: document.getElementById("loupe"),
-                    loupeCanvas: document.getElementById("loupeCanvas"),
+                    selBox: document.getElementById("selBox"),
+                    selTag: document.getElementById("selTag"),
                     // Sync UI
                     syncBtn: document.getElementById("syncBtn"),
                     syncDot: document.getElementById("syncDot"),
@@ -2054,6 +2066,9 @@ document.getElementById("stitchCancelBtn").addEventListener("click", () => {
 
 
                 let stitchInProgress = false;
+
+                // User zoom multiplier (1 = fit to window). Applied on top of the fit scale.
+                let userZoom = 1;
 
                 // Cached scan payload so we don't rebuild options on every scan.
                 // Invalidated when image type, DPI, or paper size changes.
@@ -2095,106 +2110,84 @@ document.getElementById("stitchCancelBtn").addEventListener("click", () => {
                     els.page.classList.toggle("no-image", state.layers.length === 0);
                     els.page.style.filter = state.brightness !== 1 ? "brightness(" + state.brightness + ")" : "";
 
-                    // fit to available workspace
+                    // fit to available workspace, then apply user zoom on top
                     const avail = els.workspace.getBoundingClientRect();
                     const availW = avail.width - 80;
                     const availH = avail.height - 80;
-                    state.scale = Math.min(availW / state.pageW, availH / state.pageH, 1);
+                    state.fitScale = Math.min(availW / state.pageW, availH / state.pageH, 1);
+                    state.scale = Math.max(0.02, Math.min(8, state.fitScale * userZoom));
                     els.pageScaler.style.width = state.pageW * state.scale + "px";
                     els.pageScaler.style.height = state.pageH * state.scale + "px";
                     els.page.style.transform = "scale(" + state.scale + ")";
                     els.page.style.transformOrigin = "top left";
 
                     els.emptyHint.style.display = state.layers.length === 0 ? "block" : "none";
+                    updateZoomLabel();
                 }
 
-                // ---------- Landscape loupe (hover inspect) ----------
-                // Display magnification of the loupe window; source is sampled at 0.25× page
-                // resolution for speed (avoids freezes on large scans).
-                const LOUPE_W = 320;
-                const LOUPE_H = 200;
-                const LOUPE_ZOOM = 0.25;
-                const LOUPE_SAMPLE_SCALE = 0.5;
-                let loupeSource = null;
-                let loupeDirty = true;
-
-                function invalidateLoupeSource() {
-                    loupeDirty = true;
+                // ---------- Canvas zoom (regular zoom, replaces the old hover loupe) ----------
+                function updateZoomLabel() {
+                    if (els.zoomPct) els.zoomPct.textContent = Math.round(state.scale * 100) + "%";
                 }
 
-                function ensureLoupeSource() {
-                    if (!loupeDirty && loupeSource) return loupeSource;
-                    if (state.layers.length === 0) {
-                        loupeSource = null;
-                        loupeDirty = false;
-                        return null;
-                    }
-                    // Include ghost overlay so seam fitment is visible in the loupe
-                    loupeSource = buildStitchedCanvas(LOUPE_SAMPLE_SCALE, false, true);
-                    loupeDirty = false;
-                    return loupeSource;
+                function setZoom(factor) {
+                    const ws = els.workspace;
+                    const scaler = els.pageScaler;
+                    const wsRect = ws.getBoundingClientRect();
+                    const cx = wsRect.left + wsRect.width / 2;
+                    const cy = wsRect.top + wsRect.height / 2;
+                    const sr = scaler.getBoundingClientRect();
+                    const px = sr.width ? (cx - sr.left) / state.scale : 0;
+                    const py = sr.height ? (cy - sr.top) / state.scale : 0;
+                    userZoom = Math.max(0.25, Math.min(8, userZoom * factor));
+                    layoutPage();
+                    const sr2 = scaler.getBoundingClientRect();
+                    // Keep the page point that was under the viewport centre in place
+                    ws.scrollLeft += sr2.left + px * state.scale - cx;
+                    ws.scrollTop += sr2.top + py * state.scale - cy;
+                    updateSelBox();
                 }
 
-                function hideLoupe() {
-                    if (els.loupe) els.loupe.classList.remove("visible");
+                function fitToView() {
+                    userZoom = 1;
+                    layoutPage();
+                    const ws = els.workspace;
+                    const sr = els.pageScaler.getBoundingClientRect();
+                    const wsRect = ws.getBoundingClientRect();
+                    ws.scrollLeft += sr.left - wsRect.left - (wsRect.width - sr.width) / 2;
+                    ws.scrollTop += sr.top - wsRect.top - (wsRect.height - sr.height) / 2;
+                    updateSelBox();
                 }
 
-                function updateLoupe(e) {
-                    if (!els.loupe || !els.loupeCanvas || state.layers.length === 0) {
-                        hideLoupe();
+                els.zoomOut.addEventListener("click", () => setZoom(1 / 1.25));
+                els.zoomIn.addEventListener("click", () => setZoom(1.25));
+                els.zoomFit.addEventListener("click", fitToView);
+                els.workspace.addEventListener(
+                    "wheel",
+                    (e) => {
+                        if (!e.ctrlKey && !e.metaKey) return;
+                        e.preventDefault();
+                        setZoom(e.deltaY < 0 ? 1.25 : 1 / 1.25);
+                    },
+                    { passive: false },
+                );
+
+                // ---------- Selection highlight (drawn in screen space, stays crisp at any zoom) ----------
+                function updateSelBox() {
+                    const box = els.selBox;
+                    if (!box) return;
+                    const layer = state.layers.find((l) => l.id === state.selectedId);
+                    if (!layer) {
+                        box.classList.remove("visible");
                         return;
                     }
-                    const scalerRect = els.pageScaler.getBoundingClientRect();
-                    if (
-                        e.clientX < scalerRect.left ||
-                        e.clientX > scalerRect.right ||
-                        e.clientY < scalerRect.top ||
-                        e.clientY > scalerRect.bottom
-                    ) {
-                        hideLoupe();
-                        return;
-                    }
-
-                    const pageX = (e.clientX - scalerRect.left) / state.scale;
-                    const pageY = (e.clientY - scalerRect.top) / state.scale;
-
-                    const src = ensureLoupeSource();
-                    if (!src) {
-                        hideLoupe();
-                        return;
-                    }
-
-                    const srcScale = src.width / state.pageW;
-                    const srcHalfW = LOUPE_W / 2 / LOUPE_ZOOM;
-                    const srcHalfH = LOUPE_H / 2 / LOUPE_ZOOM;
-                    const sx = pageX * srcScale - srcHalfW * srcScale;
-                    const sy = pageY * srcScale - srcHalfH * srcScale;
-                    const sw = srcHalfW * 2 * srcScale;
-                    const sh = srcHalfH * 2 * srcScale;
-
-                    const ctx = els.loupeCanvas.getContext("2d");
-                    ctx.imageSmoothingEnabled = true;
-                    ctx.imageSmoothingQuality = "high";
-                    ctx.fillStyle = "#ffffff";
-                    ctx.fillRect(0, 0, LOUPE_W, LOUPE_H);
-                    ctx.drawImage(src, sx, sy, sw, sh, 0, 0, LOUPE_W, LOUPE_H);
-
-                    const offset = 18;
-                    let left = e.clientX + offset;
-                    let top = e.clientY + offset;
-                    if (left + LOUPE_W > window.innerWidth - 8) left = e.clientX - LOUPE_W - offset;
-                    if (top + LOUPE_H > window.innerHeight - 8) top = e.clientY - LOUPE_H - offset;
-                    if (left < 8) left = 8;
-                    if (top < 8) top = 8;
-
-                    els.loupe.style.left = left + "px";
-                    els.loupe.style.top = top + "px";
-                    els.loupe.classList.add("visible");
+                    box.classList.add("visible");
+                    box.style.left = layer.x * state.scale + "px";
+                    box.style.top = layer.y * state.scale + "px";
+                    box.style.width = layer.w * state.scale + "px";
+                    box.style.height = layer.h * state.scale + "px";
+                    if (els.selTag) els.selTag.textContent = layer.name;
                 }
-
-                els.pageScaler.addEventListener("mousemove", updateLoupe);
-                els.pageScaler.addEventListener("mouseleave", hideLoupe);
-                els.pageScaler.addEventListener("pointerdown", hideLoupe);
 
                 // ---------- File loading ----------
                 function loadFile(file, slotName) {
@@ -2896,8 +2889,7 @@ const botGraySAT = buildIntegralImages(botGray);
                     updateSeamGuide();
                     renderLayerList();
                     renderSelectedControls();
-                    invalidateLoupeSource();
-                    if (state.layers.length === 0) hideLoupe();
+                    updateSelBox();
                 }
 
                 function updateSeamGuide() {
@@ -3024,6 +3016,7 @@ const botGraySAT = buildIntegralImages(botGray);
                         el.style.left = layer.x + "px";
                         el.style.top = layer.y + "px";
                         updateSeamGuide();
+                        updateSelBox();
                     }
                     function onUp(ev) {
                         el.releasePointerCapture(ev.pointerId);
@@ -3031,7 +3024,7 @@ const botGraySAT = buildIntegralImages(botGray);
                         el.removeEventListener("pointerup", onUp);
                         el.style.cursor = "grab";
                         renderLayerList();
-                        invalidateLoupeSource();
+                        updateSelBox();
                     }
                     el.addEventListener("pointermove", onMove);
                     el.addEventListener("pointerup", onUp);
@@ -3078,13 +3071,13 @@ const botGraySAT = buildIntegralImages(botGray);
         const el = els.page.querySelector('.layer[data-id="' + bottom.id + '"]');
         if (el) el.style.top = bottom.y + "px";
         updateSeamGuide();
-        invalidateLoupeSource();
+        updateSelBox();
     }
     clearTimeout(overlapDebounceTimer);
     overlapDebounceTimer = setTimeout(() => renderAll(), 80);
 });
                 els.ghostToggle.addEventListener("change", () => {
-                    invalidateLoupeSource();
+                    updateSelBox();
                     renderAll();
                 });
 
@@ -3180,14 +3173,14 @@ const botGraySAT = buildIntegralImages(botGray);
                     if (handled) {
                         e.preventDefault();
                         if (isNudge) {
-                            // Instant visual move; full re-render (list, loupe cache) is debounced
+                            // Instant visual move; full re-render (list) is debounced
                             const el = els.page.querySelector('.layer[data-id="' + layer.id + '"]');
                             if (el) {
                                 el.style.left = layer.x + "px";
                                 el.style.top = layer.y + "px";
                             }
                             updateSeamGuide();
-                            invalidateLoupeSource();
+                            updateSelBox();
                             clearTimeout(arrowDebounceTimer);
                             arrowDebounceTimer = setTimeout(() => {
                                 renderAll();
