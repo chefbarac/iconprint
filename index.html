@@ -425,7 +425,7 @@
 
             .layer {
                 position: absolute;
-                cursor: grab;
+                cursor: default;
                 touch-action: none;
             }
             .layer img {
@@ -3006,7 +3006,6 @@ const botGraySAT = buildIntegralImages(botGray);
                     const origX = layer.x,
                         origY = layer.y;
                     el.setPointerCapture(e.pointerId);
-                    el.style.cursor = "grabbing";
 
                     function onMove(ev) {
                         const dx = (ev.clientX - startX) / state.scale;
@@ -3022,7 +3021,6 @@ const botGraySAT = buildIntegralImages(botGray);
                         el.releasePointerCapture(ev.pointerId);
                         el.removeEventListener("pointermove", onMove);
                         el.removeEventListener("pointerup", onUp);
-                        el.style.cursor = "grab";
                         renderLayerList();
                         updateSelBox();
                     }
@@ -3191,6 +3189,15 @@ const botGraySAT = buildIntegralImages(botGray);
 
                 els.page.addEventListener("pointerdown", (e) => {
                     if (e.target === els.page) {
+                        state.selectedId = null;
+                        renderAll();
+                    }
+                });
+                // Clicking the blank canvas area around the page clears the selection.
+                // Layer clicks call startDrag(), which stops propagation, so they're unaffected.
+                els.workspace.addEventListener("pointerdown", (e) => {
+                    if (e.target.closest && e.target.closest("#pageScaler")) return;
+                    if (state.selectedId != null) {
                         state.selectedId = null;
                         renderAll();
                     }
