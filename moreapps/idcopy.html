@@ -308,12 +308,16 @@
             }
             .brightness-btn-row {
                 display: flex;
+                flex-wrap: wrap;
                 gap: 8px;
                 margin-top: 10px;
             }
             .brightness-btn-row .btn-scan {
                 width: auto;
-                flex: 1;
+                flex: 1 1 auto;
+                min-width: 0;
+                padding: 6px 10px;
+                font-size: 0.72rem;
             }
 
             .color-row {
@@ -393,10 +397,49 @@
                 font-size: 1.05rem;
                 margin: 0;
             }
+            .canvas-size {
+                display: inline-flex;
+                align-items: baseline;
+                gap: 8px;
+                white-space: nowrap;
+            }
+            .canvas-size .csize-label {
+                font-size: 0.68rem;
+                text-transform: uppercase;
+                letter-spacing: 1.1px;
+                font-weight: 700;
+                color: #8b8678;
+            }
             .preview-toolbar .dims {
                 font-family: var(--mono);
                 font-size: 0.75rem;
                 color: #77726a;
+            }
+            .preview-zoom {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                white-space: nowrap;
+            }
+            .preview-zoom button {
+                background: #fff;
+                border: 1px solid #dcd7cb;
+                color: var(--ink);
+                padding: 5px 9px;
+                min-width: 30px;
+                font-size: 0.82rem;
+                line-height: 1;
+                border-radius: 6px;
+            }
+            .preview-zoom button:hover:not(:disabled) {
+                border-color: var(--amber-dim);
+                color: var(--amber-dim);
+            }
+            .preview-zoom .zoom-pct {
+                min-width: 60px;
+                font-family: var(--mono);
+                font-size: 0.72rem;
+                color: #6b675c;
             }
 
             .page-frame {
@@ -966,8 +1009,17 @@
 
             <section class="preview">
                 <div class="preview-toolbar">
-                    <h2>Printable Layout</h2>
-                    <div class="dims" id="pageDims"></div>
+                    <h2>Print Layout</h2>
+                    <div class="canvas-size">
+                        <span class="csize-label">Canvas size</span>
+                        <span class="dims" id="pageDims">—</span>
+                    </div>
+                    <div class="preview-zoom">
+                        <button type="button" id="zoomOut" title="Zoom out">−</button>
+                        <button type="button" class="zoom-pct" id="zoomPct" title="Current zoom · click to reset to 100% (actual size)">100%</button>
+                        <button type="button" id="zoomIn" title="Zoom in">+</button>
+                        <button type="button" id="zoomFit" title="Fit page to window">Fit</button>
+                    </div>
                 </div>
 
                 <div class="page-frame" id="pageFrame">
@@ -1773,16 +1825,44 @@
             }
 
             function fitPreviewScale(paper) {
-                // Keep the preview at true physical size (1 CSS px ≈ 1/96 in) so
-                // Short / A4 / Long dimensions stay accurate. The preview pane
-                // scrolls when the page is larger than the viewport — no shrink-to-fit.
+                // Preview starts at true physical size (1 CSS px ≈ 1/96 in) so
+                // Short / A4 / Long dimensions stay accurate. Canvas zoom is
+                // applied on top; the preview pane scrolls when it exceeds the viewport.
+                applyPreviewZoom();
+            }
+
+            /* ---------- canvas zoom (screen only; print stays 100%) ---------- */
+            let previewZoom = 1;
+
+            function applyPreviewZoom() {
                 const frame = document.getElementById("pageFrame");
                 const wrap = document.getElementById("pageScaleWrap");
-                const pageWidthPx = paper.w * PX_PER_MM;
-                const pageHeightPx = paper.h * PX_PER_MM;
-                wrap.style.transform = "none";
-                frame.style.width = pageWidthPx + "px";
-                frame.style.height = pageHeightPx + "px";
+                const paper = currentPaper();
+                const z = Math.max(0.25, Math.min(8, previewZoom));
+                previewZoom = z;
+                const pageW = paper.w * PX_PER_MM;
+                const pageH = paper.h * PX_PER_MM;
+                wrap.style.transform = "scale(" + z + ")";
+                frame.style.width = Math.ceil(pageW * z) + "px";
+                frame.style.height = Math.ceil(pageH * z) + "px";
+                const pct = document.getElementById("zoomPct");
+                if (pct) pct.textContent = Math.round(z * 100) + "%";
+            }
+
+            function setPreviewZoom(factor) {
+                previewZoom = Math.max(0.25, Math.min(8, previewZoom * factor));
+                applyPreviewZoom();
+            }
+
+            function fitPreviewToWindow() {
+                const preview = document.querySelector("section.preview");
+                if (!preview) return;
+                const paper = currentPaper();
+                const availW = Math.max(120, preview.clientWidth - 64);
+                const availH = Math.max(120, preview.clientHeight - 120);
+                const fit = Math.min(availW / (paper.w * PX_PER_MM), availH / (paper.h * PX_PER_MM));
+                previewZoom = Math.max(0.25, Math.min(8, fit));
+                applyPreviewZoom();
             }
 
             /* ---------- drag to reposition (size stays fixed) ---------- */
@@ -1915,6 +1995,30 @@
 
             document.getElementById("paperSize").addEventListener("change", renderLayout);
             window.addEventListener("resize", () => renderLayout());
+
+            (function initPreviewZoomControls() {
+                const zoomPctBtn = document.getElementById("zoomPct");
+                zoomPctBtn.addEventListener("click", () => {
+                    previewZoom = 1;
+                    applyPreviewZoom();
+                });
+                document.getElementById("zoomIn").addEventListener("click", () => setPreviewZoom(1.25));
+                document.getElementById("zoomOut").addEventListener("click", () => setPreviewZoom(1 / 1.25));
+                document.getElementById("zoomFit").addEventListener("click", fitPreviewToWindow);
+
+                const preview = document.querySelector("section.preview");
+                if (preview) {
+                    preview.addEventListener(
+                        "wheel",
+                        (e) => {
+                            if (!e.ctrlKey && !e.metaKey) return;
+                            e.preventDefault();
+                            setPreviewZoom(e.deltaY < 0 ? 1.1 : 1 / 1.1);
+                        },
+                        { passive: false },
+                    );
+                }
+            })();
 
             /* ============================================================
            BRIGHTNESS — applied to the whole printable page as a single
@@ -2398,6 +2502,9 @@
                     printLayoutBrowser();
                     return;
                 }
+                /* reset to a single copy so a previous multi-copy isn't re-fired */
+                const copiesInput = document.getElementById("printCopies");
+                if (copiesInput) copiesInput.value = "1";
                 /* printers-on-print */
                 try {
                     if (typeof refreshDevicesPrintersOnly === "function") {
