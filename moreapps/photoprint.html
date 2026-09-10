@@ -1010,13 +1010,13 @@
                     </div>
                     <label style="margin-top: 2px">Image mode</label>
                     <div class="row" style="margin-bottom: 8px">
-                        <button type="button" class="secondary active-mode" id="btnFitFill" title="Cover frame, crop edges (default)">Fill</button>
-                        <button type="button" class="secondary" id="btnFitContain" title="Fit inside frame, letterbox">Contain</button>
+                        <button type="button" class="secondary" id="btnFitFill" title="Cover frame, crop edges">Fill</button>
+                        <button type="button" class="secondary active-mode" id="btnFitContain" title="Fit inside frame, letterbox (default)">Contain</button>
                         <button type="button" class="secondary" id="btnFitStretch" title="Stretch to fill frame, ignore aspect">Stretch</button>
                     </div>
                     <div class="row" style="margin-bottom: 8px; align-items: center">
                         <label style="display: flex; align-items: center; gap: 6px; margin: 0; cursor: pointer; font-size: 0.78rem; color: var(--text)">
-                            <input type="checkbox" id="chkBlurFill" style="width: auto" />
+                            <input type="checkbox" id="chkBlurFill" style="width: auto" checked />
                             <span>Blur-fill whitespace (Contain mode)</span>
                         </label>
                     </div>
@@ -2203,8 +2203,8 @@
                         name: item.name,
                         presetName: activePreset.name,
                         isFree: isFree,
-                        fitMode: item.fitMode || "fill",
-                        blurFill: !!item.blurFill,
+                        fitMode: item.fitMode || "contain",
+                        blurFill: item.blurFill != null ? !!item.blurFill : true,
                     };
                     placed.push(inst);
                     createPlacedEl(inst);
@@ -2267,8 +2267,8 @@
                         name: item.name,
                         presetName: activePreset.name,
                         isFree: isFree,
-                        fitMode: item.fitMode || "fill",
-                        blurFill: !!item.blurFill,
+                        fitMode: item.fitMode || "contain",
+                        blurFill: item.blurFill != null ? !!item.blurFill : true,
                     };
                 }
 
@@ -2468,7 +2468,7 @@
                         layoutImageInFrame(img, inst, fw, fh);
                     }
 
-                    var blurActive = (inst.fitMode || "fill") === "contain" && !!inst.blurFill;
+                    var blurActive = (inst.fitMode || "contain") === "contain" && !!inst.blurFill;
                     if (clipEl) clipEl.classList.toggle("blur-fill-active", blurActive);
                     var blurImg = el.querySelector(".img-clip .blur-bg");
                     if (blurImg) {
@@ -2482,7 +2482,7 @@
                     if (badge) {
                         var fr = Math.round(inst.rotation || 0);
                         var ir = Math.round(inst.imgRotation || 0);
-                        var fm = inst.fitMode || "fill";
+                        var fm = inst.fitMode || "contain";
                         var modeTag = fm === "contain" ? " · contain" : fm === "stretch" ? " · stretch" : "";
                         badge.textContent =
                             (inst.presetName || "Free") + " · " + Math.round(inst.w) + "x" + Math.round(inst.h) + " mm" + modeTag + (fr ? " · F" + fr + "°" : "") + (ir ? " · P" + ir + "°" : "");
@@ -2504,7 +2504,7 @@
                     var effH = swap ? natW : natH;
                     var imgAspect = effW / Math.max(1e-6, effH);
                     var frameAspect = fwPx / Math.max(1e-6, fhPx);
-                    var mode = inst.fitMode || "fill";
+                    var mode = inst.fitMode || "contain";
 
                     var baseW, baseH;
                     if (mode === "stretch") {
@@ -2681,7 +2681,7 @@
                         cropY: fromInst.cropY || 0,
                         flipH: !!fromInst.flipH,
                         flipV: !!fromInst.flipV,
-                        fitMode: fromInst.fitMode || "fill",
+                        fitMode: fromInst.fitMode || "contain",
                         blurFill: !!fromInst.blurFill,
                     };
                     for (var i = 0; i < placed.length; i++) {
@@ -3432,7 +3432,7 @@
                     setStatus("Image mode: " + label + (group.length > 1 ? " · " + group.length + " frames" : ""));
                 }
                 function updateFitModeUI(inst) {
-                    var mode = (inst && inst.fitMode) || "fill";
+                    var mode = (inst && inst.fitMode) || "contain";
                     var fillBtn = document.getElementById("btnFitFill");
                     var containBtn = document.getElementById("btnFitContain");
                     var stretchBtn = document.getElementById("btnFitStretch");
@@ -4539,7 +4539,7 @@
                             var effH = swap ? natW : natH;
                             var imgAspect = effW / Math.max(1e-6, effH);
                             var frameAspect = fw / Math.max(1e-6, fh);
-                            var mode = inst.fitMode || "fill";
+var mode = inst.fitMode || "contain";
                             var baseW, baseH;
                             if (mode === "stretch") {
                                 baseW = fw;
