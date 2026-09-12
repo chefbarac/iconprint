@@ -894,10 +894,12 @@
                     <div class="preset-grid" id="presetGrid">
                         <button type="button" class="preset-btn active" data-short="25.4" data-long="25.4" data-name="1x1">1x1<small class="dims">1x1 in</small></button>
                         <button type="button" class="preset-btn" data-short="25.4" data-long="38.1" data-name="1R">1R<small class="dims">1x1.5 in</small></button>
-                        <button type="button" class="preset-btn" data-short="35" data-long="45" data-name="Passport">Passport<small class="dims">35x45 mm</small></button>
+                        <button type="button" class="preset-btn" data-short="35" data-long="45" data-name="Passport">Passport<small class="dims">1.38x1.77 in</small></button>
                         <button type="button" class="preset-btn" data-short="26" data-long="42.5" data-name="KEYCHAIN">Keychain<small class="dims">2.6x4.25 cm</small></button>
-                        <button type="button" class="preset-btn" data-short="50.8" data-long="50.8" data-name="2x2">2x2<small class="dims">US passport</small></button>
-                        <button type="button" class="preset-btn" data-short="53.98" data-long="85.6" data-name="ID-PVC">ID / PVC<small class="dims">CR80 card</small></button>
+                        <button type="button" class="preset-btn" data-short="61.5" data-long="86" data-name="REFMAGNET">Ref Magnet<small class="dims">2.42x3.38 in</small></button>
+                        <button type="button" class="preset-btn" data-short="50.8" data-long="50.8" data-name="2x2">2x2<small class="dims">2x2 in</small></button>
+                        <button type="button" class="preset-btn" data-short="53.98" data-long="85.6" data-name="ID-PVC">ID / PVC<small class="dims">2.12x3.37 in</small></button>
+                        <button type="button" class="preset-btn" data-short="89.7" data-long="59.5" data-name="PHILHEALTH">PHILHEALTH<small class="dims">3.53x2.34 in</small></button>
                         <button type="button" class="preset-btn" data-short="63.5" data-long="88.9" data-name="Wallet">Wallet<small class="dims">2.5x3.5 in</small></button>
                         <button type="button" class="preset-btn" data-short="88.9" data-long="127" data-name="3R">3R<small class="dims">3.5x5 in</small></button>
                         <button type="button" class="preset-btn" data-short="101.6" data-long="152.4" data-name="4R">4R<small class="dims">4x6 in</small></button>
@@ -959,7 +961,9 @@
                             <option value="once">1 pc each</option>
                         </select>
                         <button type="button" id="btnAddAll" style="flex: 1" title="Add every uploaded design to the page at the current preset size">Add All</button>
-                        <button type="button" class="secondary" id="btnRotateAllSources" style="flex: 1" title="Rotate every library image 90° clockwise (before adding to canvas)">Rotate All ⟳</button>
+                        <button type="button" class="secondary" id="btnRotateAllSources" style="flex: 1" title="Rotate every library image 90° clockwise (before adding to canvas)">
+                            Rotate All ⟳
+                        </button>
                     </div>
                     <div class="thumb-list" id="thumbList"></div>
                 </div>
@@ -2045,11 +2049,7 @@
                     });
                     var thumb = thumbList.querySelector('.thumb-item[data-id="' + imageId + '"]');
                     if (thumb) thumb.remove();
-                    setStatus(
-                        framesDeleted
-                            ? "Removed from library · deleted " + framesDeleted + (framesDeleted === 1 ? " frame" : " frames") + " from canvas"
-                            : "Removed from library",
-                    );
+                    setStatus(framesDeleted ? "Removed from library · deleted " + framesDeleted + (framesDeleted === 1 ? " frame" : " frames") + " from canvas" : "Removed from library");
                 }
 
                 function addThumb(item) {
@@ -2350,7 +2350,21 @@
                     syncSelectionUI();
 
                     var cycles = Math.ceil(created.length / images.length);
-                    var msg = "Added " + created.length + " frame" + (created.length === 1 ? "" : "s") + " from " + images.length + " design" + (images.length === 1 ? "" : "s") + (onceOnly ? " · 1 pc each" : cycles > 1 ? " (repeated " + cycles + "x to fill page)" : "") + " at " + Math.round(wMm * 10) / 10 + "x" + Math.round(hMm * 10) / 10 + " mm";
+                    var msg =
+                        "Added " +
+                        created.length +
+                        " frame" +
+                        (created.length === 1 ? "" : "s") +
+                        " from " +
+                        images.length +
+                        " design" +
+                        (images.length === 1 ? "" : "s") +
+                        (onceOnly ? " · 1 pc each" : cycles > 1 ? " (repeated " + cycles + "x to fill page)" : "") +
+                        " at " +
+                        Math.round(wMm * 10) / 10 +
+                        "x" +
+                        Math.round(hMm * 10) / 10 +
+                        " mm";
                     msg += gap > 0.001 ? " · " + Math.round(gap * 100) / 100 + " mm spacing" : " · flush";
                     if (overflow) msg += " · " + overflow + " extend past printable height";
                     setStatus(msg);
@@ -3490,12 +3504,7 @@
                     // Refresh selection info / badges without collapsing a multi-selection.
                     syncSelectionUI();
                     var last = group[group.length - 1];
-                    setStatus(
-                        "Frame rotated to " +
-                            last.rotation +
-                            "°" +
-                            (group.length > 1 ? " · " + group.length + " frames" : " · size " + Math.round(last.w) + "x" + Math.round(last.h) + " mm"),
-                    );
+                    setStatus("Frame rotated to " + last.rotation + "°" + (group.length > 1 ? " · " + group.length + " frames" : " · size " + Math.round(last.w) + "x" + Math.round(last.h) + " mm"));
                 }
                 document.getElementById("btnRotateL").addEventListener("click", function () {
                     rotateFrame90(-1);
@@ -4193,10 +4202,7 @@
                         btn.classList.add("active-mode");
                         btn.textContent = "Showing original…";
                     }
-                    setStatus(
-                        "Compare: original (before levels) · " +
-                            (sids.length > 1 ? sids.length + " selected sources" : "all copies of this image"),
-                    );
+                    setStatus("Compare: original (before levels) · " + (sids.length > 1 ? sids.length + " selected sources" : "all copies of this image"));
                 }
 
                 function showAdjustedPreview() {
@@ -4417,15 +4423,7 @@
                             return computeAutoLevels(inst.originalDataURL)
                                 .then(function (params) {
                                     lastParams = params;
-                                    return applyLevelsParamsToSource(
-                                        inst.imageId,
-                                        inst.originalDataURL,
-                                        params.black,
-                                        params.white,
-                                        params.gamma,
-                                        params.bright,
-                                        params.contrast,
-                                    ).then(function () {
+                                    return applyLevelsParamsToSource(inst.imageId, inst.originalDataURL, params.black, params.white, params.gamma, params.bright, params.contrast).then(function () {
                                         ok++;
                                         // Keep slider UI in sync with the primary selection's result
                                         if (primary && inst.imageId === primary.imageId) {
@@ -4448,26 +4446,10 @@
                             setStatus("Auto levels: not enough subject pixels" + (sources.length > 1 ? " on any selected source" : ""));
                             return;
                         }
-                        var msg =
-                            "Auto levels (subject) on " +
-                            ok +
-                            " source" +
-                            (ok === 1 ? "" : "s") +
-                            " · " +
-                            group.length +
-                            " frame" +
-                            (group.length === 1 ? "" : "s");
+                        var msg = "Auto levels (subject) on " + ok + " source" + (ok === 1 ? "" : "s") + " · " + group.length + " frame" + (group.length === 1 ? "" : "s");
                         if (failed) msg += " · " + failed + " skipped";
                         if (ok === 1 && lastParams) {
-                            msg +=
-                                ": black=" +
-                                lastParams.black +
-                                ", white=" +
-                                lastParams.white +
-                                ", gamma=" +
-                                lastParams.gamma.toFixed(2) +
-                                ", subj≈" +
-                                Math.round(lastParams.subjectMean);
+                            msg += ": black=" + lastParams.black + ", white=" + lastParams.white + ", gamma=" + lastParams.gamma.toFixed(2) + ", subj≈" + Math.round(lastParams.subjectMean);
                         }
                         setStatus(msg);
                     });
@@ -4501,10 +4483,7 @@
                         });
                     });
                     chain.then(function () {
-                        setStatus(
-                            "Adjustments reset" +
-                                (sources.length > 1 ? " · " + sources.length + " sources · " + group.length + " frames" : ""),
-                        );
+                        setStatus("Adjustments reset" + (sources.length > 1 ? " · " + sources.length + " sources · " + group.length + " frames" : ""));
                     });
                 });
 
@@ -4539,7 +4518,7 @@
                             var effH = swap ? natW : natH;
                             var imgAspect = effW / Math.max(1e-6, effH);
                             var frameAspect = fw / Math.max(1e-6, fh);
-var mode = inst.fitMode || "contain";
+                            var mode = inst.fitMode || "contain";
                             var baseW, baseH;
                             if (mode === "stretch") {
                                 baseW = fw;
