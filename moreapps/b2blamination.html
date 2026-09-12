@@ -1113,12 +1113,12 @@
                         </div>
 
                         <div class="field" style="margin-top: 10px">
-                            <label>Black enhance <span class="mono" data-role="enhanceVal" style="color: var(--ink-soft); font-weight: 400">80%</span></label>
+                            <label>Black enhance <span class="mono" data-role="enhanceVal" style="color: var(--ink-soft); font-weight: 400">100%</span></label>
                             <div class="zoom-line">
                                 <span class="mono" style="font-size: 10px; color: var(--ink-soft)">0</span>
-                                <input type="range" data-role="enhance" min="0" max="100" value="80" step="1" disabled title="Auto-whiten the light background and strengthen black text. 0% = original image." />
+                                <input type="range" data-role="enhance" min="0" max="100" value="100" step="1" disabled title="Auto-whiten the light background and strengthen black text. 0% = original image." />
                                 <span class="mono" style="font-size: 10px; color: var(--ink-soft)">100</span>
-                                <input type="number" data-role="enhanceNum" min="0" max="100" step="1" value="80" disabled title="Enhance % (0 = off)" style="width: 58px; flex: none; padding: 4px 6px; font-size: 12px" />
+                                <input type="number" data-role="enhanceNum" min="0" max="100" step="1" value="100" disabled title="Enhance % (0 = off)" style="width: 58px; flex: none; padding: 4px 6px; font-size: 12px" />
                             </div>
                         </div>
 
@@ -1197,12 +1197,12 @@
                         </div>
 
                         <div class="field" style="margin-top: 10px">
-                            <label>Black enhance <span class="mono" data-role="enhanceVal" style="color: var(--ink-soft); font-weight: 400">80%</span></label>
+                            <label>Black enhance <span class="mono" data-role="enhanceVal" style="color: var(--ink-soft); font-weight: 400">100%</span></label>
                             <div class="zoom-line">
                                 <span class="mono" style="font-size: 10px; color: var(--ink-soft)">0</span>
-                                <input type="range" data-role="enhance" min="0" max="100" value="80" step="1" disabled title="Auto-whiten the light background and strengthen black text. 0% = original image." />
+                                <input type="range" data-role="enhance" min="0" max="100" value="100" step="1" disabled title="Auto-whiten the light background and strengthen black text. 0% = original image." />
                                 <span class="mono" style="font-size: 10px; color: var(--ink-soft)">100</span>
-                                <input type="number" data-role="enhanceNum" min="0" max="100" step="1" value="80" disabled title="Enhance % (0 = off)" style="width: 58px; flex: none; padding: 4px 6px; font-size: 12px" />
+                                <input type="number" data-role="enhanceNum" min="0" max="100" step="1" value="100" disabled title="Enhance % (0 = off)" style="width: 58px; flex: none; padding: 4px 6px; font-size: 12px" />
                             </div>
                         </div>
 
@@ -1693,7 +1693,7 @@
                         enhanceNum: ctrl.querySelector('[data-role="enhanceNum"]'),
                         enhanceVal: ctrl.querySelector('[data-role="enhanceVal"]'),
                         origDataURL: null,
-                        enhance: 80,
+                        enhance: 100,
                         _enhanceTimer: null,
                         _enhanceToken: 0,
                         natW: 0,
@@ -1935,7 +1935,7 @@
                             render(card);
                             if (card.mode === "crop") setActiveCard(card);
                             // Auto-enhance the new scan (whiten bg + strengthen black text).
-                            card.enhance = 80;
+                            card.enhance = 100;
                             card.origDataURL = e.target.result;
                             if (card.enhanceSlider) card.enhanceSlider.disabled = false;
                             if (card.enhanceNum) card.enhanceNum.disabled = false;
@@ -1986,69 +1986,57 @@
                             ctx.drawImage(img, 0, 0);
                             const imageData = ctx.getImageData(0, 0, c.width, c.height);
                             const p = imageData.data;
-                            const w = c.width,
-                                h = c.height;
-                            const ring = Math.max(3, Math.round(Math.min(w, h) * 0.025));
                             const hr = new Uint32Array(256),
                                 hg = new Uint32Array(256),
                                 hb = new Uint32Array(256);
-                            let rS = 0,
-                                gS = 0,
-                                bS = 0,
-                                n = 0;
-                            for (let i = 0, y = 0; y < h; y++) {
-                                for (let x = 0; x < w; x++, i += 4) {
-                                    hr[p[i]]++;
-                                    hg[p[i + 1]]++;
-                                    hb[p[i + 2]]++;
-                                    if (x < ring || y < ring || x >= w - ring || y >= h - ring) {
-                                        rS += p[i];
-                                        gS += p[i + 1];
-                                        bS += p[i + 2];
-                                        n++;
+                            for (let i = 0; i < p.length; i += 4) {
+                                hr[p[i]]++;
+                                hg[p[i + 1]]++;
+                                hb[p[i + 2]]++;
+                            }
+                            try {
+                                // Photoshop Auto-Levels: clip the darkest ~0.5% of
+                                // pixels to black and the brightest ~0.5% to white,
+                                // then stretch the full range.
+                                const target = Math.max(1, Math.round(c.width * c.height * 0.005));
+                                function lowPoint(hist) {
+                                    let acc = 0;
+                                    for (let v = 0; v < 256; v++) {
+                                        acc += hist[v];
+                                        if (acc >= target) return v;
+                                    }
+                                    return 0;
+                                }
+                                function highPoint(hist) {
+                                    let acc = 0;
+                                    for (let v = 255; v >= 0; v--) {
+                                        acc += hist[v];
+                                        if (acc >= target) return v;
+                                    }
+                                    return 255;
+                                }
+                                const loR = lowPoint(hr),
+                                    loG = lowPoint(hg),
+                                    loB = lowPoint(hb);
+                                const hiR = Math.min(255, Math.max(loR + 24, highPoint(hr))),
+                                    hiG = Math.min(255, Math.max(loG + 24, highPoint(hg))),
+                                    hiB = Math.min(255, Math.max(loB + 24, highPoint(hb)));
+                                const t = clamp(amount / 100, 0, 1);
+                                if (t > 0) {
+                                    for (let i = 0; i < p.length; i += 4) {
+                                        const or = p[i],
+                                            og = p[i + 1],
+                                            ob = p[i + 2];
+                                        p[i] = clamp(or + ((255 * (or - loR)) / (hiR - loR) - or) * t, 0, 255);
+                                        p[i + 1] = clamp(og + ((255 * (og - loG)) / (hiG - loG) - og) * t, 0, 255);
+                                        p[i + 2] = clamp(ob + ((255 * (ob - loB)) / (hiB - loB) - ob) * t, 0, 255);
                                     }
                                 }
-                            }
-                            if (n < 10) {
+                                ctx.putImageData(imageData, 0, 0);
+                                resolve(c.toDataURL("image/png"));
+                            } catch (err) {
                                 resolve(srcDataURL);
-                                return;
                             }
-                            // Black point = lowest ~1% of each channel's histogram.
-                            const target = Math.max(1, Math.round(w * h * 0.01));
-                            function lowPoint(hist) {
-                                let acc = 0;
-                                for (let v = 0; v < 256; v++) {
-                                    acc += hist[v];
-                                    if (acc >= target) return v;
-                                }
-                                return 0;
-                            }
-                            const loR = lowPoint(hr),
-                                loG = lowPoint(hg),
-                                loB = lowPoint(hb);
-                            // White point = estimated background; keep a minimum spread.
-                            const bgR = rS / n,
-                                bgG = gS / n,
-                                bgB = bS / n;
-                            const wr = Math.max(loR + 24, bgR),
-                                wg = Math.max(loG + 24, bgG),
-                                wb = Math.max(loB + 24, bgB);
-                            const t = clamp(amount / 100, 0, 1);
-                            if (t > 0) {
-                                for (let i = 0; i < p.length; i += 4) {
-                                    const or = p[i],
-                                        og = p[i + 1],
-                                        ob = p[i + 2];
-                                    const er = (255 * (or - loR)) / (wr - loR);
-                                    const eg = (255 * (og - loG)) / (wg - loG);
-                                    const eb = (255 * (ob - loB)) / (wb - loB);
-                                    p[i] = clamp(or + (er - or) * t, 0, 255);
-                                    p[i + 1] = clamp(og + (eg - og) * t, 0, 255);
-                                    p[i + 2] = clamp(ob + (eb - ob) * t, 0, 255);
-                                }
-                            }
-                            ctx.putImageData(imageData, 0, 0);
-                            resolve(c.toDataURL("image/png"));
                         };
                         img.onerror = function () {
                             resolve(srcDataURL);
