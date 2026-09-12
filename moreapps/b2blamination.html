@@ -1112,6 +1112,16 @@
                             </div>
                         </div>
 
+                        <div class="field" style="margin-top: 10px">
+                            <label>Black enhance <span class="mono" data-role="enhanceVal" style="color: var(--ink-soft); font-weight: 400">80%</span></label>
+                            <div class="zoom-line">
+                                <span class="mono" style="font-size: 10px; color: var(--ink-soft)">0</span>
+                                <input type="range" data-role="enhance" min="0" max="100" value="80" step="1" disabled title="Auto-whiten the light background and strengthen black text. 0% = original image." />
+                                <span class="mono" style="font-size: 10px; color: var(--ink-soft)">100</span>
+                                <input type="number" data-role="enhanceNum" min="0" max="100" step="1" value="80" disabled title="Enhance % (0 = off)" style="width: 58px; flex: none; padding: 4px 6px; font-size: 12px" />
+                            </div>
+                        </div>
+
                         <div class="toggle-row">
                             <span>
                                 <span class="lbl">Stretch to fill</span>
@@ -1186,6 +1196,16 @@
                             </div>
                         </div>
 
+                        <div class="field" style="margin-top: 10px">
+                            <label>Black enhance <span class="mono" data-role="enhanceVal" style="color: var(--ink-soft); font-weight: 400">80%</span></label>
+                            <div class="zoom-line">
+                                <span class="mono" style="font-size: 10px; color: var(--ink-soft)">0</span>
+                                <input type="range" data-role="enhance" min="0" max="100" value="80" step="1" disabled title="Auto-whiten the light background and strengthen black text. 0% = original image." />
+                                <span class="mono" style="font-size: 10px; color: var(--ink-soft)">100</span>
+                                <input type="number" data-role="enhanceNum" min="0" max="100" step="1" value="80" disabled title="Enhance % (0 = off)" style="width: 58px; flex: none; padding: 4px 6px; font-size: 12px" />
+                            </div>
+                        </div>
+
                         <div class="toggle-row">
                             <span>
                                 <span class="lbl">Stretch to fill</span>
@@ -1199,7 +1219,7 @@
                         <input type="file" accept="image/*" data-role="file" hidden />
                     </div>
 
-                    <div class="hint">Drag to pan · hover + scroll to zoom (below 100% = zoom out) · arrow keys to micro-nudge (Shift = larger). Type zoom % (10–600, 100% = cover) or rotation. Images load at contain size — not forced to fill. 90° buttons snap orientation.</div>
+                    <div class="hint">Drag to pan · hover + scroll to zoom the image (below 100% = zoom out) · Ctrl/Cmd+scroll zooms the canvas · arrow keys to micro-nudge (Shift = larger). Type zoom % (10–600, 100% = cover) or rotation. Images load at contain size — not forced to fill. 90° buttons snap orientation. New uploads are auto-enhanced (whiten background + strengthen black text); tune with the Black enhance slider.</div>
                 </div>
 
                 <!-- Guides -->
@@ -1669,6 +1689,13 @@
                         fineRotSlider: ctrl.querySelector('[data-role="finerot"]'),
                         fineRotNum: ctrl.querySelector('[data-role="finerotNum"]'),
                         fineRotVal: ctrl.querySelector('[data-role="finerotVal"]'),
+                        enhanceSlider: ctrl.querySelector('[data-role="enhance"]'),
+                        enhanceNum: ctrl.querySelector('[data-role="enhanceNum"]'),
+                        enhanceVal: ctrl.querySelector('[data-role="enhanceVal"]'),
+                        origDataURL: null,
+                        enhance: 80,
+                        _enhanceTimer: null,
+                        _enhanceToken: 0,
                         natW: 0,
                         natH: 0,
                         hasImage: false,
@@ -1907,6 +1934,13 @@
                             syncFineRotUI(card);
                             render(card);
                             if (card.mode === "crop") setActiveCard(card);
+                            // Auto-enhance the new scan (whiten bg + strengthen black text).
+                            card.enhance = 80;
+                            card.origDataURL = e.target.result;
+                            if (card.enhanceSlider) card.enhanceSlider.disabled = false;
+                            if (card.enhanceNum) card.enhanceNum.disabled = false;
+                            syncEnhanceUI(card);
+                            applyEnhance(card);
                         };
                         img.src = e.target.result;
                     };
@@ -1936,6 +1970,120 @@
                         card.ty = 0;
                     }
                     render(card);
+                }
+
+                /* ---------------- auto-enhance black text ---------------- */
+                // Non-destructive: the original upload is kept in card.origDataURL and
+                // re-processed on every slider change, so the raw scan is never lost.
+                function autoEnhanceImage(srcDataURL, amount) {
+                    return new Promise(function (resolve) {
+                        const img = new Image();
+                        img.onload = function () {
+                            const c = document.createElement("canvas");
+                            c.width = img.naturalWidth || img.width;
+                            c.height = img.naturalHeight || img.height;
+                            const ctx = c.getContext("2d");
+                            ctx.drawImage(img, 0, 0);
+                            const imageData = ctx.getImageData(0, 0, c.width, c.height);
+                            const p = imageData.data;
+                            const w = c.width,
+                                h = c.height;
+                            const ring = Math.max(3, Math.round(Math.min(w, h) * 0.025));
+                            const hr = new Uint32Array(256),
+                                hg = new Uint32Array(256),
+                                hb = new Uint32Array(256);
+                            let rS = 0,
+                                gS = 0,
+                                bS = 0,
+                                n = 0;
+                            for (let i = 0, y = 0; y < h; y++) {
+                                for (let x = 0; x < w; x++, i += 4) {
+                                    hr[p[i]]++;
+                                    hg[p[i + 1]]++;
+                                    hb[p[i + 2]]++;
+                                    if (x < ring || y < ring || x >= w - ring || y >= h - ring) {
+                                        rS += p[i];
+                                        gS += p[i + 1];
+                                        bS += p[i + 2];
+                                        n++;
+                                    }
+                                }
+                            }
+                            if (n < 10) {
+                                resolve(srcDataURL);
+                                return;
+                            }
+                            // Black point = lowest ~1% of each channel's histogram.
+                            const target = Math.max(1, Math.round(w * h * 0.01));
+                            function lowPoint(hist) {
+                                let acc = 0;
+                                for (let v = 0; v < 256; v++) {
+                                    acc += hist[v];
+                                    if (acc >= target) return v;
+                                }
+                                return 0;
+                            }
+                            const loR = lowPoint(hr),
+                                loG = lowPoint(hg),
+                                loB = lowPoint(hb);
+                            // White point = estimated background; keep a minimum spread.
+                            const bgR = rS / n,
+                                bgG = gS / n,
+                                bgB = bS / n;
+                            const wr = Math.max(loR + 24, bgR),
+                                wg = Math.max(loG + 24, bgG),
+                                wb = Math.max(loB + 24, bgB);
+                            const t = clamp(amount / 100, 0, 1);
+                            if (t > 0) {
+                                for (let i = 0; i < p.length; i += 4) {
+                                    const or = p[i],
+                                        og = p[i + 1],
+                                        ob = p[i + 2];
+                                    const er = (255 * (or - loR)) / (wr - loR);
+                                    const eg = (255 * (og - loG)) / (wg - loG);
+                                    const eb = (255 * (ob - loB)) / (wb - loB);
+                                    p[i] = clamp(or + (er - or) * t, 0, 255);
+                                    p[i + 1] = clamp(og + (eg - og) * t, 0, 255);
+                                    p[i + 2] = clamp(ob + (eb - ob) * t, 0, 255);
+                                }
+                            }
+                            ctx.putImageData(imageData, 0, 0);
+                            resolve(c.toDataURL("image/png"));
+                        };
+                        img.onerror = function () {
+                            resolve(srcDataURL);
+                        };
+                        img.src = srcDataURL;
+                    });
+                }
+
+                function syncEnhanceUI(card) {
+                    const v = card.enhance;
+                    if (card.enhanceSlider && String(card.enhanceSlider.value) !== String(v)) card.enhanceSlider.value = v;
+                    if (card.enhanceNum && String(card.enhanceNum.value) !== String(v)) card.enhanceNum.value = v;
+                    if (card.enhanceVal) card.enhanceVal.textContent = v + "%";
+                }
+
+                function scheduleEnhance(card) {
+                    if (card._enhanceTimer) clearTimeout(card._enhanceTimer);
+                    card._enhanceTimer = setTimeout(function () {
+                        card._enhanceTimer = null;
+                        applyEnhance(card);
+                    }, 120);
+                }
+
+                function applyEnhance(card) {
+                    if (!card.hasImage || !card.origDataURL) return;
+                    card._enhanceToken++;
+                    const token = card._enhanceToken;
+                    const amt = card.enhance;
+                    if (amt <= 0) {
+                        card.img.src = card.origDataURL;
+                        return;
+                    }
+                    autoEnhanceImage(card.origDataURL, amt).then(function (url) {
+                        if (card._enhanceToken === token && card.hasImage) card.img.src = url;
+                    });
                 }
 
                 /* ---------------- wire up interactions per card ---------------- */
@@ -2018,6 +2166,23 @@
                         applyFineRot(card, card.fineRotSlider.value);
                     });
 
+                    if (card.enhanceSlider) {
+                        card.enhanceSlider.addEventListener("input", function () {
+                            if (!card.hasImage) return;
+                            card.enhance = clamp(parseInt(card.enhanceSlider.value, 10) || 0, 0, 100);
+                            syncEnhanceUI(card);
+                            scheduleEnhance(card);
+                        });
+                    }
+                    if (card.enhanceNum) {
+                        card.enhanceNum.addEventListener("change", function () {
+                            if (!card.hasImage) return;
+                            card.enhance = clamp(parseInt(card.enhanceNum.value, 10) || 0, 0, 100);
+                            syncEnhanceUI(card);
+                            applyEnhance(card);
+                        });
+                    }
+
                     if (card.fineRotNum) {
                         card.fineRotNum.addEventListener("change", function () {
                             if (card.mode !== "crop" || !card.hasImage) return;
@@ -2031,10 +2196,12 @@
                         });
                     }
 
-                    // Micro-zoom: hover over image + scroll wheel (allows zoom below cover)
+                    // Micro-zoom: hover over image + scroll wheel (allows zoom below cover).
+                    // Ctrl/Cmd+scroll is reserved for canvas zoom — let it bubble to the stage.
                     card.wrap.addEventListener(
                         "wheel",
                         function (e) {
+                            if (e.ctrlKey || e.metaKey) return;
                             if (card.mode !== "crop" || !card.hasImage) return;
                             e.preventDefault();
                             setActiveCard(card);
