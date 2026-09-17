@@ -1325,8 +1325,8 @@
                         const url = URL.createObjectURL(file);
                         const img = new Image();
                         img.onload = function () {
-                            // Image is decoded into img now; the blob URL itself is no longer needed.
-                            URL.revokeObjectURL(url);
+                            // Keep the blob URL alive: it is reused as rec.img.src for
+                            // every tile <img> and print-canvas rasterization.
                             images.push({ id: idSeq++, img: img, aspect: img.naturalWidth / img.naturalHeight });
                             pending--;
                             if (pending === 0) {
