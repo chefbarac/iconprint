@@ -2175,7 +2175,7 @@ const AGENT_PREF_KEY = "iconprint_agent_enabled_autocollage";
                     try {
                         const pageEls = Array.from(document.querySelectorAll(".page"));
                         if (!pageEls.length) throw new Error("No pages to print");
-                        const dpi = 300;
+                        const dpi = 600;
                         const targetW = Math.round(pageW * dpi);
                         const targetH = Math.round(pageH * dpi);
 

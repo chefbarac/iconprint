@@ -2459,10 +2459,10 @@
                 return mm / 25.4;
             }
 
-            /** Rasterize #printPage at 300 DPI for agent Actual Size print. */
+            /** Rasterize #printPage at 600 DPI for agent Actual Size print. */
             async function buildPagePngBlob() {
                 const paper = currentPaper();
-                const dpi = 300;
+                const dpi = 600;
                 const pageWIn = mmToInches(paper.w);
                 const pageHIn = mmToInches(paper.h);
                 const canvas = document.createElement("canvas");

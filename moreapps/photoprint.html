@@ -1109,7 +1109,7 @@
 
         <div class="statusbar">
             <span id="status">Ready - Select preset, upload, place on paper</span>
-            <span>Print / Print / Export @ 300 DPI</span>
+            <span>Print / Print / Export @ 600 DPI</span>
         </div>
 
         <div class="print-modal-backdrop" id="printBackdrop">
@@ -4622,12 +4622,12 @@
 
                 document.getElementById("btnExport").addEventListener("click", function () {
                     var guides = document.getElementById("showGuides").checked;
-                    renderSheet(300, guides).then(function (res) {
+                    renderSheet(600, guides).then(function (res) {
                         var link = document.createElement("a");
                         link.download = "print-" + paperKey + "-" + Date.now() + ".png";
                         link.href = res.canvas.toDataURL("image/png");
                         link.click();
-                        setStatus("Exported " + res.pxW + "x" + res.pxH + "px @ 300 DPI" + (guides ? " (with cut guides)" : ""));
+                        setStatus("Exported " + res.pxW + "x" + res.pxH + "px @ 600 DPI" + (guides ? " (with cut guides)" : ""));
                     });
                 });
 
@@ -4638,7 +4638,7 @@
                         return;
                     }
                     var guides = document.getElementById("showGuides").checked;
-                    renderSheet(300, guides).then(function (res) {
+                    renderSheet(600, guides).then(function (res) {
                         var dataUrl = res.canvas.toDataURL("image/png");
                         var d = res.d;
                         var doc = win.document;
@@ -4767,7 +4767,7 @@
                     submitBtn.disabled = true;
 
                     var guides = document.getElementById("showGuides").checked;
-                    renderSheet(300, guides)
+                    renderSheet(600, guides)
                         .then(function (res) {
                             return new Promise(function (resolve, reject) {
                                 res.canvas.toBlob(function (blob) {

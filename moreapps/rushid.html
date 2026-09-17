@@ -2815,7 +2815,10 @@
                         pageH = size.h;
                     }
 
-                    const dpi = Math.min(pageW, pageH) < 5 ? 600 : 300;
+                    // Physical prints ship at 600 DPI for crisp edges at any sheet
+                    // size. 300 DPI on A4 was visibly soft once printed (upscaled to
+                    // the printer's native LOGPIXELS), which read as "low quality".
+                    const dpi = 600;
                     const outW = Math.round(pageW * dpi);
                     const outH = Math.round(pageH * dpi);
 
