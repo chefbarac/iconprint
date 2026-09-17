@@ -236,7 +236,15 @@
                 display: none;
             }
             #sigThumb,
-            #sigBThumb,
+            #sigBThumb {
+                object-fit: contain;
+                background-color: #fff;
+                background-image:
+                    linear-gradient(45deg, #e6e9ec 25%, transparent 25%, transparent 75%, #e6e9ec 75%),
+                    linear-gradient(45deg, #e6e9ec 25%, transparent 25%, transparent 75%, #e6e9ec 75%);
+                background-size: 12px 12px;
+                background-position: 0 0, 6px 6px;
+            }
             #asaLogoThumb {
                 object-fit: contain;
                 background: #fff;
@@ -916,6 +924,26 @@
                         <label for="sigGapSlider" style="margin-top: 6px">Signature ↔ name spacing</label>
                         <input type="range" id="sigGapSlider" min="-40" max="20" value="1" />
                         <div class="rangeval"><span id="sigGapVal">1</span>px (negative = overlap)</div>
+
+                        <label class="checkline" style="margin-top: 10px">
+                            <input type="checkbox" id="sigAutoClean" checked />
+                            Auto-clean signature (remove background + crop)
+                        </label>
+                        <div id="sigCleanWrap">
+                            <label for="sigThresholdSlider" style="margin-top: 6px">White threshold</label>
+                            <input type="range" id="sigThresholdSlider" min="200" max="255" step="1" value="245" title="Pixels this close to white become transparent. Raise to remove more of a gray/photo background." />
+                            <div class="rangeval"><span id="sigThresholdVal">245</span> (near-white → transparent)</div>
+
+                            <label class="checkline" style="margin-top: 8px">
+                                <input type="checkbox" id="sigAutoCrop" checked />
+                                Auto-crop to the ink
+                            </label>
+                            <label for="sigCropPadSlider" style="margin-top: 6px">Crop padding</label>
+                            <input type="range" id="sigCropPadSlider" min="0" max="30" step="1" value="8" />
+                            <div class="rangeval"><span id="sigCropPadVal">8</span>px around the signature</div>
+                        </div>
+                        <button type="button" id="btnReprocessSig" class="ghost" style="margin-top: 8px">Re-process signature</button>
+                        <div class="rangeval" style="margin-top: 4px">Applies to both signatures · clears the photographed paper background</div>
                     </div>
 
                     <div class="field">
@@ -1474,12 +1502,14 @@
                 let currentPhoto = null; // final cropped dataURL
                 let rawPhoto = null; // uncropped source for the crop modal
                 let currentSignature = null; // signature dataURL
+                let sigRaw = null; // raw uploaded signature (person A) for re-processing
                 let stream = null; // camera MediaStream
 
                 // ASA person B + logo
                 let photoB = null;
                 let rawPhotoB = null;
                 let sigB = null;
+                let sigBRaw = null; // raw uploaded signature (person B) for re-processing
                 let asaLogo = null;
                 let asaLogoSize = 0.45; // logo max-height in inches
                 let asaLogoTop = 0; // badge top offset in inches
@@ -1531,6 +1561,14 @@
                 const sigHeightVal = document.getElementById("sigHeightVal");
                 const sigGapSlider = document.getElementById("sigGapSlider");
                 const sigGapVal = document.getElementById("sigGapVal");
+                const sigAutoClean = document.getElementById("sigAutoClean");
+                const sigCleanWrap = document.getElementById("sigCleanWrap");
+                const sigThresholdSlider = document.getElementById("sigThresholdSlider");
+                const sigThresholdVal = document.getElementById("sigThresholdVal");
+                const sigAutoCrop = document.getElementById("sigAutoCrop");
+                const sigCropPadSlider = document.getElementById("sigCropPadSlider");
+                const sigCropPadVal = document.getElementById("sigCropPadVal");
+                const btnReprocessSig = document.getElementById("btnReprocessSig");
 
                 const nameInput = document.getElementById("nameInput");
                 const nameFontSelect = document.getElementById("nameFontSelect");
@@ -1680,6 +1718,160 @@
                     });
                 }
 
+                // ---------------- Signature auto-clean ----------------
+                // Removes a (usually photographed) paper background, detects the ink
+                // bounds, and crops tightly. The raw upload is kept in sigRaw/sigBRaw so
+                // the user can re-process live while adjusting the manual controls.
+                function processSignatureImage(dataUrl, opts) {
+                    return new Promise(function (resolve) {
+                        const img = new Image();
+                        img.onload = function () {
+                            try {
+                                const srcW = img.naturalWidth || img.width;
+                                const srcH = img.naturalHeight || img.height;
+                                const CAP = 2048;
+                                const scale = Math.min(1, CAP / Math.max(srcW, srcH));
+                                const c = document.createElement("canvas");
+                                c.width = Math.max(1, Math.round(srcW * scale));
+                                c.height = Math.max(1, Math.round(srcH * scale));
+                                const ctx = c.getContext("2d");
+                                ctx.drawImage(img, 0, 0, c.width, c.height);
+                                const imageData = ctx.getImageData(0, 0, c.width, c.height);
+                                const p = imageData.data;
+                                const threshold = Math.max(150, Math.min(255, opts.threshold || 245));
+                                if (opts.removeBg) {
+                                    const soft = 30; // soft ramp keeps anti-aliased edges
+                                    for (let i = 0; i < p.length; i += 4) {
+                                        const m = Math.max(p[i], p[i + 1], p[i + 2]);
+                                        if (m >= threshold) p[i + 3] = 0;
+                                        else if (m >= threshold - soft) p[i + 3] = Math.round(((threshold - m) / soft) * 255);
+                                    }
+                                }
+                                let x0 = 0,
+                                    y0 = 0,
+                                    x1 = c.width - 1,
+                                    y1 = c.height - 1;
+                                if (opts.autoCrop) {
+                                    let minX = c.width,
+                                        minY = c.height,
+                                        maxX = -1,
+                                        maxY = -1;
+                                    let bgRef = 255;
+                                    if (!opts.removeBg) {
+                                        const r = Math.max(2, Math.round(Math.min(c.width, c.height) * 0.02));
+                                        let s = 0,
+                                            n = 0;
+                                        for (let y = 0; y < c.height; y++) {
+                                            for (let x = 0; x < c.width; x++) {
+                                                if (x < r || y < r || x >= c.width - r || y >= c.height - r) {
+                                                    const i = (y * c.width + x) * 4;
+                                                    s += (p[i] + p[i + 1] + p[i + 2]) / 3;
+                                                    n++;
+                                                }
+                                            }
+                                        }
+                                        bgRef = n ? s / n : 255;
+                                    }
+                                    for (let y = 0; y < c.height; y++) {
+                                        for (let x = 0; x < c.width; x++) {
+                                            const i = (y * c.width + x) * 4;
+                                            let ink;
+                                            if (opts.removeBg) {
+                                                ink = Math.max(p[i], p[i + 1], p[i + 2]) < threshold;
+                                            } else {
+                                                const lum = (p[i] + p[i + 1] + p[i + 2]) / 3;
+                                                ink = Math.abs(lum - bgRef) >= 36;
+                                            }
+                                            if (ink) {
+                                                if (x < minX) minX = x;
+                                                if (x > maxX) maxX = x;
+                                                if (y < minY) minY = y;
+                                                if (y > maxY) maxY = y;
+                                            }
+                                        }
+                                    }
+                                    if (maxX >= minX && maxY >= minY) {
+                                        const pad = Math.max(0, Math.min(120, opts.cropPad || 8));
+                                        x0 = Math.max(0, minX - pad);
+                                        y0 = Math.max(0, minY - pad);
+                                        x1 = Math.min(c.width - 1, maxX + pad);
+                                        y1 = Math.min(c.height - 1, maxY + pad);
+                                    }
+                                }
+                                const out = document.createElement("canvas");
+                                out.width = x1 - x0 + 1;
+                                out.height = y1 - y0 + 1;
+                                const octx = out.getContext("2d");
+                                octx.putImageData(imageData, -x0, -y0);
+                                resolve(out.toDataURL("image/png"));
+                            } catch (err) {
+                                resolve(dataUrl);
+                            }
+                        };
+                        img.onerror = function () {
+                            resolve(dataUrl);
+                        };
+                        img.src = dataUrl;
+                    });
+                }
+
+                function prepareSignature(raw, done) {
+                    if (!sigAutoClean.checked) {
+                        done(raw);
+                        return;
+                    }
+                    processSignatureImage(raw, {
+                        removeBg: true,
+                        threshold: parseInt(sigThresholdSlider.value, 10) || 245,
+                        autoCrop: sigAutoCrop.checked,
+                        cropPad: parseInt(sigCropPadSlider.value, 10) || 8,
+                    }).then(done);
+                }
+
+                let sigReprocessTimer = null;
+                function reprocessSignatures() {
+                    if (sigReprocessTimer) clearTimeout(sigReprocessTimer);
+                    sigReprocessTimer = setTimeout(function () {
+                        sigReprocessTimer = null;
+                        if (sigRaw) {
+                            prepareSignature(sigRaw, function (out) {
+                                currentSignature = out;
+                                sigThumb.src = out;
+                                sigThumb.style.display = "block";
+                                sigPlaceholder.style.display = "none";
+                                btnClearSig.disabled = false;
+                                generateLayout();
+                            });
+                        }
+                        if (sigBRaw) {
+                            prepareSignature(sigBRaw, function (out) {
+                                sigB = out;
+                                sigBThumb.src = out;
+                                sigBThumb.style.display = "block";
+                                sigBPlaceholder.style.display = "none";
+                                btnClearSigB.disabled = false;
+                                generateLayout();
+                            });
+                        }
+                    }, 200);
+                }
+
+                sigThresholdSlider.addEventListener("input", function () {
+                    sigThresholdVal.textContent = sigThresholdSlider.value;
+                    reprocessSignatures();
+                });
+                sigCropPadSlider.addEventListener("input", function () {
+                    sigCropPadVal.textContent = sigCropPadSlider.value;
+                    reprocessSignatures();
+                });
+                sigAutoCrop.addEventListener("change", reprocessSignatures);
+                sigAutoClean.addEventListener("change", function () {
+                    sigCleanWrap.style.display = sigAutoClean.checked ? "block" : "none";
+                    reprocessSignatures();
+                });
+                btnReprocessSig.addEventListener("click", reprocessSignatures);
+                sigCleanWrap.style.display = sigAutoClean.checked ? "block" : "none";
+
                 // ---------------- Upload signature ----------------
                 btnUploadSig.addEventListener("click", () => sigFileInput.click());
                 sigFileInput.addEventListener("change", (e) => {
@@ -1687,12 +1879,16 @@
                     if (!file) return;
                     const reader = new FileReader();
                     reader.onload = (ev) => {
-                        currentSignature = ev.target.result;
-                        sigThumb.src = currentSignature;
-                        sigThumb.style.display = "block";
-                        sigPlaceholder.style.display = "none";
-                        btnClearSig.disabled = false;
-                        generateLayout();
+                        const raw = ev.target.result;
+                        prepareSignature(raw, (out) => {
+                            sigRaw = raw;
+                            currentSignature = out;
+                            sigThumb.src = out;
+                            sigThumb.style.display = "block";
+                            sigPlaceholder.style.display = "none";
+                            btnClearSig.disabled = false;
+                            generateLayout();
+                        });
                     };
                     reader.readAsDataURL(file);
                     sigFileInput.value = "";
@@ -1700,6 +1896,7 @@
 
                 btnClearSig.addEventListener("click", () => {
                     currentSignature = null;
+                    sigRaw = null;
                     sigThumb.style.display = "none";
                     sigPlaceholder.style.display = "flex";
                     btnClearSig.disabled = true;
@@ -1713,12 +1910,16 @@
                     if (!file) return;
                     const reader = new FileReader();
                     reader.onload = (ev) => {
-                        sigB = ev.target.result;
-                        sigBThumb.src = sigB;
-                        sigBThumb.style.display = "block";
-                        sigBPlaceholder.style.display = "none";
-                        btnClearSigB.disabled = false;
-                        generateLayout();
+                        const raw = ev.target.result;
+                        prepareSignature(raw, (out) => {
+                            sigBRaw = raw;
+                            sigB = out;
+                            sigBThumb.src = out;
+                            sigBThumb.style.display = "block";
+                            sigBPlaceholder.style.display = "none";
+                            btnClearSigB.disabled = false;
+                            generateLayout();
+                        });
                     };
                     reader.readAsDataURL(file);
                     sigFileInputB.value = "";
@@ -1726,6 +1927,7 @@
 
                 btnClearSigB.addEventListener("click", () => {
                     sigB = null;
+                    sigBRaw = null;
                     sigBThumb.style.display = "none";
                     sigBPlaceholder.style.display = "flex";
                     btnClearSigB.disabled = true;
@@ -3016,6 +3218,7 @@
                     currentPhoto = null;
                     rawPhoto = null;
                     currentSignature = null;
+                    sigRaw = null;
                     photoThumb.style.display = "none";
                     thumbPlaceholder.style.display = "flex";
                     btnRecrop.disabled = true;
@@ -3027,6 +3230,7 @@
                     photoB = null;
                     rawPhotoB = null;
                     sigB = null;
+                    sigBRaw = null;
                     asaLogo = null;
                     photoBThumb.style.display = "none";
                     photoBPlaceholder.style.display = "flex";
