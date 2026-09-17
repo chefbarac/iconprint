@@ -396,14 +396,14 @@
 
             .tile {
                 position: absolute;
-                cursor: grab;
+                cursor: move;
                 background: #000;
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
                 outline: 1px solid rgba(0, 0, 0, 0.08);
                 outline-offset: 0;
             }
             .tile.dragging {
-                cursor: grabbing;
+                cursor: move;
                 z-index: 9999 !important;
                 outline: 2px solid var(--accent);
             }
@@ -412,7 +412,7 @@
             }
             .tile {
                 pointer-events: auto;
-                cursor: grab;
+                cursor: move;
             }
             .tile img {
                 width: 100%;
@@ -515,7 +515,7 @@
                 background: var(--accent);
                 border: 2px solid #fff;
                 border-radius: 50%;
-                cursor: grab;
+                cursor: move;
             }
 
             footer.hint {
