@@ -240,10 +240,11 @@
                 object-fit: contain;
                 background-color: #fff;
                 background-image:
-                    linear-gradient(45deg, #e6e9ec 25%, transparent 25%, transparent 75%, #e6e9ec 75%),
-                    linear-gradient(45deg, #e6e9ec 25%, transparent 25%, transparent 75%, #e6e9ec 75%);
+                    linear-gradient(45deg, #e6e9ec 25%, transparent 25%, transparent 75%, #e6e9ec 75%), linear-gradient(45deg, #e6e9ec 25%, transparent 25%, transparent 75%, #e6e9ec 75%);
                 background-size: 12px 12px;
-                background-position: 0 0, 6px 6px;
+                background-position:
+                    0 0,
+                    6px 6px;
             }
             #asaLogoThumb {
                 object-fit: contain;
@@ -931,7 +932,15 @@
                         </label>
                         <div id="sigCleanWrap">
                             <label for="sigThresholdSlider" style="margin-top: 6px">White threshold</label>
-                            <input type="range" id="sigThresholdSlider" min="200" max="255" step="1" value="245" title="Pixels this close to white become transparent. Raise to remove more of a gray/photo background." />
+                            <input
+                                type="range"
+                                id="sigThresholdSlider"
+                                min="200"
+                                max="255"
+                                step="1"
+                                value="245"
+                                title="Pixels this close to white become transparent. Raise to remove more of a gray/photo background."
+                            />
                             <div class="rangeval"><span id="sigThresholdVal">245</span> (near-white → transparent)</div>
 
                             <label class="checkline" style="margin-top: 8px">
@@ -1218,62 +1227,9 @@
             </div>
         </div>
 
+        <script src="../js/icon-print-agent.js"></script>
         <script>
             (function () {
-                // ---------- Local print agent (configurable host) ----------
-
-                const AGENT_HOST_KEY = "iconprint_agent_host";
-
-                const DEFAULT_AGENT_HOST = "http://localhost:5001";
-
-                function getAgentHost() {
-                    try {
-                        const v = (localStorage.getItem(AGENT_HOST_KEY) || "").trim();
-
-                        if (v) return v.replace(/\/+$/, "");
-                    } catch (e) {}
-
-                    return DEFAULT_AGENT_HOST;
-                }
-
-                function setAgentHost(url) {
-                    try {
-                        const cleaned = (url || "").trim().replace(/\/+$/, "");
-
-                        if (cleaned) localStorage.setItem(AGENT_HOST_KEY, cleaned);
-                        else localStorage.removeItem(AGENT_HOST_KEY);
-                    } catch (e) {}
-                }
-
-                let LOCAL_AGENT = getAgentHost();
-
-                function promptAgentHost() {
-                    const current = getAgentHost();
-
-                    const next = window.prompt(
-                        "Print agent URL\n\nUse this PC: http://localhost:5001\nOther PC on LAN: http://<agent-ip>:5001",
-
-                        current,
-                    );
-
-                    if (next === null) return;
-
-                    setAgentHost(next || DEFAULT_AGENT_HOST);
-
-                    LOCAL_AGENT = getAgentHost();
-
-                    if (typeof agentConnectionEnabled !== "undefined" && agentConnectionEnabled && typeof startAgentPolling === "function") {
-                        startAgentPolling();
-                    } else if (typeof checkAgentHealth === "function") {
-                        checkAgentHealth();
-                    }
-
-                    const badgeText = document.getElementById("agentBadgeText");
-
-                    if (badgeText && typeof agentOnline !== "undefined" && !agentOnline) {
-                        badgeText.title = "Agent host: " + LOCAL_AGENT + " (click to change)";
-                    }
-                }
                 const AGENT_PREF_KEY = "iconprint_agent_enabled_rushid";
                 function getAgentEnabledPref() {
                     try {
@@ -1358,7 +1314,7 @@
                 }
                 async function refreshDevices() {
                     try {
-                        const res = await fetch(LOCAL_AGENT + "/devices", { cache: "no-store" });
+                        const res = await agentFetch("/devices", { cache: "no-store" });
                         if (!res.ok) throw new Error("devices");
                         const data = await res.json();
                         agentDevices = { scanners: data.scanners || [], printers: data.printers || [] };
@@ -1373,7 +1329,7 @@
                         return;
                     }
                     try {
-                        const res = await fetch(LOCAL_AGENT + "/health", {
+                        const res = await agentFetch("/health", {
                             cache: "no-store",
                             signal: typeof AbortSignal !== "undefined" && AbortSignal.timeout ? AbortSignal.timeout(2500) : undefined,
                         });
@@ -1398,7 +1354,7 @@
                 }
 
                 function refreshDevicesScannersOnly() {
-                    return fetch(LOCAL_AGENT + "/devices?printers=0", { cache: "no-store" })
+                    return agentFetch("/devices?printers=0", { cache: "no-store" })
                         .then(function (res) {
                             if (!res.ok) throw new Error("devices " + res.status);
                             return res.json();
@@ -1420,7 +1376,7 @@
                 }
 
                 function refreshDevicesPrintersOnly() {
-                    return fetch(LOCAL_AGENT + "/devices?scanners=0", { cache: "no-store" })
+                    return agentFetch("/devices?scanners=0", { cache: "no-store" })
                         .then(function (res) {
                             if (!res.ok) throw new Error("devices");
                             return res.json();
@@ -2506,7 +2462,7 @@
                                         photo: isA ? currentPhoto : photoB,
                                         name: isA ? nameInput.value.trim() : nameBText,
                                         sig: isA ? currentSignature : sigB,
-                                    })
+                                    }),
                                 );
                             }
                         } else {
@@ -3033,10 +2989,7 @@
                     // but leave no noticeable residue on the trimmed pieces.
                     const guideLw = Math.max(1, Math.round(0.15 * (dpi / 25.4)));
                     ctx.strokeStyle = "rgba(110, 120, 130, 0.5)";
-                    ctx.setLineDash([
-                        Math.max(3, Math.round(0.4 * (dpi / 25.4))),
-                        Math.max(2, Math.round(0.3 * (dpi / 25.4))),
-                    ]);
+                    ctx.setLineDash([Math.max(3, Math.round(0.4 * (dpi / 25.4))), Math.max(2, Math.round(0.3 * (dpi / 25.4)))]);
                     ctx.lineWidth = guideLw;
                     guideRects.forEach((r) => ctx.strokeRect(r.x, r.y, r.w, r.h));
                     ctx.restore();
@@ -3141,28 +3094,14 @@
                         fd.append("quality", (document.getElementById("printQuality") && document.getElementById("printQuality").value) || "high");
                         fd.append("page_width_inches", String(pageW));
                         fd.append("page_height_inches", String(pageH));
-                        const res = await fetch(LOCAL_AGENT + "/print", { method: "POST", body: fd });
+                        const res = await agentFetch("/print", { method: "POST", body: fd });
                         const data = await res.json().catch(() => ({}));
                         if (!res.ok || !data.success) {
                             throw new Error(data.error || "Print failed (" + res.status + ")");
                         }
                         const jobId = data.job_id;
                         if (st) st.textContent = "Queued — job " + jobId.slice(0, 8) + "…";
-                        for (let tries = 0; tries < 120; tries++) {
-                            await new Promise((r) => setTimeout(r, tries === 0 ? 600 : 1000));
-                            const sr = await fetch(LOCAL_AGENT + "/print/jobs/" + jobId, { cache: "no-store" });
-                            const job = await sr.json();
-                            const status = job.status || "unknown";
-                            if (st) {
-                                st.textContent = status.charAt(0).toUpperCase() + status.slice(1) + (job.warnings && job.warnings.length ? " — " + job.warnings[0] : "");
-                                st.className = "print-status" + (status === "completed" ? " ok" : status === "failed" ? " error" : "");
-                            }
-                            if (status === "completed") break;
-                            if (status === "failed") {
-                                throw new Error(job.error || "Print job failed");
-                            }
-                            if (tries === 119) throw new Error("Print timed out");
-                        }
+                        await pollPrintJob(jobId, st);
                     } catch (err) {
                         if (st) {
                             st.textContent = "Failed: " + (err.message || err);

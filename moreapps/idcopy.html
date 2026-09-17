@@ -1161,62 +1161,9 @@
             </div>
         </div>
 
+        <script src="../js/icon-print-agent.js"></script>
         <script>
-            // ---------- Local print agent (configurable host) ----------
-
-            const AGENT_HOST_KEY = "iconprint_agent_host";
-
-            const DEFAULT_AGENT_HOST = "http://localhost:5001";
-
-            function getAgentHost() {
-                try {
-                    const v = (localStorage.getItem(AGENT_HOST_KEY) || "").trim();
-
-                    if (v) return v.replace(/\/+$/, "");
-                } catch (e) {}
-
-                return DEFAULT_AGENT_HOST;
-            }
-
-            function setAgentHost(url) {
-                try {
-                    const cleaned = (url || "").trim().replace(/\/+$/, "");
-
-                    if (cleaned) localStorage.setItem(AGENT_HOST_KEY, cleaned);
-                    else localStorage.removeItem(AGENT_HOST_KEY);
-                } catch (e) {}
-            }
-
-            let LOCAL_AGENT = getAgentHost();
-
-            function promptAgentHost() {
-                const current = getAgentHost();
-
-                const next = window.prompt(
-                    "Print agent URL\n\nUse this PC: http://localhost:5001\nOther PC on LAN: http://<agent-ip>:5001",
-
-                    current,
-                );
-
-                if (next === null) return;
-
-                setAgentHost(next || DEFAULT_AGENT_HOST);
-
-                LOCAL_AGENT = getAgentHost();
-
-                if (typeof agentConnectionEnabled !== "undefined" && agentConnectionEnabled && typeof startAgentPolling === "function") {
-                    startAgentPolling();
-                } else if (typeof checkAgentHealth === "function") {
-                    checkAgentHealth();
-                }
-
-                const badgeText = document.getElementById("agentBadgeText");
-
-                if (badgeText && typeof agentOnline !== "undefined" && !agentOnline) {
-                    badgeText.title = "Agent host: " + LOCAL_AGENT + " (click to change)";
-                }
-            }
-            const AGENT_PREF_KEY = "iconprint_agent_enabled_index";
+            const AGENT_PREF_KEY = "iconprint_agent_enabled_idcopy";
             function getAgentEnabledPref() {
                 try {
                     const v = localStorage.getItem(AGENT_PREF_KEY);
@@ -1232,8 +1179,6 @@
                 } catch (e) {}
             }
             let agentConnectionEnabled = getAgentEnabledPref();
-
-            const SCAN_ENDPOINT = LOCAL_AGENT + "/scan";
 
             let agentOnline = false;
             let agentDevices = { scanners: [], printers: [] };
@@ -1328,7 +1273,7 @@
 
             async function refreshDevices() {
                 try {
-                    const res = await fetch(LOCAL_AGENT + "/devices", { cache: "no-store" });
+                    const res = await agentFetch("/devices", { cache: "no-store" });
                     if (!res.ok) throw new Error("devices " + res.status);
                     const data = await res.json();
                     agentDevices = {
@@ -1350,7 +1295,7 @@
                     return;
                 }
                 try {
-                    const res = await fetch(LOCAL_AGENT + "/health", {
+                    const res = await agentFetch("/health", {
                         cache: "no-store",
                         signal: typeof AbortSignal !== "undefined" && AbortSignal.timeout ? AbortSignal.timeout(2500) : undefined,
                     });
@@ -1375,7 +1320,7 @@
             }
 
             function refreshDevicesScannersOnly() {
-                return fetch(LOCAL_AGENT + "/devices?printers=0", { cache: "no-store" })
+                return agentFetch("/devices?printers=0", { cache: "no-store" })
                     .then(function (res) {
                         if (!res.ok) throw new Error("devices " + res.status);
                         return res.json();
@@ -1395,7 +1340,7 @@
             }
 
             function refreshDevicesPrintersOnly() {
-                return fetch(LOCAL_AGENT + "/devices?scanners=0", { cache: "no-store" })
+                return agentFetch("/devices?scanners=0", { cache: "no-store" })
                     .then(function (res) {
                         if (!res.ok) throw new Error("devices");
                         return res.json();
@@ -1520,7 +1465,7 @@
                 const timeout = setTimeout(() => controller.abort(), 120000);
                 try {
                     const options = getScanOptions();
-                    const response = await fetch(SCAN_ENDPOINT, {
+                    const response = await agentFetch("/scan", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         signal: controller.signal,
@@ -1532,7 +1477,7 @@
                     if (err.name === "AbortError") {
                         throw new Error("Scan request timed out after 2 minutes. Is the scanner service running?");
                     }
-                    throw new Error("Could not reach scanner service at " + SCAN_ENDPOINT + " (" + err.message + ")");
+                    throw new Error("Could not reach scanner service at " + LOCAL_AGENT + "/scan (" + err.message + ")");
                 } finally {
                     clearTimeout(timeout);
                 }
@@ -1542,8 +1487,14 @@
                 return new Promise((resolve, reject) => {
                     const url = URL.createObjectURL(blob);
                     const img = new Image();
-                    img.onload = () => resolve(img);
-                    img.onerror = () => reject(new Error("Could not decode scanned image"));
+                    img.onload = () => {
+                        URL.revokeObjectURL(url);
+                        resolve(img);
+                    };
+                    img.onerror = () => {
+                        URL.revokeObjectURL(url);
+                        reject(new Error("Could not decode scanned image"));
+                    };
                     img.src = url;
                 });
             }
@@ -2608,7 +2559,7 @@
                     fd.append("page_height_inches", String(pageH));
 
                     if (st) st.textContent = "Submitting to printer…";
-                    const res = await fetch(LOCAL_AGENT + "/print", { method: "POST", body: fd });
+                    const res = await agentFetch("/print", { method: "POST", body: fd });
                     const data = await res.json().catch(() => ({}));
                     if (!res.ok || !data.success) {
                         throw new Error(data.error || "Print failed (" + res.status + ")");
@@ -2617,39 +2568,17 @@
                     if (st) st.textContent = "Queued — job " + jobId.slice(0, 8) + "…";
                     log("Print job queued: " + jobId.slice(0, 8), "ok");
 
-                    let tries = 0;
-                    const poll = async () => {
-                        tries++;
-                        try {
-                            const sr = await fetch(LOCAL_AGENT + "/print/jobs/" + jobId, { cache: "no-store" });
-                            const job = await sr.json();
-                            const status = job.status || "unknown";
-                            if (st) {
-                                st.textContent = status.charAt(0).toUpperCase() + status.slice(1) + (job.warnings && job.warnings.length ? " — " + job.warnings[0] : "");
-                                st.className = "print-status" + (status === "completed" ? " ok" : status === "failed" ? " error" : "");
-                            }
-                            if (status === "completed" || status === "failed") {
-                                submitBtn.disabled = false;
-                                if (status === "failed") {
-                                    const msg = job.error || "Print job failed";
-                                    if (st) st.textContent = "Failed: " + msg;
-                                    alert("Print aborted:\n\n" + msg);
-                                    log("Print failed: " + msg, "err");
-                                } else {
-                                    log("Print completed.", "ok");
-                                }
-                                return;
-                            }
-                        } catch (err) {
-                            if (st) {
-                                st.textContent = "Status check error: " + err.message;
-                                st.className = "print-status error";
-                            }
-                        }
-                        if (tries < 120) setTimeout(poll, 1000);
-                        else submitBtn.disabled = false;
-                    };
-                    setTimeout(poll, 600);
+                    try {
+                        const job = await pollPrintJob(jobId, st);
+                        submitBtn.disabled = false;
+                        log("Print completed.", "ok");
+                    } catch (err) {
+                        submitBtn.disabled = false;
+                        const msg = (err && err.job && err.job.error) || (err && err.message) || "Print job failed";
+                        if (st) st.textContent = "Failed: " + msg;
+                        alert("Print aborted:\n\n" + msg);
+                        log("Print failed: " + msg, "err");
+                    }
                 } catch (err) {
                     if (st) {
                         st.textContent = err.message || String(err);

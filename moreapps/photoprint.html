@@ -1194,42 +1194,10 @@
 
         <canvas id="exportCanvas"></canvas>
 
+        <script src="../js/icon-print-agent.js"></script>
         <script>
             (function () {
                 "use strict";
-                // ---------- Local print agent (configurable host) ----------
-                var AGENT_HOST_KEY = "iconprint_agent_host";
-                var DEFAULT_AGENT_HOST = "http://localhost:5001";
-                function getAgentHost() {
-                    try {
-                        var v = (localStorage.getItem(AGENT_HOST_KEY) || "").trim();
-                        if (v) return v.replace(/\/+$/, "");
-                    } catch (e) {}
-                    return DEFAULT_AGENT_HOST;
-                }
-                function setAgentHost(url) {
-                    try {
-                        var cleaned = (url || "").trim().replace(/\/+$/, "");
-                        if (cleaned) localStorage.setItem(AGENT_HOST_KEY, cleaned);
-                        else localStorage.removeItem(AGENT_HOST_KEY);
-                    } catch (e) {}
-                }
-                var LOCAL_AGENT = getAgentHost();
-                function promptAgentHost() {
-                    var current = getAgentHost();
-                    var next = window.prompt("Print agent URL\n\nUse this PC: http://localhost:5001\nOther PC on LAN: http://<agent-ip>:5001", current);
-                    if (next === null) return;
-                    setAgentHost(next || DEFAULT_AGENT_HOST);
-                    LOCAL_AGENT = getAgentHost();
-                    if (typeof agentConnectionEnabled !== "undefined" && agentConnectionEnabled && typeof startAgentPolling === "function") {
-                        startAgentPolling();
-                    } else if (typeof checkAgentHealth === "function") {
-                        checkAgentHealth();
-                    }
-                    var badge = document.getElementById("agentBadge");
-                    if (badge) badge.title = "Agent host: " + LOCAL_AGENT + " — click to change";
-                }
-
                 const AGENT_PREF_KEY = "iconprint_agent_enabled_photoprint";
                 function getAgentEnabledPref() {
                     try {
@@ -1314,7 +1282,7 @@
                 }
 
                 function refreshDevices() {
-                    return fetch(LOCAL_AGENT + "/devices", { cache: "no-store" })
+                    return agentFetch("/devices", { cache: "no-store" })
                         .then(function (res) {
                             if (!res.ok) throw new Error("devices " + res.status);
                             return res.json();
@@ -1340,7 +1308,7 @@
                     var timer = setTimeout(function () {
                         if (ctrl) ctrl.abort();
                     }, 2500);
-                    fetch(LOCAL_AGENT + "/health", {
+                    agentFetch("/health", {
                         cache: "no-store",
                         signal: ctrl ? ctrl.signal : undefined,
                     })
@@ -1371,7 +1339,7 @@
                 }
 
                 function refreshDevicesScannersOnly() {
-                    return fetch(LOCAL_AGENT + "/devices?printers=0", { cache: "no-store" })
+                    return agentFetch("/devices?printers=0", { cache: "no-store" })
                         .then(function (res) {
                             if (!res.ok) throw new Error("devices " + res.status);
                             return res.json();
@@ -1393,7 +1361,7 @@
                 }
 
                 function refreshDevicesPrintersOnly() {
-                    return fetch(LOCAL_AGENT + "/devices?scanners=0", { cache: "no-store" })
+                    return agentFetch("/devices?scanners=0", { cache: "no-store" })
                         .then(function (res) {
                             if (!res.ok) throw new Error("devices");
                             return res.json();
@@ -4792,7 +4760,7 @@
                             fd.append("quality", (document.getElementById("printQuality") && document.getElementById("printQuality").value) || "standard");
                             fd.append("page_width_inches", String(pageW));
                             fd.append("page_height_inches", String(pageH));
-                            return fetch(LOCAL_AGENT + "/print", { method: "POST", body: fd });
+                            return agentFetch("/print", { method: "POST", body: fd });
                         })
                         .then(function (res) {
                             return res.json().then(function (data) {
@@ -4806,44 +4774,24 @@
                             var jobId = r.data.job_id;
                             if (st) st.textContent = "Queued — job " + jobId.slice(0, 8) + "…";
                             setStatus("Print job queued");
-                            var tries = 0;
-                            function poll() {
-                                tries++;
-                                fetch(LOCAL_AGENT + "/print/jobs/" + jobId, { cache: "no-store" })
-                                    .then(function (sr) {
-                                        return sr.json();
-                                    })
-                                    .then(function (job) {
-                                        var status = job.status || "unknown";
-                                        if (st) {
-                                            st.textContent = status.charAt(0).toUpperCase() + status.slice(1) + (job.warnings && job.warnings.length ? " — " + job.warnings[0] : "");
-                                            st.className = "print-status" + (status === "completed" ? " ok" : status === "failed" ? " error" : "");
-                                        }
-                                        if (status === "completed" || status === "failed") {
-                                            submitBtn.disabled = false;
-                                            if (status === "failed") {
-                                                var msg = job.error || "Print job failed";
-                                                if (st) st.textContent = "Failed: " + msg;
-                                                alert("Print aborted:\n\n" + msg);
-                                                setStatus("Print failed");
-                                            } else {
-                                                setStatus("Print completed");
-                                            }
-                                            return;
-                                        }
-                                        if (tries < 120) setTimeout(poll, 1000);
-                                        else submitBtn.disabled = false;
-                                    })
-                                    .catch(function (err) {
-                                        if (st) {
-                                            st.textContent = "Status check error: " + err.message;
-                                            st.className = "print-status error";
-                                        }
-                                        if (tries < 120) setTimeout(poll, 1000);
-                                        else submitBtn.disabled = false;
-                                    });
-                            }
-                            setTimeout(poll, 600);
+                            return pollPrintJob(jobId, st)
+                                .then(function () {
+                                    submitBtn.disabled = false;
+                                    setStatus("Print completed");
+                                })
+                                .catch(function (err) {
+                                    submitBtn.disabled = false;
+                                    var msg = (err && err.job && err.job.error) || (err && err.message) || "Print job failed";
+                                    if (err && err.job) {
+                                        // A genuine job failure (vs. a network/timeout error): match the
+                                        // previous alert-and-status-message behaviour exactly.
+                                        if (st) st.textContent = "Failed: " + msg;
+                                        alert("Print aborted:\n\n" + msg);
+                                        setStatus("Print failed");
+                                    } else {
+                                        throw err; // let the outer .catch below handle non-job errors
+                                    }
+                                });
                         })
                         .catch(function (err) {
                             if (st) {
